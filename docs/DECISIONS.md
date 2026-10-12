@@ -1,0 +1,6 @@
+- No Storage/uploads: assignments are text + external links; certificates are DB rows verified at /verify/:id (no PDF).
+- shadcn/ui CLI not used; Tailwind component classes follow the BlezeX design spec (sketch cards, ink pills). `clsx`/`tailwind-merge` helper is included in `src/lib/utils.ts` if you later add shadcn components.
+- Quiz answer keys live in `quiz_keys` (admin-only); scoring happens in the `submit_quiz` RPC.
+- Completion rules are per course columns, evaluated by `enrollment_eligibility`; certificate insert is blocked by trigger when not eligible.
+- Reports are security_invoker views; only the admin UI links to them.
+- Scores 0–100 for assignments.

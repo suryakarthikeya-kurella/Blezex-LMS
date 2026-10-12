@@ -1,0 +1,29 @@
+node_modules
+dist
+.env
+.env.local
+.DS_Store
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+dist/
+.netlify/
+
+# Supabase temporary files
+supabase/.temp/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+dist/
+.netlify/
+supabase/.temp/
