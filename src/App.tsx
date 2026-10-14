@@ -17,6 +17,9 @@ import MentorHome from "./pages/mentor/Home";
 import MentorEnrollment from "./pages/mentor/EnrollmentDetail";
 import StudentHome from "./pages/student/Home";
 import StudentCourse from "./pages/student/Course";
+import StudentCourses from "./pages/student/Courses";
+import StudentJourney from "./pages/student/Journey";
+import StudentLesson from "./pages/student/Lesson";
 
 function Guard({ role, children }: { role: string; children: ReactNode }) {
   const { profile, loading } = useAuth();
@@ -51,7 +54,10 @@ export default function App() {
         <Route path="/mentor" element={<Guard role="mentor"><MentorHome /></Guard>} />
         <Route path="/mentor/enrollment/:eid" element={<Guard role="mentor"><MentorEnrollment /></Guard>} />
         <Route path="/student" element={<Guard role="student"><StudentHome /></Guard>} />
+        <Route path="/student/courses" element={<Guard role="student"><StudentCourses /></Guard>} />
+        <Route path="/student/journey" element={<Guard role="student"><StudentJourney /></Guard>} />
         <Route path="/student/course/:eid" element={<Guard role="student"><StudentCourse /></Guard>} />
+        <Route path="/student/course/:eid/lesson/:lid" element={<Guard role="student"><StudentLesson /></Guard>} />
       </Route>
       <Route path="*" element={<Root />} />
     </Routes>

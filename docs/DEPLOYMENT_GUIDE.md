@@ -1,5 +1,5 @@
 (Deployment itself is out of scope for this delivery; this is the reference for when you deploy.)
 1. Push to GitHub. 2. Netlify: New site from Git → build `npm run build`, publish `dist`, env `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. `public/_redirects` + `netlify.toml` cover SPA routing.
-3. Supabase: apply migrations 0001, 0002, seed; deploy the function; disable signups; add the Netlify URL to Auth → URL Configuration (Site URL + Redirect URLs).
+3. Supabase: apply migrations 0001, 0002, then `seed.sql`, followed by migrations 0003–0006 in numeric order; deploy the function; disable signups; add the Netlify URL to Auth → URL Configuration (Site URL + Redirect URLs). For an existing database, apply only the unapplied numbered migrations. Migration 0004 seeds the expanded Full Stack curriculum, 0005 adds lesson quizzes, and 0006 links practice assignments to lessons.
 4. Backups: free Supabase has limited/no automatic backups — export with `supabase db dump` regularly. Recovery = recreate project, apply migrations, restore dump.
 5. Free-tier limits (approximate, **verify current pricing pages**): Supabase Free — ~500 MB database, limited egress and monthly active users, projects pause after about a week of inactivity, no guaranteed backups. Netlify Free — monthly build/bandwidth credits. Upgrade when you approach these or need backups/no pausing.

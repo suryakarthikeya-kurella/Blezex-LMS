@@ -4,16 +4,20 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../lib/auth";
 import { loginSchema } from "../lib/schemas";
 import { Card, Annotation } from "../components/ui";
 type F = z.infer<typeof loginSchema>;
 export default function Login() {
-  const nav = useNavigate(); const [err, setErr] = useState(""); const [info, setInfo] = useState("");
+  const nav = useNavigate(); const { refresh } = useAuth(); const [err, setErr] = useState(""); const [info, setInfo] = useState("");
   const { register, handleSubmit, getValues, formState: { errors, isSubmitting } } = useForm<F>({ resolver: zodResolver(loginSchema) });
   const submit = async (v: F) => {
     setErr(""); setInfo("");
-    const { error } = await supabase.auth.signInWithPassword(v);
+    const email = v.email.trim();
+    const password = v.password.trim();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return setErr("Invalid credentials or account suspended.");
+    await refresh();
     nav("/");
   };
   const reset = async () => {

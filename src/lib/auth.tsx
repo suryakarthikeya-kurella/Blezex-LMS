@@ -1,6 +1,20 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "./supabase";
-export type Profile = { id: string; full_name: string; email: string; role: "admin" | "mentor" | "student"; status: string; must_change_password: boolean; is_alumni: boolean };
+export type Profile = {
+  id: string;
+  full_name: string;
+  email: string;
+  role: "admin" | "mentor" | "student";
+  status: string;
+  must_change_password: boolean;
+  is_alumni: boolean;
+  education_level?: string | null;
+  institution?: string | null;
+  field_of_study?: string | null;
+  graduation_year?: number | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
+};
 type C = { profile: Profile | null; loading: boolean; recovery: boolean; signOut: () => Promise<void>; refresh: () => Promise<void>; endRecovery: () => void };
 const Ctx = createContext<C>({ profile: null, loading: true, recovery: false, signOut: async () => {}, refresh: async () => {}, endRecovery: () => {} });
 export const useAuth = () => useContext(Ctx);
