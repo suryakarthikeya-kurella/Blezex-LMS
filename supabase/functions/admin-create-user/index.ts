@@ -1,5 +1,5 @@
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -68,8 +68,10 @@ Deno.serve(async (req) => {
     return json({ error: "Invalid request body" }, 400);
   }
 
-  const { full_name, email, password, role } =
+  const { full_name, email: rawEmail, password, role } =
     body as Record<string, unknown>;
+  // Supabase Auth lower-cases emails; store the same canonical form in profiles so lookups match.
+  const email = typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : rawEmail;
 
   if (role !== "student" && role !== "mentor") {
     return json({ error: "Role must be student or mentor" }, 400);
@@ -78,13 +80,15 @@ Deno.serve(async (req) => {
   if (
     typeof full_name !== "string" ||
     !full_name.trim() ||
+    full_name.trim().length > 120 ||
     typeof email !== "string" ||
     !/^\S+@\S+\.\S+$/.test(email) ||
     typeof password !== "string" ||
-    password.length < 8
+    password.length < 8 ||
+    password.length > 72
   ) {
     return json(
-      { error: "Invalid name, email or password (minimum 8 characters)" },
+      { error: "Invalid name, email or password (8–72 characters)" },
       400,
     );
   }

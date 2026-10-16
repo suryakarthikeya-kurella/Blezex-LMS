@@ -22,20 +22,20 @@ const KPIS: { label: string; icon: IconName; get: () => Promise<number> }[] = [
 ];
 
 const Panel = ({ title, link, children }: { title: string; link?: [string, string]; children: ReactNode }) =>
-  <KitPanel title={title} aside={link && <Link to={link[0]} className="text-xs font-bold text-brand hover:underline inline-flex items-center gap-1">{link[1]}<Icon name="arrow" className="w-3.5 h-3.5" /></Link>}>{children}</KitPanel>;
+  <KitPanel title={title} aside={link && <Link to={link[0]} className="text-xs font-bold text-brand-dark hover:underline inline-flex items-center gap-1">{link[1]}<Icon name="arrow" className="w-3.5 h-3.5" /></Link>}>{children}</KitPanel>;
 
 function Kpis() {
   return <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">{KPIS.map(k => <Kpi key={k.label} {...k} />)}</div>;
 }
 function Kpi({ label, icon, get }: (typeof KPIS)[number]) {
-  const { data, error, isLoading } = useQuery({ queryKey: ["admin-kpi", label], queryFn: get });
+  const { data, error, isLoading } = useQuery({ queryKey: ["admin-kpi", label], queryFn: get, staleTime: 60_000 });
   return <MetricCard label={label} icon={icon}>
       {error ? <p role="alert" className="text-xs text-red-600" title={(error as Error).message}>Failed to load</p>
         : <p className="text-[2rem] font-heading font-bold tabular-nums text-ink leading-tight">{isLoading ? <span className="inline-block w-10 h-8 rounded bg-paper animate-pulse" /> : data}</p>}</MetricCard>;
 }
 
 function Activity() {
-  const { data, error, isLoading } = useQuery({ queryKey: ["admin-activity"], queryFn: async () => {
+  const { data, error, isLoading } = useQuery({ queryKey: ["admin-activity"], staleTime: 60_000, queryFn: async () => {
     const r = await supabase.from("audit_logs").select("id,actor_id,action,entity,created_at,details").order("created_at", { ascending: false }).limit(8);
     if (r.error) throw r.error;
     const ids = [...new Set((r.data ?? []).map(x => x.actor_id).filter(Boolean))] as string[];
@@ -53,7 +53,7 @@ function Activity() {
 
 // Only items derivable directly from existing tables/views; zero-count items are hidden.
 function Notices() {
-  const { data, error, isLoading } = useQuery({ queryKey: ["admin-notices"], queryFn: async () => {
+  const { data, error, isLoading } = useQuery({ queryKey: ["admin-notices"], staleTime: 300_000, queryFn: async () => { // heavy: the completion view evaluates every active enrollment
     const head = (t: string) => supabase.from(t).select("*", { count: "exact", head: true });
     const [noMentor, review, ready] = await Promise.all([
       head("enrollments").eq("status", "active").is("mentor_id", null),
@@ -72,12 +72,12 @@ function Notices() {
       <div className="text-center py-4"><span className="inline-grid place-items-center w-10 h-10 rounded-full bg-paper text-brand mb-2"><Icon name="check" /></span><p className="text-sm text-muted">Nothing needs your attention right now.</p></div> :
       <ul className="space-y-3">{data.map(x => <li key={x.text} className="flex gap-3 items-start">
         <span className="w-8 h-8 rounded-lg bg-paper text-brand grid place-items-center shrink-0"><Icon name="alert" className="w-4 h-4" /></span>
-        <p className="text-sm flex-1"><b className="text-ink">{x.n}</b> {x.text}. <Link to={x.to} className="text-brand font-bold hover:underline">{x.cta}</Link></p></li>)}</ul>}</Panel>;
+        <p className="text-sm flex-1"><b className="text-ink">{x.n}</b> {x.text}. <Link to={x.to} className="text-brand-dark font-bold hover:underline">{x.cta}</Link></p></li>)}</ul>}</Panel>;
 }
 
 // Enrollments created per month (last 6 months) — one head-count query per month on enrollments.created_at.
 function Trend() {
-  const { data, error, isLoading } = useQuery({ queryKey: ["admin-enrollment-trend"], queryFn: async () => {
+  const { data, error, isLoading } = useQuery({ queryKey: ["admin-enrollment-trend"], staleTime: 300_000, queryFn: async () => {
     const now = new Date();
     return Promise.all(Array.from({ length: 6 }, async (_, i) => {
       const s = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1), e = new Date(s.getFullYear(), s.getMonth() + 1, 1);

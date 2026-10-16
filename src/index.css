@@ -7,7 +7,7 @@
 @layer components{
  .sketch-card{@apply bg-white border border-hairline rounded-[20px] p-5 transition-all duration-300;box-shadow:0 8px 24px -12px rgba(17,17,17,.08)}
  .sketch-card.hov:hover{@apply border-ink;transform:translateY(-4px);box-shadow:6px 6px 0 #111}
- .btn{@apply rounded-full bg-ink text-white px-5 py-2 text-sm font-bold font-display transition-colors hover:bg-brand disabled:opacity-50}
+ .btn{@apply rounded-full bg-ink text-white px-5 py-2 text-sm font-bold font-display transition-colors hover:bg-brand-dark disabled:opacity-50}
  .btn-ghost{@apply rounded-full border border-ink px-4 py-1.5 text-xs font-bold hover:bg-ink hover:text-white}
  .inp{@apply w-full rounded-xl border border-hairline bg-white px-3 py-2 text-sm outline-none focus:border-ink}
  .lesson h1,.lesson h2,.lesson h3{@apply mt-4 mb-2 font-bold}.lesson p{@apply my-2}.lesson ul{@apply list-disc pl-6}.lesson ol{@apply list-decimal pl-6}

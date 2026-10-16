@@ -72,9 +72,9 @@ export default function Enrollments() {
       const { error } = await supabase.from("certificates").update({ status: "revoked" }).eq("enrollment_id", e.id);
       if (error) return error.message; toast("ok", "Certificate revoked.");
     } else {
-      const c = await supabase.from("certificates").insert({ enrollment_id: e.id }); if (c.error) return c.error.message;
-      const u = await supabase.from("enrollments").update({ status: "completed" }).eq("id", e.id);
-      if (u.error) { loadEnr(sid); return `The certificate was issued, but marking the enrollment completed failed: ${u.error.message}`; }
+      // One atomic database call: re-checks eligibility, issues the certificate and completes the enrollment together or not at all.
+      const { error } = await supabase.rpc("complete_enrollment", { eid: e.id });
+      if (error) return error.message;
       toast("ok", "Completed and certificate issued.");
     }
     loadEnr(sid); return null;
@@ -88,8 +88,8 @@ export default function Enrollments() {
         <Panel title="1 · Select a student">
           <div className="flex flex-wrap gap-2"><SearchBox label="Filter students" placeholder="Filter by name or email…" value={sf} onChange={setSf} />
             <select aria-label="Student" className="inp flex-1 min-w-[220px]" value={sid} onChange={e => setSid(e.target.value)}><option value="">Select student… ({shownStudents.length})</option>{shownStudents.map(s => <option key={s.id} value={s.id}>{s.full_name} ({s.email})</option>)}</select></div>
-          {!students.length && <p className="text-sm text-muted mt-3">No students exist yet. <Link to="/admin/people" className="text-brand font-bold hover:underline">Create one in People</Link>.</p>}
-          {student && <div className="mt-4 flex items-center gap-3 rounded-xl bg-paper p-3"><span className="w-10 h-10 rounded-full bg-brand text-white grid place-items-center font-bold">{student.full_name.charAt(0).toUpperCase()}</span>
+          {!students.length && <p className="text-sm text-muted mt-3">No students exist yet. <Link to="/admin/people" className="text-brand-dark font-bold hover:underline">Create one in People</Link>.</p>}
+          {student && <div className="mt-4 flex items-center gap-3 rounded-xl bg-paper p-3"><span className="w-10 h-10 rounded-full bg-brand-dark text-white grid place-items-center font-bold">{student.full_name.charAt(0).toUpperCase()}</span>
             <div className="min-w-0 flex-1"><p className="font-bold text-ink truncate">{student.full_name}{student.is_alumni && " 🎓"}</p><p className="text-xs text-muted truncate">{student.email}</p></div>
             <div className="text-right text-xs text-muted">{enr.filter(e => e.status === "active").length} active · {enr.length} total</div></div>}
         </Panel>
@@ -97,7 +97,7 @@ export default function Enrollments() {
         {sid && <Panel title="Existing enrollments">
           {enrErr ? <ErrorState error={enrErr} /> : enrLoading && !enr.length ? <LoadingState /> : !enr.length ? <EmptyState title="No enrollments yet." hint="Use the course list below to grant the first one." /> :
             <div className={`overflow-x-auto -mx-5 ${enrLoading ? "opacity-60" : ""}`}><table className="w-full text-sm min-w-[720px]">
-              <thead><tr className="text-left text-xs uppercase tracking-wide text-muted bg-paper"><th className="px-5 py-2 font-medium">Course</th><th className="px-2 font-medium">Status</th><th className="px-2 font-medium">Mentor</th><th className="px-2 font-medium">Batch</th><th className="px-5 text-right font-medium">Actions</th></tr></thead>
+              <thead><tr className="text-left text-xs uppercase tracking-wide text-muted bg-paper"><th scope="col" className="px-5 py-2 font-medium">Course</th><th scope="col" className="px-2 font-medium">Status</th><th scope="col" className="px-2 font-medium">Mentor</th><th scope="col" className="px-2 font-medium">Batch</th><th scope="col" className="px-5 text-right font-medium">Actions</th></tr></thead>
               <tbody>{enr.map(e => { const locked = e.status === "revoked"; return <tr key={e.id} className="border-t border-hairline align-top">
                 <td className="px-5 py-3"><p className="font-medium text-ink">{e.courses.title}</p><p className="text-xs text-muted">Granted {fmtDay(e.created_at)}</p>
                   {cert(e) && <p className="text-xs mt-1">🎓 <Link className="underline" to={`/verify/${cert(e).verification_id}`}>{cert(e).verification_id}</Link> <StatusBadge value={cert(e).status} /></p>}</td>
@@ -106,7 +106,7 @@ export default function Enrollments() {
                 <td className="px-2 py-2"><select aria-label={`Batch for ${e.courses.title}`} className="inp min-w-[130px]" value={e.batch_id ?? ""} disabled={locked} onChange={ev => reassign(e, { batch_id: ev.target.value || null })}><option value="">No batch</option>{batches.filter(b => b.course_id === e.course_id).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></td>
                 <td className="px-5 py-3"><div className="flex flex-wrap gap-1 justify-end">
                   {e.status === "active" && <button className="btn-ghost" onClick={() => setAct({ kind: "paused", e })}>Pause</button>}
-                  {e.status !== "active" && !locked && <button className="btn-ghost" onClick={() => setAct({ kind: "active", e })}>Reactivate</button>}
+                  {e.status === "paused" && <button className="btn-ghost" onClick={() => setAct({ kind: "active", e })}>Reactivate</button>}
                   {!locked && <button className="btn-ghost" onClick={() => setAct({ kind: "revoked", e })}>Revoke</button>}
                   {!locked && e.status !== "completed" && !e.certificates?.length && <button className="btn-ghost !bg-ink !text-white hover:!bg-brand hover:!border-brand" onClick={() => setAct({ kind: "complete", e })}>Complete + certify</button>}
                   {cert(e)?.status === "issued" && <button className="btn-ghost" onClick={() => setAct({ kind: "revokeCert", e })}>Revoke cert</button>}</div></td></tr>; })}</tbody></table></div>}
@@ -138,7 +138,7 @@ export default function Enrollments() {
       title={act?.kind === "complete" ? "Complete and certify?" : act?.kind === "revokeCert" ? "Revoke certificate?" : act ? `${VERB[act.kind]} enrollment?` : ""}
       confirmLabel={act?.kind === "complete" ? "Complete + certify" : act?.kind === "revokeCert" ? "Revoke certificate" : act ? VERB[act.kind] : ""}>
       {act && <><p><b>{student?.full_name}</b> · {act.e.courses.title}</p>
-        {act.kind === "revokeCert" ? <p className="text-muted">The public verification page will show this certificate as REVOKED.</p> : act.kind === "complete" ? <Eligibility elig={elig} err={eligErr} course={courses.find(c => c.id === act.e.course_id)} /> : <p className="text-muted">{NOTE[act.kind]}</p>}</>}
+        {act.kind === "revokeCert" ? <p className="text-muted">The public verification page will show this certificate as REVOKED.</p> : act.kind === "complete" ? <Eligibility elig={elig} err={eligErr} course={courses.find(c => c.id === act.e.course_id)} /> : <p className="text-muted">{NOTE[act.kind]}{act.kind === "revoked" && act.e.certificates?.some((c: any) => c.status === "issued") && " Its issued certificate will be revoked as well."}</p>}</>}
     </ConfirmActionDialog>
   </>;
 }

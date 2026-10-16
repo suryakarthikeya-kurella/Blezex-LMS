@@ -17,10 +17,10 @@ const FEATURES: { icon: IconName; title: string; text: string }[] = [
 const HERO = "linear-gradient(90deg,#0d0d0d 30%,rgba(13,13,13,.6) 62%,rgba(13,13,13,.15) 100%),url(/login-hero.jpg),radial-gradient(circle at 78% 72%,rgba(255,77,28,.28),transparent 55%),linear-gradient(160deg,#171717,#0b0b0b)";
 const Wordmark = ({ className = "" }: { className?: string }) => <span className={`font-heading font-extrabold ${className}`}>Bleze<span className="text-brand">X</span></span>;
 export default function Login() {
-  const { profile, loading } = useAuth(); const [err, setErr] = useState(""); const [info, setInfo] = useState(""); const [show, setShow] = useState(false); const [sending, setSending] = useState(false);
+  const { profile, loading, notice, clearNotice } = useAuth(); const [err, setErr] = useState(""); const [info, setInfo] = useState(""); const [show, setShow] = useState(false); const [sending, setSending] = useState(false);
   const { register, handleSubmit, getValues, formState: { errors, isSubmitting } } = useForm<F>({ resolver: zodResolver(loginSchema) });
   const submit = async (v: F) => {
-    setErr(""); setInfo("");
+    setErr(""); setInfo(""); clearNotice();
     const { error } = await supabase.auth.signInWithPassword(v);
     if (error) return setErr("Invalid credentials or account suspended.");
     // No navigation here: the profile loads asynchronously after sign-in, so redirecting now bounced back to /login. The redirect below fires once it is ready.
@@ -66,14 +66,15 @@ export default function Login() {
                   <input id="em" className="inp !h-[52px] !rounded-xl !pl-12 !text-[15px] !bg-[#FBFAF8]" type="email" placeholder="you@example.com" autoComplete="username" aria-invalid={!!errors.email} {...register("email")} /></div>
                 {errors.email && <p role="alert" className="text-xs text-red-600 mt-1.5">{errors.email.message}</p>}</div>
               <div><div className="flex items-center justify-between"><label className="text-[15px] font-semibold text-ink" htmlFor="pw">Password</label>
-                  <button type="button" className="text-[15px] font-semibold text-brand hover:underline disabled:opacity-50" onClick={reset} disabled={sending}>{sending ? "Sending…" : "Forgot password?"}</button></div>
+                  <button type="button" className="text-[15px] font-semibold text-brand-dark hover:underline disabled:opacity-50" onClick={reset} disabled={sending}>{sending ? "Sending…" : "Forgot password?"}</button></div>
                 <div className="relative mt-2"><Icon name="lock" className="w-5 h-5 text-[#444] absolute left-4 top-1/2 -translate-y-1/2" />
                   <input id="pw" className="inp !h-[52px] !rounded-xl !pl-12 !pr-12 !text-[15px] !bg-[#FBFAF8]" type={show ? "text" : "password"} placeholder="Enter your password" autoComplete="current-password" aria-invalid={!!errors.password} {...register("password")} />
                   <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-[#444] hover:text-ink" aria-label={show ? "Hide password" : "Show password"} aria-pressed={show} onClick={() => setShow(s => !s)}><Icon name={show ? "eyeoff" : "eye"} className="w-5 h-5" /></button></div>
                 {errors.password && <p role="alert" className="text-xs text-red-600 mt-1.5">{errors.password.message}</p>}</div>
+              {notice && !err && <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{notice}</p>}
               {err && <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{err}</p>}
               {info && <p role="status" className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-xl px-3 py-2">{info}</p>}
-              <button className="btn w-full !h-14 !text-base !bg-brand hover:!bg-[#E63E10] inline-flex items-center justify-center gap-2" disabled={isSubmitting}>{isSubmitting ? "Signing in…" : <>Sign in<Icon name="arrow" className="w-5 h-5" /></>}</button></form>
+              <button className="btn w-full !h-14 !text-base !bg-brand-dark hover:!bg-[#B82F0A] inline-flex items-center justify-center gap-2" disabled={isSubmitting}>{isSubmitting ? "Signing in…" : <>Sign in<Icon name="arrow" className="w-5 h-5" /></>}</button></form>
             <div className="flex items-center gap-4 my-6 text-sm text-muted"><span className="flex-1 h-px bg-hairline" />or<span className="flex-1 h-px bg-hairline" /></div>
             <div className="flex gap-3 rounded-xl bg-[#FFF1EA] p-4"><Icon name="shield" className="w-7 h-7 text-brand shrink-0" /><p className="text-sm leading-snug"><span className="block font-semibold text-ink text-[15px]">Secure access</span><span className="text-[#555]">Only authorized students, mentors and administrators can sign in.</span></p></div>
           </div>
