@@ -15,3 +15,19 @@
  .lesson pre{@apply bg-ink text-white p-3 rounded-xl overflow-x-auto text-sm}.lesson svg{max-width:100%;height:auto}
  .callout{@apply border-l-4 border-brand bg-paper p-3 my-3 rounded-r-xl}
 }
+
+/* Manrope (headings, KPI numbers) + Inter (interface). Scoped via .admin-ui (AdminShell + Login) so Mentor/Student keep their fonts. */
+@layer base{
+ .admin-ui{@apply font-sans text-[#333]}
+ .admin-ui :where(h1,h2,h3,h4){@apply font-heading tracking-tight}
+ .admin-ui h1{font-weight:700}
+ .admin-ui .font-display{@apply font-heading}
+ .admin-ui .font-hand{@apply font-sans text-sm font-semibold tracking-normal}
+ .admin-ui h2.font-bold,.admin-ui h3.font-bold{font-weight:600}
+ .admin-ui label.text-xs{font-size:13px;font-weight:500}
+ .admin-ui table{font-variant-numeric:tabular-nums}
+}
+@layer components{
+ .admin-ui .btn,.admin-ui .btn-ghost{@apply font-sans font-semibold}
+ .admin-ui .btn-ghost{@apply text-[13px]}
+}
