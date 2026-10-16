@@ -4,8 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
 import { Icon, IconName } from "../../components/icons";
-import Illustration from "../../components/Illustration";
-import { EmptyState, ErrorState, LoadingState, MetricCard, Panel as KitPanel } from "../../components/admin/kit";
+import { EmptyState, ErrorState, LoadingState, MetricCard, Panel as KitPanel, WelcomeBanner } from "../../components/admin/kit";
 import { auditLabel, fmtDate } from "../../lib/format";
 
 // KPI definitions are unchanged from the original overview; only error surfacing was added.
@@ -116,12 +115,8 @@ const Quick = () => <Panel title="Quick access"><div className="grid gap-2">{QUI
 export default function AdminHome() {
   const { profile } = useAuth();
   return <div className="space-y-6">
-    <section className="rounded-[20px] bg-ink text-white overflow-hidden grid md:grid-cols-[1fr_260px] items-center gap-4 p-5 md:p-6" aria-label="Welcome">
-      <div><p className="text-sm font-semibold text-brand">Your command center</p>
-        <h1 className="!text-white text-3xl md:text-[2rem] mt-1">Welcome back, {profile?.full_name?.split(" ")[0] || "Admin"}</h1>
-        <p className="text-white/75 mt-2 max-w-xl text-sm md:text-base">Run the BlezeX Career Accelerator: onboard students and mentors, publish courses, grant access and certify completions.</p>
-        <Link to="/admin/enrollments" className="inline-flex mt-5 rounded-full bg-brand px-5 py-2 text-sm font-semibold font-sans text-white hover:bg-white hover:text-ink transition-colors">Grant course access</Link></div>
-      <div className="hidden md:block"><Illustration /></div></section>
+    <WelcomeBanner eyebrow="Your command center" title={`Welcome back, ${profile?.full_name?.split(" ")[0] || "Admin"}`}
+      text="Run the BlezeX Career Accelerator: onboard students and mentors, publish courses, grant access and certify completions." cta={{ label: "Grant course access", to: "/admin/enrollments" }} />
     <Kpis />
     <div className="grid lg:grid-cols-3 gap-6 items-start">
       <div className="lg:col-span-2 space-y-6"><Activity /><Trend /></div>

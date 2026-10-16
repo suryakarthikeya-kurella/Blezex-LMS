@@ -1,31 +1,55 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
+import { fmtDay } from "../../lib/format";
 import MilestonesPanel from "../../components/MilestonesPanel";
-import { Card, Title, Msg, Empty } from "../../components/ui";
+import { EmptyState, Field, LoadingState, MetricCard, PageHeader, Panel, StatusBadge, useToast } from "../../components/admin/kit";
+const EMPTY = { criterion: "", score: "", max_score: "10", remarks: "" };
 export default function EnrollmentDetail() {
-  const { eid } = useParams(); const [e, setE] = useState<any>(null); const [el, setEl] = useState<any>(null); const [att, setAtt] = useState<any[]>([]); const [qa, setQa] = useState<any[]>([]); const [ev, setEv] = useState<any[]>([]);
-  const [f, setF] = useState({ criterion: "", score: "", max_score: "10", remarks: "" }); const [msg, setMsg] = useState("");
-  const load = async () => {
+  const { eid } = useParams(); const toast = useToast();
+  const [e, setE] = useState<any>(null); const [el, setEl] = useState<any>(null); const [att, setAtt] = useState<any[]>([]); const [qa, setQa] = useState<any[]>([]); const [ev, setEv] = useState<any[]>([]);
+  const [f, setF] = useState(EMPTY); const [loaded, setLoaded] = useState(false); const [saving, setSaving] = useState(false);
+  const load = useCallback(async () => {
     setE((await supabase.from("enrollments").select("id,status,course:courses(title),student:profiles!enrollments_student_id_fkey(full_name,email)").eq("id", eid!).maybeSingle()).data);
     setEl((await supabase.rpc("enrollment_eligibility", { eid })).data?.[0] ?? null);
     setAtt((await supabase.from("attendance").select("session_date,present").eq("enrollment_id", eid!).order("session_date", { ascending: false })).data ?? []);
     setQa((await supabase.from("quiz_attempts").select("score_pct,passed,created_at,quiz:quizzes(title)").eq("enrollment_id", eid!).order("created_at", { ascending: false })).data ?? []);
     setEv((await supabase.from("evaluations").select("*").eq("enrollment_id", eid!).order("created_at", { ascending: false })).data ?? []);
+    setLoaded(true);
+  }, [eid]);
+  useEffect(() => { load(); }, [load]);
+  const add = async () => {
+    if (!f.criterion || f.score === "") return toast("err", "Criterion and score are required.");
+    setSaving(true);
+    const { error } = await supabase.from("evaluations").insert({ enrollment_id: eid, criterion: f.criterion, score: Number(f.score), max_score: Number(f.max_score), remarks: f.remarks });
+    setSaving(false); if (error) return toast("err", error.message); // keep the typed values on failure
+    toast("ok", "Evaluation saved."); setF(EMPTY); load();
   };
-  useEffect(() => { load(); }, [eid]);
-  const add = async () => { if (!f.criterion || f.score === "") return setMsg("Criterion and score required.");
-    const { error } = await supabase.from("evaluations").insert({ enrollment_id: eid, criterion: f.criterion, score: Number(f.score), max_score: Number(f.max_score), remarks: f.remarks }); setMsg(error?.message ?? "Evaluation saved."); setF({ criterion: "", score: "", max_score: "10", remarks: "" }); load(); };
-  if (!e) return <p>Loading… or not authorized. <Link className="underline" to="/mentor">Back</Link></p>;
-  return <><Link to="/mentor" className="text-sm underline">← My students</Link><Title note={e.status}>{e.student.full_name} · {e.course.title}</Title><Msg m={msg} />
-    {el && <Card className="mb-4 grid grid-cols-2 md:grid-cols-5 gap-3 text-sm"><div>Progress<p className="text-2xl font-bold">{el.progress_pct}%</p></div><div>Attendance<p className="text-2xl font-bold">{el.attendance_pct}%</p></div>
-      <div>Assignment avg<p className="text-2xl font-bold">{el.assignment_avg}</p></div><div>Graded<p className="text-2xl font-bold">{el.assignments_graded}/{el.assignments_total}</p></div><div>Eligible<p className="text-2xl font-bold">{el.eligible ? "Yes" : "Not yet"}</p></div></Card>}
-    <MilestonesPanel eid={eid!} who="mentor" />
-    <Card className="mb-4"><h2 className="font-bold mb-2">Evaluations</h2>
-      <div className="grid md:grid-cols-5 gap-2 mb-2"><input aria-label="Criterion" className="inp" placeholder="Criterion" value={f.criterion} onChange={e => setF({ ...f, criterion: e.target.value })} />
-        <input aria-label="Score" type="number" className="inp" placeholder="Score" value={f.score} onChange={e => setF({ ...f, score: e.target.value })} /><input aria-label="Max score" type="number" className="inp" value={f.max_score} onChange={e => setF({ ...f, max_score: e.target.value })} />
-        <input aria-label="Remarks" className="inp" placeholder="Remarks" value={f.remarks} onChange={e => setF({ ...f, remarks: e.target.value })} /><button className="btn" onClick={add}>Add</button></div>
-      {!ev.length ? <Empty t="No evaluations." /> : ev.map(x => <p key={x.id} className="text-sm border-t border-hairline py-1">{x.criterion}: <b>{x.score}/{x.max_score}</b> {x.remarks}</p>)}</Card>
-    <div className="grid md:grid-cols-2 gap-4"><Card><h2 className="font-bold mb-2">Quiz attempts</h2>{!qa.length ? <Empty t="None." /> : qa.map((a, i) => <p key={i} className="text-sm">{a.quiz?.title}: {a.score_pct}% {a.passed ? "✓" : "✗"}</p>)}</Card>
-      <Card><h2 className="font-bold mb-2">Attendance</h2>{!att.length ? <Empty t="None." /> : att.map((a, i) => <p key={i} className="text-sm">{a.session_date}: {a.present ? "present" : "absent"}</p>)}</Card></div></>;
+  const back = <Link to="/mentor" className="text-sm font-semibold text-brand hover:underline">← My students</Link>;
+  if (!loaded) return <LoadingState />;
+  if (!e) return <><div className="mb-4">{back}</div><div className="bg-white border border-hairline rounded-[20px]"><EmptyState title="Enrollment not found" hint="It may not exist, or it is not assigned to you." /></div></>;
+  const metrics: [string, string][] = el ? [["Progress", `${el.progress_pct}%`], ["Attendance", `${el.attendance_pct}%`], ["Assignment avg", `${el.assignment_avg}`], ["Graded", `${el.assignments_graded}/${el.assignments_total}`], ["Eligible", el.eligible ? "Yes" : "Not yet"]] : [];
+  return <>
+    <div className="mb-3">{back}</div>
+    <PageHeader title={e.student.full_name} description={`${e.course.title} · ${e.student.email}`} actions={<StatusBadge value={e.status} />} />
+    {!!metrics.length && <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">{metrics.map(([k, v]) => <MetricCard key={k} label={k} icon={k === "Eligible" ? "award" : k === "Attendance" ? "list" : k === "Progress" ? "chart" : "book"}>
+      <p className="text-[1.75rem] font-heading font-bold tabular-nums text-ink leading-tight">{v}</p></MetricCard>)}</div>}
+    <div className="space-y-6">
+      <MilestonesPanel eid={eid!} who="mentor" />
+      <Panel title="Evaluations">
+        <div className="grid md:grid-cols-[1.4fr_100px_100px_1.6fr_auto] gap-3 items-end mb-4">
+          <Field label="Criterion" htmlFor="ev-c" required><input id="ev-c" className="inp" value={f.criterion} onChange={x => setF({ ...f, criterion: x.target.value })} /></Field>
+          <Field label="Score" htmlFor="ev-s" required><input id="ev-s" type="number" className="inp" value={f.score} onChange={x => setF({ ...f, score: x.target.value })} /></Field>
+          <Field label="Max score" htmlFor="ev-m"><input id="ev-m" type="number" className="inp" value={f.max_score} onChange={x => setF({ ...f, max_score: x.target.value })} /></Field>
+          <Field label="Remarks" htmlFor="ev-r"><input id="ev-r" className="inp" value={f.remarks} onChange={x => setF({ ...f, remarks: x.target.value })} /></Field>
+          <button className="btn" onClick={add} disabled={saving}>{saving ? "Saving…" : "Add"}</button></div>
+        {!ev.length ? <p className="text-sm text-muted">No evaluations recorded yet.</p> : <ul className="divide-y divide-hairline border-t border-hairline">{ev.map(x => <li key={x.id} className="py-2.5 text-sm flex flex-wrap gap-x-3 gap-y-1 items-baseline">
+          <span className="font-medium text-ink">{x.criterion}</span><b className="tabular-nums">{x.score}/{x.max_score}</b><span className="text-muted flex-1">{x.remarks}</span><span className="text-xs text-muted tabular-nums">{fmtDay(x.created_at)}</span></li>)}</ul>}
+      </Panel>
+      <div className="grid md:grid-cols-2 gap-6 items-start">
+        <Panel title="Quiz attempts">{!qa.length ? <p className="text-sm text-muted">No attempts yet.</p> : <ul className="divide-y divide-hairline -my-2">{qa.map((a, i) => <li key={i} className="py-2 text-sm flex justify-between gap-2"><span>{a.quiz?.title}</span><span className="tabular-nums"><b>{a.score_pct}%</b> <span className={a.passed ? "text-green-700" : "text-red-600"}>{a.passed ? "Passed" : "Not passed"}</span></span></li>)}</ul>}</Panel>
+        <Panel title="Attendance">{!att.length ? <p className="text-sm text-muted">No attendance recorded yet.</p> : <ul className="divide-y divide-hairline -my-2">{att.map((a, i) => <li key={i} className="py-2 text-sm flex justify-between gap-2"><span className="tabular-nums">{fmtDay(a.session_date)}</span><span className={a.present ? "text-green-700" : "text-red-600"}>{a.present ? "Present" : "Absent"}</span></li>)}</ul>}</Panel>
+      </div>
+    </div>
+  </>;
 }
