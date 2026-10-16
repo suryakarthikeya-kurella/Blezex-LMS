@@ -47,7 +47,6 @@ export default function People() {
     const p = target; const next = p.status === "active" ? "suspended" : "active";
     const { error } = await supabase.from("profiles").update({ status: next }).eq("id", p.id);
     if (error) return error.message;
-    await supabase.from("audit_logs").insert({ action: "set_status_" + next, entity: "profiles", entity_id: p.id }).then(() => {}, () => {});
     toast("ok", `${p.full_name} ${next === "suspended" ? "suspended" : "reactivated"}.`); load(); return null;
   };
   const filtered = !!(q.trim() || role || status);
@@ -68,7 +67,7 @@ export default function People() {
         <EmptyState title={filtered ? "No people match these filters." : "No people yet."} hint={filtered ? "Try a different search or clear the filters." : "Create the first student or mentor account."}
           action={filtered ? <button className="btn-ghost" onClick={() => { setQ(""); setRole(""); setStatus(""); setPage(0); }}>Clear filters</button> : <button className="btn" onClick={openCreate}>Create user</button>} /> :
         <div className={`overflow-x-auto ${loading ? "opacity-60" : ""}`}><table className="w-full text-sm">
-          <thead><tr className="text-left text-xs uppercase tracking-wide text-muted bg-paper"><th className="px-5 py-3 font-medium">Person</th><th className="px-3 font-medium">Role</th><th className="px-3 font-medium hidden sm:table-cell">Status</th><th className="px-3 font-medium hidden md:table-cell">Created</th><th className="px-5 text-right font-medium">Action</th></tr></thead>
+          <thead><tr className="text-left text-xs uppercase tracking-wide text-muted bg-paper"><th scope="col" className="px-5 py-3 font-medium">Person</th><th scope="col" className="px-3 font-medium">Role</th><th scope="col" className="px-3 font-medium hidden sm:table-cell">Status</th><th scope="col" className="px-3 font-medium hidden md:table-cell">Created</th><th scope="col" className="px-5 text-right font-medium">Action</th></tr></thead>
           <tbody>{rows.map(p => <tr key={p.id} className="border-t border-hairline">
             <td className="px-5 py-3"><p className="font-medium text-ink">{p.full_name}{p.is_alumni && <span title="Alumni" className="ml-1">🎓</span>}</p><p className="text-xs text-muted">{p.email}</p></td>
             <td className="px-3"><div className="flex flex-col items-start gap-1"><StatusBadge value={p.role} /><span className="sm:hidden"><StatusBadge value={p.status} /></span></div></td><td className="px-3 hidden sm:table-cell"><StatusBadge value={p.status} /></td>

@@ -4,7 +4,7 @@ React + Vite + TypeScript (strict) + Tailwind + Supabase (Postgres, Auth, RLS, E
 ## Run locally
 1. Install Node 18+ and VS Code. Open this folder, then `npm install`.
 2. Create a free project at supabase.com. Copy `.env.example` to `.env` and fill `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (Project Settings > API).
-3. Database: SQL Editor > run `supabase/migrations/0001_schema.sql`, then `0002_features.sql`, then `supabase/seed.sql` (5 courses + sample lesson).
+3. Database: SQL Editor > run `supabase/migrations/0001_schema.sql`, then `0002_features.sql`, then `0003_integrity_hardening.sql`, then `supabase/seed.sql` (5 courses + sample lesson).
 4. Auth: Authentication > Providers > Email: keep enabled, **turn OFF "Allow new users to sign up"**. Authentication > URL Configuration: add `http://localhost:5173` (and your Netlify URL).
 5. First admin: follow `supabase/create_first_admin.sql`.
 6. Edge function (needed for creating students/mentors):
@@ -23,7 +23,7 @@ Push to GitHub → Netlify "Import project" → build `npm run build`, publish `
 Supabase free projects pause after inactivity and have DB/bandwidth/user caps; Netlify free has build/bandwidth caps. Check current quotas before launch.
 
 ## Checks
-`npm run typecheck` · `npm test` · `npm run build`. Authorization tests: paste `supabase/tests/rls_tests.sql` into the SQL Editor of a DEV project (rolls back). Manual smoke test: `docs/TEST_PLAN.md`.
+`npm run typecheck` · `npm test` · `npm run build` · `npm run test:db` (applies every migration to a throwaway local PostgreSQL and runs the RLS + integrity SQL suites; needs PostgreSQL server binaries) · `npm run test:all`. Existing projects: back up, then apply `0003_integrity_hardening.sql` (additive; existing rows are not rewritten).
 
 ## Added since v1
 Quizzes, project milestones, sessions + attendance, evaluations, completion rules + certificate eligibility, alumni, notifications, reports, audit log, password reset/first-login flow, profile page, pagination/sorting.

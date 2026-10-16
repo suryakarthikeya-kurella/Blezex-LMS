@@ -21,7 +21,7 @@ export const MetricCard = ({ label, icon, children }: { label: string; icon: Ico
     <div><p className="text-sm text-muted">{label}</p>{children}</div></div>;
 
 export const WelcomeBanner = ({ eyebrow, title, text, cta }: { eyebrow: string; title: string; text: string; cta?: { label: string; to?: string; href?: string } }) => {
-  const cls = "inline-flex mt-5 rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white hover:bg-white hover:text-ink transition-colors";
+  const cls = "inline-flex mt-5 rounded-full bg-brand-dark px-5 py-2 text-sm font-semibold text-white hover:bg-white hover:text-ink transition-colors";
   return <section className="rounded-[20px] bg-ink text-white overflow-hidden grid md:grid-cols-[1fr_260px] items-center gap-4 p-5 md:p-6" aria-label="Welcome">
     <div><p className="text-sm font-semibold text-brand">{eyebrow}</p><h1 className="!text-white text-3xl md:text-[2rem] mt-1">{title}</h1>
       <p className="text-white/75 mt-2 max-w-xl text-sm md:text-base">{text}</p>
@@ -71,14 +71,25 @@ export function Modal({ open, onClose, title, description, children, wide }: { o
 /** onConfirm resolves to an error message, or null on success (dialog then closes). */
 export function ConfirmActionDialog({ open, title, children, confirmLabel, danger, disabled, onConfirm, onClose }:
   { open: boolean; title: string; children: ReactNode; confirmLabel: string; danger?: boolean; disabled?: boolean; onConfirm: () => Promise<string | null>; onClose: () => void }) {
-  const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
-  useEffect(() => { if (open) { setErr(""); setBusy(false); } }, [open]);
-  const go = async (e: FormEvent) => { e.preventDefault(); if (busy) return; setBusy(true); setErr(""); const m = await onConfirm(); setBusy(false); if (m) setErr(m); else onClose(); };
+  const [busy, run] = useBusy(); const [err, setErr] = useState("");
+  useEffect(() => { if (open) setErr(""); }, [open]);
+  const go = (e: FormEvent) => { e.preventDefault(); run(async () => { setErr(""); const m = await onConfirm(); if (m) setErr(m); else onClose(); }); };
   return <Modal open={open} onClose={() => { if (!busy) onClose(); }} title={title}>
     <form onSubmit={go}><div className="text-sm space-y-2">{children}</div>
       {err && <p role="alert" className="text-sm text-red-600 mt-3">{err}</p>}
       <div className="flex justify-end gap-2 mt-5"><button type="button" className="btn-ghost" onClick={onClose} disabled={busy}>Cancel</button>
         <button className={cn("btn", danger && "!bg-red-600 hover:!bg-red-700")} disabled={busy || disabled}>{busy ? "Working…" : confirmLabel}</button></div></form></Modal>;
+}
+
+/* ---------- duplicate-submit guard ---------- */
+/** `run(fn)` ignores calls while one is in flight. The ref blocks a second click in the same tick (state alone cannot); `busy` drives the UI. */
+export function useBusy() {
+  const ref = useRef(false); const [busy, setBusy] = useState(false);
+  const run = useCallback(async <T,>(fn: () => Promise<T>): Promise<T | undefined> => {
+    if (ref.current) return undefined; ref.current = true; setBusy(true);
+    try { return await fn(); } finally { ref.current = false; setBusy(false); }
+  }, []);
+  return [busy, run] as const;
 }
 
 /* ---------- toasts ---------- */

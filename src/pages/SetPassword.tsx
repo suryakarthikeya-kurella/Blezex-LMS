@@ -11,9 +11,11 @@ export default function SetPassword() {
   const { profile, refresh, endRecovery, signOut } = useAuth(); const [err, setErr] = useState("");
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<F>({ resolver: zodResolver(passwordSchema) });
   const submit = async (v: F) => {
+    setErr("");
     const { error } = await supabase.auth.updateUser({ password: v.password });
     if (error) return setErr(error.message);
-    if (profile) await supabase.from("profiles").update({ must_change_password: false }).eq("id", profile.id);
+    if (profile) { const r = await supabase.from("profiles").update({ must_change_password: false }).eq("id", profile.id);
+      if (r.error) return setErr("Your password was changed, but we could not finish the setup: " + r.error.message + ". Please try again."); }
     endRecovery(); await refresh(); window.location.assign("/");
   };
   return <div className="min-h-screen flex items-center justify-center p-4"><Card className="w-full max-w-sm">

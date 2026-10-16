@@ -1,22 +1,22 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { ReactNode } from "react";
+import { lazy, ReactNode, Suspense } from "react";
 import { useAuth } from "./lib/auth";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Verify from "./pages/Verify";
 import SetPassword from "./pages/SetPassword";
-import Profile from "./pages/Profile";
-import AdminHome from "./pages/admin/Home";
-import People from "./pages/admin/People";
-import Courses from "./pages/admin/Courses";
-import CourseEditor from "./pages/admin/CourseEditor";
-import Enrollments from "./pages/admin/Enrollments";
-import Reports from "./pages/admin/Reports";
-import Audit from "./pages/admin/Audit";
-import MentorHome from "./pages/mentor/Home";
-import MentorEnrollment from "./pages/mentor/EnrollmentDetail";
-import StudentHome from "./pages/student/Home";
-import StudentCourse from "./pages/student/Course";
+const Profile = lazy(() => import("./pages/Profile"));
+const AdminHome = lazy(() => import("./pages/admin/Home"));
+const People = lazy(() => import("./pages/admin/People"));
+const Courses = lazy(() => import("./pages/admin/Courses"));
+const CourseEditor = lazy(() => import("./pages/admin/CourseEditor"));
+const Enrollments = lazy(() => import("./pages/admin/Enrollments"));
+const Reports = lazy(() => import("./pages/admin/Reports"));
+const Audit = lazy(() => import("./pages/admin/Audit"));
+const MentorHome = lazy(() => import("./pages/mentor/Home"));
+const MentorEnrollment = lazy(() => import("./pages/mentor/EnrollmentDetail"));
+const StudentHome = lazy(() => import("./pages/student/Home"));
+const StudentCourse = lazy(() => import("./pages/student/Course"));
 
 function Guard({ role, children }: { role: string; children: ReactNode }) {
   const { profile, loading } = useAuth();
@@ -35,6 +35,7 @@ export default function App() {
   if (recovery || profile?.must_change_password) return <SetPassword />;
   const A = (c: ReactNode) => <Guard role="admin">{c}</Guard>;
   return (
+    <Suspense fallback={<p className="p-8">Loading…</p>}>
     <Routes>
       <Route path="/" element={<Root />} />
       <Route path="/login" element={<Login />} />
@@ -55,5 +56,6 @@ export default function App() {
       </Route>
       <Route path="*" element={<Root />} />
     </Routes>
+    </Suspense>
   );
 }

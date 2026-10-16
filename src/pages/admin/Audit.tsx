@@ -25,7 +25,7 @@ export default function Audit() {
       <button className="btn-ghost" onClick={() => { setAsc(a => !a); setPage(0); }}>{asc ? "Oldest first ▲" : "Newest first ▼"}</button></Toolbar>
     {error ? <ErrorState error={error} /> : isLoading ? <LoadingState /> :
       <Panel className="overflow-hidden [&>div]:!p-0">{!data?.rows.length ? <EmptyState title={term ? "No events match your search." : "No audit events yet."} /> :
-        <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-left text-xs uppercase tracking-wide text-muted bg-paper"><th className="px-4 py-3 font-medium">When</th><th className="px-3 font-medium">Event</th><th className="px-3 font-medium">Actor</th><th className="px-3 font-medium">Target</th><th className="px-4" /></tr></thead>
+        <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-left text-xs uppercase tracking-wide text-muted bg-paper"><th scope="col" className="px-4 py-3 font-medium">When</th><th scope="col" className="px-3 font-medium">Event</th><th scope="col" className="px-3 font-medium">Actor</th><th scope="col" className="px-3 font-medium">Target</th><th scope="col" className="px-4" /></tr></thead>
           <tbody>{data.rows.map(r => <tr key={r.id} className="border-t border-hairline hover:bg-paper/60 align-top">
             <td className="px-4 py-2.5 whitespace-nowrap text-muted">{fmtDate(r.created_at)}</td>
             <td className="px-3"><p className="font-medium text-ink">{auditLabel(r)}</p><p className="font-mono text-xs text-muted">{r.action}</p></td>

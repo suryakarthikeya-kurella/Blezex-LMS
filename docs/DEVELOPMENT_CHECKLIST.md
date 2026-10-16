@@ -16,3 +16,9 @@ Legend: [x] implemented AND verified by an executed check · [~] implemented, no
 ## Not done
 - [ ] End-to-end browser tests (Playwright) · [ ] M15 deployment (excluded by request)
 - [ ] Rich WYSIWYG editor (HTML textarea + live sanitized preview instead)
+## Audit remediation (migration 0003 + UI)
+- [x] DB integrity/security hardening (0003) — executed locally: 2 SQL suites pass; integrity suite fails without 0003
+- [x] Student panel on the shared shell/kit; Admin/Mentor/Student share typography, dialogs, toasts, badges
+- [x] Route-level code splitting, parallel student dashboard queries, lazy lesson bodies, dashboard query caching
+- [x] Accessibility: drawer not focusable when closed, Esc closes drawer, WAI-ARIA report tabs, labelled inputs, th scope, AA-contrast brand text/buttons (`brand-dark`)
+- [ ] Supabase generated types (needs the CLI against a database), lesson/assignment/batch editing UI, self-hosted fonts, server-side `must_change_password` enforcement

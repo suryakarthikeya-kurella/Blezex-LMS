@@ -3,29 +3,30 @@ import { Link, useParams } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { fmtDay } from "../../lib/format";
 import MilestonesPanel from "../../components/MilestonesPanel";
-import { EmptyState, Field, LoadingState, MetricCard, PageHeader, Panel, StatusBadge, useToast } from "../../components/admin/kit";
+import { EmptyState, Field, LoadingState, MetricCard, PageHeader, Panel, StatusBadge, useBusy, useToast } from "../../components/admin/kit";
 const EMPTY = { criterion: "", score: "", max_score: "10", remarks: "" };
 export default function EnrollmentDetail() {
   const { eid } = useParams(); const toast = useToast();
   const [e, setE] = useState<any>(null); const [el, setEl] = useState<any>(null); const [att, setAtt] = useState<any[]>([]); const [qa, setQa] = useState<any[]>([]); const [ev, setEv] = useState<any[]>([]);
-  const [f, setF] = useState(EMPTY); const [loaded, setLoaded] = useState(false); const [saving, setSaving] = useState(false);
+  const [f, setF] = useState(EMPTY); const [loaded, setLoaded] = useState(false); const [saving, guard] = useBusy();
   const load = useCallback(async () => {
-    setE((await supabase.from("enrollments").select("id,status,course:courses(title),student:profiles!enrollments_student_id_fkey(full_name,email)").eq("id", eid!).maybeSingle()).data);
-    setEl((await supabase.rpc("enrollment_eligibility", { eid })).data?.[0] ?? null);
-    setAtt((await supabase.from("attendance").select("session_date,present").eq("enrollment_id", eid!).order("session_date", { ascending: false })).data ?? []);
-    setQa((await supabase.from("quiz_attempts").select("score_pct,passed,created_at,quiz:quizzes(title)").eq("enrollment_id", eid!).order("created_at", { ascending: false })).data ?? []);
-    setEv((await supabase.from("evaluations").select("*").eq("enrollment_id", eid!).order("created_at", { ascending: false })).data ?? []);
-    setLoaded(true);
+    const [en, elig, at, qz, evs] = await Promise.all([
+      supabase.from("enrollments").select("id,status,course:courses(title),student:profiles!enrollments_student_id_fkey(full_name,email)").eq("id", eid!).maybeSingle(),
+      supabase.rpc("enrollment_eligibility", { eid }),
+      supabase.from("attendance").select("session_date,present").eq("enrollment_id", eid!).order("session_date", { ascending: false }),
+      supabase.from("quiz_attempts").select("score_pct,passed,created_at,quiz:quizzes(title)").eq("enrollment_id", eid!).order("created_at", { ascending: false }),
+      supabase.from("evaluations").select("*").eq("enrollment_id", eid!).order("created_at", { ascending: false })]);
+    setE(en.data); setEl(elig.data?.[0] ?? null); setAtt(at.data ?? []); setQa(qz.data ?? []); setEv(evs.data ?? []); setLoaded(true);
   }, [eid]);
   useEffect(() => { load(); }, [load]);
   const add = async () => {
     if (!f.criterion || f.score === "") return toast("err", "Criterion and score are required.");
-    setSaving(true);
-    const { error } = await supabase.from("evaluations").insert({ enrollment_id: eid, criterion: f.criterion, score: Number(f.score), max_score: Number(f.max_score), remarks: f.remarks });
-    setSaving(false); if (error) return toast("err", error.message); // keep the typed values on failure
-    toast("ok", "Evaluation saved."); setF(EMPTY); load();
+    await guard(async () => {
+      const { error } = await supabase.from("evaluations").insert({ enrollment_id: eid, criterion: f.criterion, score: Number(f.score), max_score: Number(f.max_score), remarks: f.remarks });
+      if (error) return toast("err", error.message); // keep the typed values on failure
+      toast("ok", "Evaluation saved."); setF(EMPTY); load(); });
   };
-  const back = <Link to="/mentor" className="text-sm font-semibold text-brand hover:underline">← My students</Link>;
+  const back = <Link to="/mentor" className="text-sm font-semibold text-brand-dark hover:underline">← My students</Link>;
   if (!loaded) return <LoadingState />;
   if (!e) return <><div className="mb-4">{back}</div><div className="bg-white border border-hairline rounded-[20px]"><EmptyState title="Enrollment not found" hint="It may not exist, or it is not assigned to you." /></div></>;
   const metrics: [string, string][] = el ? [["Progress", `${el.progress_pct}%`], ["Attendance", `${el.attendance_pct}%`], ["Assignment avg", `${el.assignment_avg}`], ["Graded", `${el.assignments_graded}/${el.assignments_total}`], ["Eligible", el.eligible ? "Yes" : "Not yet"]] : [];
