@@ -1,5 +1,7 @@
 import { createContext, FormEvent, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Icon, IconName } from "../icons";
+import Illustration from "../Illustration";
 import { cn } from "../../lib/utils";
 
 /* ---------- page + layout ---------- */
@@ -18,6 +20,15 @@ export const MetricCard = ({ label, icon, children }: { label: string; icon: Ico
     <span className="w-10 h-10 rounded-xl bg-paper text-brand grid place-items-center"><Icon name={icon} /></span>
     <div><p className="text-sm text-muted">{label}</p>{children}</div></div>;
 
+export const WelcomeBanner = ({ eyebrow, title, text, cta }: { eyebrow: string; title: string; text: string; cta?: { label: string; to?: string; href?: string } }) => {
+  const cls = "inline-flex mt-5 rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white hover:bg-white hover:text-ink transition-colors";
+  return <section className="rounded-[20px] bg-ink text-white overflow-hidden grid md:grid-cols-[1fr_260px] items-center gap-4 p-5 md:p-6" aria-label="Welcome">
+    <div><p className="text-sm font-semibold text-brand">{eyebrow}</p><h1 className="!text-white text-3xl md:text-[2rem] mt-1">{title}</h1>
+      <p className="text-white/75 mt-2 max-w-xl text-sm md:text-base">{text}</p>
+      {cta && (cta.to ? <Link to={cta.to} className={cls}>{cta.label}</Link> : <a href={cta.href} className={cls}>{cta.label}</a>)}</div>
+    <div className="hidden md:block"><Illustration /></div></section>;
+};
+
 /* ---------- states ---------- */
 export const LoadingState = ({ label = "Loading…" }: { label?: string }) =>
   <div role="status" className="flex items-center justify-center gap-2 py-10 text-sm text-muted"><span className="w-4 h-4 rounded-full border-2 border-hairline border-t-brand animate-spin" />{label}</div>;
@@ -31,7 +42,7 @@ const TONE: Record<string, string> = {
   success: "bg-green-50 text-green-800 border-green-200", warn: "bg-amber-50 text-amber-800 border-amber-200", danger: "bg-red-50 text-red-700 border-red-200",
   brand: "bg-[#FFF0EB] text-[#B42E0A] border-[#FFD2C4]", ink: "bg-ink text-white border-ink", neutral: "bg-paper text-[#444] border-hairline" };
 const BADGE: Record<string, string> = { active: "success", published: "success", issued: "success", paused: "warn", draft: "warn", pending: "warn",
-  revoked: "danger", suspended: "danger", completed: "ink", admin: "brand", mentor: "ink", student: "neutral" };
+  submitted: "warn", graded: "success", evaluated: "success", revoked: "danger", suspended: "danger", completed: "ink", admin: "brand", mentor: "ink", student: "neutral" };
 export const StatusBadge = ({ value }: { value: string }) =>
   <span className={cn("inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize", TONE[BADGE[value] ?? "neutral"])}>{value}</span>;
 

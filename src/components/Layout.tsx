@@ -1,8 +1,7 @@
 import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
-import AdminShell from "./AdminShell";
+import AppShell from "./AppShell";
 const nav = {
-  mentor: [["/mentor", "My Students"]],
   student: [["/student", "My Learning"]],
 } as const;
 export default function Layout() {
@@ -10,7 +9,7 @@ export default function Layout() {
   // Layout wraps the guarded routes, so it must redirect itself: returning null here hid the Guards (blank page after sign-out).
   if (loading) return <p className="p-8">Loading…</p>;
   if (!profile) return <Navigate to="/login" replace />;
-  if (profile.role === "admin") return <AdminShell />;
+  if (profile.role !== "student") return <AppShell />; // admin + mentor share the sidebar shell
   const links = [...nav[profile.role], ["/profile", "Profile"]];
   return (
     <div className="min-h-screen">

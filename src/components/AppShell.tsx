@@ -3,14 +3,16 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { Icon, IconName } from "./icons";
 import { ToastProvider } from "./admin/kit";
-// Admin-only chrome: persistent sidebar + compact header. Mentor/Student keep Layout's top nav.
-const nav: { to: string; label: string; icon: IconName }[] = [
+// Admin + Mentor chrome: persistent sidebar + compact header (Student keeps Layout's top nav).
+type Item = { to: string; label: string; icon: IconName };
+const NAV: Record<"admin" | "mentor", Item[]> = { admin: [
   { to: "/admin", label: "Overview", icon: "home" }, { to: "/admin/people", label: "People", icon: "users" },
   { to: "/admin/courses", label: "Courses", icon: "book" }, { to: "/admin/enrollments", label: "Course Access", icon: "key" },
   { to: "/admin/reports", label: "Reports", icon: "chart" }, { to: "/admin/audit", label: "Audit Log", icon: "list" },
-];
+],
+  mentor: [{ to: "/mentor", label: "My Students", icon: "users" }, { to: "/profile", label: "Profile", icon: "user" }] };
 const isActive = (to: string, path: string) => to === "/admin" ? path === to : path === to || path.startsWith(to + "/");
-export default function AdminShell() {
+export default function AppShell() {
   const { profile, signOut } = useAuth(); const { pathname } = useLocation();
   const [collapsed, setCollapsed] = useState(false); // desktop: icons only
   const [drawer, setDrawer] = useState(false); // mobile: overlay
@@ -23,8 +25,9 @@ export default function AdminShell() {
     document.addEventListener("mousedown", off); document.addEventListener("keydown", esc);
     return () => { document.removeEventListener("mousedown", off); document.removeEventListener("keydown", esc); };
   }, [menu]);
-  if (!profile) return null;
-  const current = nav.find(n => isActive(n.to, pathname));
+  if (!profile || profile.role === "student") return null;
+  const nav = NAV[profile.role]; const roleLabel = profile.role === "admin" ? "Admin" : "Mentor";
+  const current = nav.find(n => isActive(n.to, pathname)) ?? (pathname === "/profile" ? { label: "Profile" } : undefined);
   const toggle = () => window.matchMedia("(min-width: 768px)").matches ? setCollapsed(c => !c) : setDrawer(d => !d);
   const label = `${collapsed ? "md:hidden" : ""}`;
   return (
@@ -44,7 +47,7 @@ export default function AdminShell() {
       <div className="flex-1 min-w-0">
         <header className="h-16 bg-white border-b border-hairline sticky top-0 z-20 flex items-center gap-3 px-4 md:px-6">
           <button className="p-2 -ml-2 rounded-lg hover:bg-paper" onClick={toggle} aria-label="Toggle sidebar"><Icon name="menu" /></button>
-          <div className="min-w-0 flex-1"><p className="text-xs text-muted leading-none">Admin</p><p className="font-heading font-bold text-ink truncate">{current?.label ?? "Admin"}</p></div>
+          <div className="min-w-0 flex-1"><p className="text-xs text-muted leading-none">{roleLabel}</p><p className="font-heading font-bold text-ink truncate">{current?.label ?? roleLabel}</p></div>
           <div className="relative" ref={menuRef}>
             <button className="flex items-center gap-2 rounded-full border border-hairline pl-1 pr-3 py-1 hover:border-ink" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(m => !m)}>
               <span className="w-8 h-8 rounded-full bg-brand text-white grid place-items-center text-sm font-bold">{profile.full_name.trim().charAt(0).toUpperCase()}</span>
