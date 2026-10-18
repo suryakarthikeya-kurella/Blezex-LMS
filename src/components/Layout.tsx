@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import Icon, { IconName } from "./Icon";
 import AppShell from "./AppShell";
+import { calculateStreakInfo, StreakInfo } from "../lib/streakService";
 
 const nav = {
   student: [
@@ -14,6 +16,19 @@ const nav = {
 export default function Layout() {
   const { profile, loading, signOut } = useAuth();
   const loc = useLocation();
+  const [streak, setStreak] = useState<StreakInfo>(() => calculateStreakInfo());
+
+  useEffect(() => {
+    const updateStreak = () => setStreak(calculateStreakInfo());
+    window.addEventListener("blezex:streak-updated", updateStreak);
+    window.addEventListener("blezex:progress-updated", updateStreak);
+    window.addEventListener("storage", updateStreak);
+    return () => {
+      window.removeEventListener("blezex:streak-updated", updateStreak);
+      window.removeEventListener("blezex:progress-updated", updateStreak);
+      window.removeEventListener("storage", updateStreak);
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -104,18 +119,32 @@ export default function Layout() {
         </nav>
 
         {/* Learning Streak / Motivation Card in Sidebar */}
-        <div className="mt-6 rounded-2xl border border-slate-200/80 bg-gradient-to-br from-amber-50/60 via-white to-orange-50/40 p-4 shadow-2xs">
+        <div className="mt-6 rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/70 via-white to-orange-50/40 p-4 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-amber-700">
+            <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-amber-800">
               <Icon name="flame" size={15} className="text-amber-500" />
-              <span>Daily Streak</span>
+              <span>{streak.currentStreak} Day{streak.currentStreak === 1 ? "" : "s"} Streak</span>
             </span>
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold text-amber-800">
-              Active
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+                streak.isActiveToday
+                  ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                  : "bg-amber-100 text-amber-800 border border-amber-200"
+              }`}
+            >
+              {streak.isActiveToday ? "Active ✓" : "Due Today"}
             </span>
           </div>
-          <p className="mt-2 text-xs font-semibold text-slate-600">
-            Keep learning daily to maintain your momentum & unlock certifications!
+
+          <div className="mt-2.5 flex items-center justify-between text-[11px] font-bold text-slate-500">
+            <span>Highest Record:</span>
+            <span className="text-amber-700 font-extrabold">{streak.maxStreak} Days</span>
+          </div>
+
+          <p className="mt-2 text-[11px] leading-relaxed text-slate-600">
+            {streak.isActiveToday
+              ? "Great work! You studied today and kept your streak alive."
+              : "Complete or submit any topic today so your streak doesn't reset to 0!"}
           </p>
         </div>
 
@@ -173,9 +202,17 @@ export default function Layout() {
 
             {/* Top Right Quick Badges */}
             <div className="flex items-center gap-3">
-              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-amber-50/80 px-3 py-1 text-xs font-bold text-amber-800 shadow-2xs">
+              <span
+                title={`Current streak: ${streak.currentStreak} days | Best streak: ${streak.maxStreak} days. Resets to 0 if a day is missed.`}
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-amber-200/90 bg-amber-50/90 px-3 py-1 text-xs font-bold text-amber-900 shadow-2xs"
+              >
                 <Icon name="flame" size={14} className="text-amber-500" />
-                <span>Daily Streak Active</span>
+                <span>{streak.currentStreak} Day{streak.currentStreak === 1 ? "" : "s"}</span>
+                <span className="text-slate-300">·</span>
+                <span className="text-[10px] text-amber-700 font-extrabold">Max {streak.maxStreak}d</span>
+                {streak.isActiveToday && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" title="Active today ✓" />
+                )}
               </span>
 
               <Link

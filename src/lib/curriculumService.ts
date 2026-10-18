@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { FULL_STACK_MODULES, CurriculumModule, CurriculumItem, getCurriculumForCourse } from "./curriculumData";
 import { isCertificateUnlocked } from "./certificateUnlock";
+import { recordDailyActivity } from "./streakService";
 
 const STORAGE_PREFIX = "blezex_curriculum_completed_";
 const QUIZ_STORAGE_KEY = "blezex_quiz_attempts";
@@ -55,6 +56,7 @@ export function notifyProgressUpdated() {
   if (typeof window !== "undefined") {
     try {
       window.dispatchEvent(new CustomEvent("blezex:progress-updated"));
+      window.dispatchEvent(new CustomEvent("blezex:streak-updated"));
       window.dispatchEvent(new Event("storage"));
     } catch {}
   }
@@ -96,7 +98,7 @@ export function getCompletedItemIds(enrollmentId?: string): Set<string> {
 /**
  * Save a completed curriculum item.
  * Updates both the enrollment-specific key and canonical full-stack key,
- * records a timeline event, and notifies components.
+ * records a timeline event, records streak activity, and notifies components.
  */
 export function saveCompletedItemId(
   enrollmentId: string,
@@ -128,6 +130,7 @@ export function saveCompletedItemId(
       created_at: new Date().toISOString(),
       enrollment_id: enrollmentId,
     });
+    recordDailyActivity();
   }
 
   notifyProgressUpdated();
@@ -214,6 +217,7 @@ export function saveQuizAttempt(attempt: {
     enrollment_id: attempt.enrollmentId,
   });
 
+  recordDailyActivity();
   notifyProgressUpdated();
 }
 
@@ -271,6 +275,7 @@ export function saveAssignmentSubmission(sub: {
     enrollment_id: sub.enrollmentId,
   });
 
+  recordDailyActivity();
   notifyProgressUpdated();
 }
 

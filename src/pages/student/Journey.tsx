@@ -8,6 +8,7 @@ import {
   getQuizAttempts,
   getAllJourneyEvents,
 } from "../../lib/curriculumService";
+import { calculateStreakInfo } from "../../lib/streakService";
 
 export default function StudentJourney() {
   const [enrollments, setEnrollments] = useState<any[]>([]);
@@ -120,6 +121,8 @@ export default function StudentJourney() {
       progress: getCourseProgress(e, lessons, progress),
     }));
   }, [displayEnrollments, lessons, progress, refreshTick]);
+
+  const streakInfo = useMemo(() => calculateStreakInfo(), [refreshTick]);
 
   const totalLessons = courseProgressList.reduce(
     (sum, item) => sum + item.progress.totalLessons,
@@ -268,6 +271,80 @@ export default function StudentJourney() {
             <p className="mt-1 text-xs font-semibold text-slate-400">{item.sub}</p>
           </div>
         ))}
+      </section>
+
+      {/* Learning Habit & Daily Streak Consistency Card */}
+      <section aria-label="Learning streak consistency">
+        <div className="rounded-3xl border border-amber-200/80 bg-gradient-to-r from-amber-50/70 via-orange-50/40 to-white p-6 shadow-xs">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="flex items-start gap-4">
+              <span className="grid h-13 w-13 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/20">
+                <Icon name="flame" size={24} />
+              </span>
+
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-md bg-amber-100 border border-amber-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-800">
+                    Daily Study Habit
+                  </span>
+                  <span className="text-slate-300">·</span>
+                  <span className="text-xs font-bold text-slate-500">
+                    {streakInfo.totalActiveDays} Total Active Days Recorded
+                  </span>
+                </div>
+
+                <h2 className="mt-1 font-display text-xl font-extrabold text-slate-900">
+                  {streakInfo.currentStreak} Day Learning Streak
+                </h2>
+
+                <p className="mt-1 text-xs sm:text-sm text-slate-600 max-w-xl">
+                  {streakInfo.isActiveToday
+                    ? "Streak alive! You have successfully completed coursework today. Miss a day, and the streak resets to 0."
+                    : streakInfo.currentStreak > 0
+                    ? `Keep your ${streakInfo.currentStreak}-day streak alive! Complete any lesson or quiz today before midnight.`
+                    : "Complete any lesson, quiz, or assignment today to ignite your daily streak!"}
+                </p>
+              </div>
+            </div>
+
+            {/* Streak metrics + Calendar badges */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white/80 border border-amber-200/60 rounded-2xl p-3.5 backdrop-blur-xs">
+              <div className="text-left sm:text-center pr-2 sm:border-r border-slate-200/80">
+                <span className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  All-Time Best
+                </span>
+                <span className="font-display text-xl font-black text-amber-700">
+                  {streakInfo.maxStreak} <span className="text-xs font-bold text-slate-500">Days</span>
+                </span>
+              </div>
+
+              {/* 7-Day Week Indicator */}
+              <div className="flex items-center gap-1.5">
+                {streakInfo.weekDays.map((d, i) => (
+                  <div key={i} className="flex flex-col items-center gap-1">
+                    <span
+                      title={`${d.dayName} (${d.date}): ${d.hasActivity ? "Completed ✓" : d.isToday ? "Today" : d.isFuture ? "Upcoming" : "Missed"}`}
+                      className={`grid h-7 w-7 place-items-center rounded-lg text-[10px] font-bold ${
+                        d.hasActivity
+                          ? "bg-emerald-500 text-white shadow-xs"
+                          : d.isToday
+                          ? "bg-amber-100 text-amber-800 border-2 border-amber-400 animate-pulse font-extrabold"
+                          : d.isFuture
+                          ? "bg-slate-50 text-slate-400 border border-dashed border-slate-200"
+                          : "bg-slate-100 text-slate-400"
+                      }`}
+                    >
+                      {d.hasActivity ? "✓" : d.dayName[0]}
+                    </span>
+                    <span className={`text-[9px] font-bold ${d.isToday ? "text-amber-700 font-extrabold" : "text-slate-400"}`}>
+                      {d.dayName}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Course Milestones Cards */}

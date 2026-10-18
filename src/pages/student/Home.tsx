@@ -12,6 +12,7 @@ import {
   getCompletedItemIds,
 } from "../../lib/curriculumService";
 import { FULL_STACK_MODULES, getCurriculumForCourse } from "../../lib/curriculumData";
+import { calculateStreakInfo } from "../../lib/streakService";
 
 const dateLabel = (value: string) => {
   if (!value) return "";
@@ -35,13 +36,15 @@ export default function StudentHome() {
   const [err, setErr] = useState("");
   const [refreshTick, setRefreshTick] = useState(0);
 
-  // Listen for progress updates from Lesson completions, quizzes, or assignments
+  // Listen for progress and streak updates from Lesson completions, quizzes, or assignments
   useEffect(() => {
     const handleUpdate = () => setRefreshTick(t => t + 1);
     window.addEventListener("blezex:progress-updated", handleUpdate);
+    window.addEventListener("blezex:streak-updated", handleUpdate);
     window.addEventListener("storage", handleUpdate);
     return () => {
       window.removeEventListener("blezex:progress-updated", handleUpdate);
+      window.removeEventListener("blezex:streak-updated", handleUpdate);
       window.removeEventListener("storage", handleUpdate);
     };
   }, []);
@@ -233,16 +236,8 @@ export default function StudentHome() {
     })),
   ];
 
-  // Weekly study calendar days
-  const weekDays = [
-    { day: "Mon", active: true, done: true },
-    { day: "Tue", active: true, done: true },
-    { day: "Wed", active: true, done: true },
-    { day: "Thu", active: true, done: true },
-    { day: "Fri", active: true, done: true },
-    { day: "Sat", active: false, done: false },
-    { day: "Sun", active: false, done: false },
-  ];
+  // Dynamic study streak info (Option 1: consecutive days active, misses a day = 0, tracks max streak)
+  const streakInfo = useMemo(() => calculateStreakInfo(), [refreshTick]);
 
   if (loading) {
     return (
@@ -311,39 +306,94 @@ export default function StudentHome() {
             </div>
           </div>
 
-          {/* Quick Learning Streak Card on Hero */}
-          <div className="shrink-0 rounded-2xl border border-white/10 bg-white/10 p-5 backdrop-blur-md text-center md:text-left min-w-[220px]">
+          {/* Learning Streak & Consistency Card on Hero */}
+          <div className="shrink-0 rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur-md text-left w-full md:w-auto md:min-w-[300px] shadow-lg shadow-black/10">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-[11px] font-extrabold uppercase tracking-widest text-blue-200">
-                Weekly Streak
-              </span>
-              <span className="flex items-center gap-1 text-xs font-bold text-amber-300">
-                <Icon name="flame" size={15} /> 5 Days
-              </span>
-            </div>
-
-            <div className="mt-3 flex items-center justify-between gap-1.5">
-              {weekDays.map((d, i) => (
-                <div key={i} className="flex flex-col items-center gap-1">
-                  <span
-                    className={`grid h-7 w-7 place-items-center rounded-lg text-[10px] font-bold ${
-                      d.done
-                        ? "bg-emerald-500 text-white shadow-xs"
-                        : d.active
-                        ? "bg-blue-600 text-white"
-                        : "bg-white/10 text-slate-400"
-                    }`}
-                  >
-                    {d.done ? "✓" : d.day[0]}
+              <div className="flex items-center gap-2">
+                <span className="grid h-7 w-7 place-items-center rounded-xl bg-amber-500/20 text-amber-400 border border-amber-400/30">
+                  <Icon name="flame" size={15} />
+                </span>
+                <div>
+                  <span className="block text-[10px] font-black uppercase tracking-widest text-blue-200">
+                    Daily Streak
                   </span>
-                  <span className="text-[9px] text-slate-400">{d.day}</span>
+                  <span className="font-display text-sm font-extrabold text-white">
+                    {streakInfo.currentStreak} {streakInfo.currentStreak === 1 ? "Day" : "Days"}
+                  </span>
                 </div>
-              ))}
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <span
+                  title="Highest historical streak achieved"
+                  className="inline-flex items-center gap-1 rounded-full border border-blue-400/30 bg-blue-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-blue-200 shadow-2xs"
+                >
+                  <Icon name="award" size={11} className="text-amber-300" />
+                  <span>Max {streakInfo.maxStreak}d</span>
+                </span>
+              </div>
             </div>
 
-            <p className="mt-3 text-[11px] font-semibold text-slate-300">
-              🔥 On track for weekly goal!
-            </p>
+            {/* Week Days Attendance Breakdown */}
+            <div className="mt-3.5 grid grid-cols-7 gap-1.5">
+              {streakInfo.weekDays.map((d, i) => {
+                let badgeClass = "bg-white/10 text-slate-300 border border-white/10";
+                let content: React.ReactNode = d.dayName[0];
+
+                if (d.hasActivity) {
+                  badgeClass = "bg-emerald-500 text-white font-black shadow-xs shadow-emerald-500/30 border border-emerald-400";
+                  content = "✓";
+                } else if (d.isToday) {
+                  badgeClass = "bg-amber-400/20 text-amber-300 font-black border-2 border-amber-400 animate-pulse";
+                  content = d.dayName[0];
+                } else if (d.isFuture) {
+                  badgeClass = "bg-white/5 text-slate-500 border border-dashed border-white/10";
+                  content = d.dayName[0];
+                }
+
+                return (
+                  <div key={i} className="flex flex-col items-center gap-1">
+                    <span
+                      title={`${d.dayName} (${d.date}): ${
+                        d.hasActivity
+                          ? "Lesson or activity completed ✓"
+                          : d.isToday
+                          ? "Today (study now to keep streak)"
+                          : d.isFuture
+                          ? "Upcoming"
+                          : "Missed (streak resets if day skipped)"
+                      }`}
+                      className={`grid h-7 w-7 place-items-center rounded-lg text-[10px] transition-all hover:scale-110 ${badgeClass}`}
+                    >
+                      {content}
+                    </span>
+                    <span
+                      className={`text-[9px] font-bold ${
+                        d.isToday ? "text-amber-300 font-extrabold" : "text-slate-400"
+                      }`}
+                    >
+                      {d.dayName}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Motivational Footer / Status Badge */}
+            <div className="mt-3.5 flex items-center justify-between gap-2 border-t border-white/10 pt-2.5 text-[11px]">
+              <span className="truncate text-slate-300 text-[11px] font-medium" title={streakInfo.message}>
+                {streakInfo.message}
+              </span>
+              <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${
+                  streakInfo.isActiveToday
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/30"
+                    : "bg-amber-500/20 text-amber-300 border border-amber-400/30"
+                }`}
+              >
+                {streakInfo.isActiveToday ? "Today Done ✓" : "Due Today"}
+              </span>
+            </div>
           </div>
         </div>
       </section>
@@ -522,7 +572,9 @@ export default function StudentHome() {
 
                     {/* Sub-courses Mini Grid */}
                     <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-                      {FULL_STACK_MODULES.map((m, idx) => {
+                      {getCurriculumForCourse(
+                        enrollment.course?.slug || enrollment.course?.title || effectiveCourseId
+                      ).map((m, idx) => {
                         const completedSet = getCompletedItemIds(effectiveCourseId);
                         const doneInMod = m.items.filter(it => completedSet.has(it.id)).length;
                         const modPct = m.items.length ? Math.round((doneInMod * 100) / m.items.length) : 0;
@@ -542,7 +594,7 @@ export default function StudentHome() {
                             <span className="block text-[9px] font-black uppercase tracking-wider text-slate-400">
                               Sub-0{idx + 1}
                             </span>
-                            <span className="block truncate text-[11px] font-bold text-slate-800">
+                            <span className="block truncate text-[11px] font-bold text-slate-800" title={m.title}>
                               {m.title.split(" ")[0]}
                             </span>
                             <span className="mt-1 block text-[10px] font-extrabold text-blue-600">
