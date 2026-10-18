@@ -15,8 +15,8 @@ export type Profile = {
   emergency_contact_name?: string | null;
   emergency_contact_phone?: string | null;
 };
-type C = { profile: Profile | null; loading: boolean; recovery: boolean; signOut: () => Promise<void>; refresh: () => Promise<void>; endRecovery: () => void };
-const Ctx = createContext<C>({ profile: null, loading: true, recovery: false, signOut: async () => {}, refresh: async () => {}, endRecovery: () => {} });
+type C = { profile: Profile | null; loading: boolean; recovery: boolean; notice: string; clearNotice: () => void; signOut: () => Promise<void>; refresh: () => Promise<void>; endRecovery: () => void };
+const Ctx = createContext<C>({ profile: null, loading: true, recovery: false, notice: "", clearNotice: () => {}, signOut: async () => {}, refresh: async () => {}, endRecovery: () => {} });
 export const useAuth = () => useContext(Ctx);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null); const [loading, setLoading] = useState(true); const [recovery, setRecovery] = useState(false); const [notice, setNotice] = useState("");
