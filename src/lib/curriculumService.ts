@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { FULL_STACK_MODULES, CurriculumModule, CurriculumItem } from "./curriculumData";
+import { FULL_STACK_MODULES, CurriculumModule, CurriculumItem, getCurriculumForCourse } from "./curriculumData";
 import { isCertificateUnlocked } from "./certificateUnlock";
 
 const STORAGE_PREFIX = "blezex_curriculum_completed_";
@@ -72,8 +72,10 @@ export function getCompletedItemIds(enrollmentId?: string): Set<string> {
   if (enrollmentId) {
     keysToRead.push(`${STORAGE_PREFIX}${enrollmentId}`);
   }
-  keysToRead.push(`${STORAGE_PREFIX}full-stack-web`);
-  keysToRead.push(`${STORAGE_PREFIX}default`);
+  if (!enrollmentId || enrollmentId === "full-stack-web" || enrollmentId === "7779e007-096a-4295-a772-be469591e24b") {
+    keysToRead.push(`${STORAGE_PREFIX}full-stack-web`);
+    keysToRead.push(`${STORAGE_PREFIX}default`);
+  }
 
   for (const k of keysToRead) {
     try {
@@ -144,46 +146,18 @@ export function getCourseProgress(
 ): CourseProgressInfo {
   const enrollmentId = enrollment?.id || "full-stack-web";
   const courseSlug = enrollment?.course?.slug || enrollment?.course_id || "";
-  const isFullStack =
-    !courseSlug ||
-    courseSlug === "full-stack-web" ||
-    enrollment?.course?.title?.toLowerCase().includes("full stack") ||
-    enrollment?.id === "full-stack-web";
-
+  const courseTitle = enrollment?.course?.title || "";
   const targetPct = enrollment?.course?.min_progress_pct ?? 80;
 
-  if (isFullStack) {
-    const allCurriculumItems = FULL_STACK_MODULES.flatMap(m => m.items);
-    const totalLessons = allCurriculumItems.length; // 38 items
-    const completedSet = getCompletedItemIds(enrollmentId);
+  // Resolve curriculum for this specific course track
+  const courseCurriculum = getCurriculumForCourse(courseSlug || courseTitle || enrollment?.id);
+  const allCurriculumItems = courseCurriculum.flatMap(m => m.items);
+  const totalLessons = allCurriculumItems.length || 1;
+  const completedSet = getCompletedItemIds(enrollmentId);
 
-    // Count how many valid curriculum items have been completed
-    const completedLessons = allCurriculumItems.filter(item => completedSet.has(item.id)).length;
-    const progressPct = totalLessons ? Math.round((completedLessons * 100) / totalLessons) : 0;
-    const certificateUnlocked = isCertificateUnlocked(progressPct, targetPct);
-
-    let status: CourseProgressInfo["status"] = "not_started";
-    if (progressPct >= 100) status = "completed";
-    else if (certificateUnlocked) status = "certificate_unlocked";
-    else if (progressPct > 0) status = "in_progress";
-
-    return {
-      totalLessons,
-      completedLessons,
-      progressPct,
-      isCertificateUnlocked: certificateUnlocked,
-      targetPct,
-      status,
-    };
-  }
-
-  // Fallback for custom courses that use DB tables exclusively
-  const courseLessons = dbLessons.filter(l => l.modules?.course_id === enrollment.course_id);
-  const totalLessons = courseLessons.length || 1;
-  const done = dbProgress.filter(
-    p => p.enrollment_id === enrollment.id && courseLessons.some(l => l.id === p.lesson_id)
-  ).length;
-  const progressPct = Math.round((done * 100) / totalLessons);
+  // Count how many valid curriculum items have been completed in this track
+  const completedLessons = allCurriculumItems.filter(item => completedSet.has(item.id)).length;
+  const progressPct = totalLessons ? Math.round((completedLessons * 100) / totalLessons) : 0;
   const certificateUnlocked = isCertificateUnlocked(progressPct, targetPct);
 
   let status: CourseProgressInfo["status"] = "not_started";
@@ -193,7 +167,7 @@ export function getCourseProgress(
 
   return {
     totalLessons,
-    completedLessons: done,
+    completedLessons,
     progressPct,
     isCertificateUnlocked: certificateUnlocked,
     targetPct,
@@ -509,6 +483,8 @@ export async function fetchCourseCurriculum(
     }
   } catch {}
 
+  const resolvedModules = getCurriculumForCourse(courseSlug || courseTitle || courseIdOrEid);
+
   return {
     course: {
       id: courseSlug,
@@ -517,7 +493,7 @@ export async function fetchCourseCurriculum(
       slug: courseSlug,
       min_progress_pct: minProgress,
     },
-    modules: FULL_STACK_MODULES,
+    modules: resolvedModules,
     enrollmentId,
     source: "static",
   };

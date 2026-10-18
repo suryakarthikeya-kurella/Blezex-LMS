@@ -13,12 +13,53 @@ import {
 } from "../../lib/curriculumData";
 
 const SUB_COURSE_TAGS: Record<string, string[]> = {
+  // Full Stack Web Development
   "html-css-foundations": ["HTML5", "CSS3", "BOOTSTRAP"],
   "js-fundamentals": ["JAVASCRIPT", "ES6+", "DOM"],
   "database-sql": ["SQL", "POSTGRESQL", "DATABASE"],
   "node-express": ["NODE.JS", "EXPRESS", "REST API"],
   "react-js": ["REACT", "HOOKS", "JSX"],
   "git-basics": ["GIT", "GITHUB", "WORKFLOW"],
+
+  // AI Automation
+  "subcourse-ai-foundations": ["LLM", "PROMPT ENGINEERING", "TOKENS"],
+  "subcourse-ai-python": ["PYTHON", "OPENAI SDK", "STREAMING"],
+  "subcourse-ai-rag": ["RAG", "VECTOR DB", "EMBEDDINGS"],
+  "subcourse-ai-agents": ["LANGCHAIN", "AGENTS", "TOOLS"],
+  "subcourse-ai-n8n": ["N8N", "AUTOMATION", "WEBHOOKS"],
+  "subcourse-ai-capstone": ["CAPSTONE", "EVALS", "GOVERNANCE"],
+
+  // Cloud & DevOps
+  "subcourse-devops-linux": ["LINUX", "NETWORKING", "NGINX"],
+  "subcourse-devops-docker": ["DOCKER", "CONTAINERS", "COMPOSE"],
+  "subcourse-devops-aws": ["AWS", "VPC", "EC2 & S3"],
+  "subcourse-devops-cicd": ["CI/CD", "GITHUB ACTIONS", "AUTOMATION"],
+  "subcourse-devops-terraform": ["TERRAFORM", "IAC", "HCL"],
+  "subcourse-devops-k8s": ["KUBERNETES", "SRE", "MONITORING"],
+
+  // Data Analytics
+  "subcourse-data-excel": ["EXCEL", "XLOOKUP", "PIVOT TABLES"],
+  "subcourse-data-sql": ["SQL", "WINDOW FUNCTIONS", "CTEs"],
+  "subcourse-data-python": ["PYTHON", "PANDAS", "NUMPY"],
+  "subcourse-data-viz": ["SEABORN", "MATPLOTLIB", "EDA"],
+  "subcourse-data-bi": ["POWER BI", "DAX", "STAR SCHEMA"],
+  "subcourse-data-capstone": ["A/B TESTING", "PREDICTIVE", "CAPSTONE"],
+
+  // Digital Marketing
+  "subcourse-mktg-strategy": ["PERSONAS", "FUNNELS", "JTBD"],
+  "subcourse-mktg-seo": ["SEO", "CORE WEB VITALS", "SCHEMA"],
+  "subcourse-mktg-ads": ["META ADS", "GOOGLE ADS", "ROAS"],
+  "subcourse-mktg-content": ["COPYWRITING", "AIDA & PAS", "REELS"],
+  "subcourse-mktg-email": ["EMAIL MARKETING", "KLAVIYO", "DMARC"],
+  "subcourse-mktg-capstone": ["GA4", "CRO", "GROWTH CAPSTONE"],
+
+  // UI/UX Design
+  "subcourse-uiux-research": ["DESIGN THINKING", "USER RESEARCH", "PERSONAS"],
+  "subcourse-uiux-ia": ["INFORMATION ARCHITECTURE", "TASK FLOWS", "WIREFRAMES"],
+  "subcourse-uiux-figma": ["FIGMA", "DESIGN SYSTEMS", "AUTO-LAYOUT"],
+  "subcourse-uiux-proto": ["PROTOTYPING", "SMART ANIMATE", "MICRO-INTERACTIONS"],
+  "subcourse-uiux-access": ["WCAG 2.2 AA", "ACCESSIBILITY", "HEURISTICS"],
+  "subcourse-uiux-capstone": ["DEV HANDOFF", "PORTFOLIO", "SAAS CAPSTONE"],
 };
 
 export default function StudentCourse() {
@@ -107,6 +148,7 @@ export default function StudentCourse() {
 
   // Sub-course custom SVG icons
   const renderSubCourseIcon = (subCourseId: string) => {
+    // 1. Full Stack Web Development
     switch (subCourseId) {
       case "html-css-foundations":
         return (
@@ -118,6 +160,7 @@ export default function StudentCourse() {
       case "js-fundamentals":
         return <Icon name="code" size={22} />;
       case "database-sql":
+      case "subcourse-data-sql":
         return (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
             <ellipse cx="12" cy="5" rx="9" ry="3" />
@@ -143,6 +186,7 @@ export default function StudentCourse() {
           </svg>
         );
       case "git-basics":
+      case "subcourse-devops-cicd":
         return (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
             <line x1="6" y1="3" x2="6" y2="15" />
@@ -151,6 +195,117 @@ export default function StudentCourse() {
             <path d="M18 9a9 9 0 0 1-9 9" />
           </svg>
         );
+
+      // AI Automation
+      case "subcourse-ai-foundations":
+      case "subcourse-ai-agents":
+      case "subcourse-ai-capstone":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+            <path d="M19 8H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Z" />
+            <circle cx="9" cy="13" r="1" fill="currentColor" />
+            <circle cx="15" cy="13" r="1" fill="currentColor" />
+            <path d="M9 17h6" />
+          </svg>
+        );
+      case "subcourse-ai-python":
+      case "subcourse-data-python":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <polyline points="16 18 22 12 16 6" />
+            <polyline points="8 6 2 12 8 18" />
+          </svg>
+        );
+      case "subcourse-ai-rag":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            <line x1="11" y1="8" x2="11" y2="14" />
+            <line x1="8" y1="11" x2="14" y2="11" />
+          </svg>
+        );
+      case "subcourse-ai-n8n":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="6" r="3" />
+            <circle cx="18" cy="18" r="3" />
+            <line x1="8.7" y1="10.7" x2="15.3" y2="7.3" />
+            <line x1="8.7" y1="13.3" x2="15.3" y2="16.7" />
+          </svg>
+        );
+
+      // Cloud & DevOps
+      case "subcourse-devops-linux":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <polyline points="4 17 10 11 4 5" />
+            <line x1="12" y1="19" x2="20" y2="19" />
+          </svg>
+        );
+      case "subcourse-devops-docker":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <path d="M22 12.5c-.7 0-1.5-.2-2.1-.7-.8.5-1.8.7-2.9.7-1.3 0-2.4-.4-3.3-1.1-.9.7-2 1.1-3.3 1.1s-2.4-.4-3.3-1.1C6.2 12.1 5.1 12.5 3.8 12.5c-.6 0-1.2-.1-1.8-.4C2 17 6 21 12 21s10-4 10-8.5Z" />
+            <rect x="7" y="5" width="2" height="2" />
+            <rect x="10" y="5" width="2" height="2" />
+            <rect x="13" y="5" width="2" height="2" />
+            <rect x="10" y="2" width="2" height="2" />
+          </svg>
+        );
+      case "subcourse-devops-aws":
+      case "subcourse-devops-terraform":
+      case "subcourse-devops-k8s":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
+          </svg>
+        );
+
+      // Data Analytics
+      case "subcourse-data-excel":
+      case "subcourse-data-viz":
+      case "subcourse-data-bi":
+      case "subcourse-data-capstone":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+          </svg>
+        );
+
+      // Digital Marketing
+      case "subcourse-mktg-strategy":
+      case "subcourse-mktg-seo":
+      case "subcourse-mktg-ads":
+      case "subcourse-mktg-content":
+      case "subcourse-mktg-email":
+      case "subcourse-mktg-capstone":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
+        );
+
+      // UI/UX Design
+      case "subcourse-uiux-research":
+      case "subcourse-uiux-ia":
+      case "subcourse-uiux-figma":
+      case "subcourse-uiux-proto":
+      case "subcourse-uiux-access":
+      case "subcourse-uiux-capstone":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <path d="m12 19 7-7 3 3-7 7-3-3z" />
+            <path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+            <path d="m2 2 7.586 7.586" />
+            <circle cx="11" cy="11" r="2" />
+          </svg>
+        );
+
       default:
         return <Icon name="book" size={22} />;
     }

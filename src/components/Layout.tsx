@@ -165,10 +165,10 @@ export default function Layout() {
             {/* Desktop Header Left Subtext */}
             <div className="hidden lg:flex items-center gap-2.5 text-xs font-semibold text-slate-500">
               <span className="rounded-lg bg-blue-50 px-2.5 py-1 text-blue-700 font-bold border border-blue-200/50">
-                Full Stack Career Track
+                Career Accelerator Tracks
               </span>
               <span className="text-slate-300">·</span>
-              <span>Empowering your path to software engineering roles</span>
+              <span>Empowering your path to software, data, AI, and design leadership</span>
             </div>
 
             {/* Top Right Quick Badges */}

@@ -11,7 +11,7 @@ import {
   getAssignmentSubmissions,
   getCompletedItemIds,
 } from "../../lib/curriculumService";
-import { FULL_STACK_MODULES } from "../../lib/curriculumData";
+import { FULL_STACK_MODULES, getCurriculumForCourse } from "../../lib/curriculumData";
 
 const dateLabel = (value: string) => {
   if (!value) return "";
@@ -148,9 +148,12 @@ export default function StudentHome() {
 
   // Identify next uncompleted lesson to spotlight for instant continue
   const nextLessonSpotlight = useMemo(() => {
+    const primaryCurriculum = getCurriculumForCourse(
+      primaryEnrollment?.course?.slug || primaryEnrollment?.course?.title || effectiveCourseId
+    );
     const completedSet = getCompletedItemIds(effectiveCourseId);
-    for (let modIdx = 0; modIdx < FULL_STACK_MODULES.length; modIdx++) {
-      const mod = FULL_STACK_MODULES[modIdx];
+    for (let modIdx = 0; modIdx < primaryCurriculum.length; modIdx++) {
+      const mod = primaryCurriculum[modIdx];
       for (const item of mod.items) {
         if (!completedSet.has(item.id)) {
           return {
@@ -162,14 +165,14 @@ export default function StudentHome() {
         }
       }
     }
-    const lastMod = FULL_STACK_MODULES[FULL_STACK_MODULES.length - 1];
+    const lastMod = primaryCurriculum[primaryCurriculum.length - 1];
     return {
       item: lastMod.items[lastMod.items.length - 1],
       module: lastMod,
-      moduleIndex: FULL_STACK_MODULES.length,
+      moduleIndex: primaryCurriculum.length,
       isCompleted: true,
     };
-  }, [effectiveCourseId, refreshTick]);
+  }, [primaryEnrollment, effectiveCourseId, refreshTick]);
 
   const totalCompletedAcrossCourses = courseProgressList.reduce(
     (sum, item) => sum + item.progress.completedLessons,
@@ -410,7 +413,7 @@ export default function StudentHome() {
           {
             label: "Enrolled Tracks",
             value: displayEnrollments.length,
-            sub: "Full Stack Web Track Active",
+            sub: `${primaryEnrollment?.course?.title || "Career Track"} Active`,
             icon: "courses" as const,
             tone: "bg-indigo-50 text-indigo-700 border-indigo-200/60",
           },
@@ -462,7 +465,7 @@ export default function StudentHome() {
             to={`/student/course/${effectiveCourseId}`}
             className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 transition"
           >
-            <span>View 6 Sub-Courses</span>
+            <span>View Track Curriculum</span>
             <Icon name="arrow" size={14} />
           </Link>
         </div>

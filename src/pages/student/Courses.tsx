@@ -4,7 +4,170 @@ import Icon from "../../components/Icon";
 import { supabase } from "../../lib/supabase";
 import { Card } from "../../components/ui";
 import { getCourseProgress, getCompletedItemIds } from "../../lib/curriculumService";
-import { FULL_STACK_MODULES, getCourseTotalMinutes, formatMinutesToHuman } from "../../lib/curriculumData";
+import {
+  FULL_STACK_MODULES,
+  getCourseTotalMinutes,
+  formatMinutesToHuman,
+  getCurriculumForCourse,
+} from "../../lib/curriculumData";
+
+const DEFAULT_COURSES = [
+  {
+    id: "full-stack-web",
+    status: "active",
+    course_id: "full-stack-web",
+    course: {
+      id: "full-stack-web",
+      title: "Full Stack Web Development",
+      description:
+        "A comprehensive journey across HTML & CSS, JavaScript, SQL databases, Node.js & Express APIs, React, and Git basics. Build job-ready full-stack applications.",
+      slug: "full-stack-web",
+      min_progress_pct: 80,
+    },
+  },
+  {
+    id: "ai-automation",
+    status: "active",
+    course_id: "ai-automation",
+    course: {
+      id: "ai-automation",
+      title: "AI Automation",
+      description:
+        "Master Large Language Models, prompt engineering, Python SDKs, RAG vector pipelines, autonomous agent architectures, and enterprise n8n workflow integrations.",
+      slug: "ai-automation",
+      min_progress_pct: 80,
+    },
+  },
+  {
+    id: "cloud-devops",
+    status: "active",
+    course_id: "cloud-devops",
+    course: {
+      id: "cloud-devops",
+      title: "Cloud & DevOps",
+      description:
+        "Build robust cloud infrastructure with Linux administration, production Docker containerization, AWS core architecture, CI/CD with GitHub Actions, Terraform, and Kubernetes.",
+      slug: "cloud-devops",
+      min_progress_pct: 80,
+    },
+  },
+  {
+    id: "data-analytics",
+    status: "active",
+    course_id: "data-analytics",
+    course: {
+      id: "data-analytics",
+      title: "Data Analytics",
+      description:
+        "Turn raw data into executive strategy with modern Excel, analytical SQL, Python Pandas & NumPy, exploratory visualizations, Power BI dashboards, and predictive statistical testing.",
+      slug: "data-analytics",
+      min_progress_pct: 80,
+    },
+  },
+  {
+    id: "digital-marketing",
+    status: "active",
+    course_id: "digital-marketing",
+    course: {
+      id: "digital-marketing",
+      title: "Digital Marketing",
+      description:
+        "Drive high-converting customer acquisition with growth strategy, technical SEO, high-ROAS Google & Meta ad campaigns, persuasive copywriting, lifecycle email flows, and GA4.",
+      slug: "digital-marketing",
+      min_progress_pct: 80,
+    },
+  },
+  {
+    id: "ui-ux-design",
+    status: "active",
+    course_id: "ui-ux-design",
+    course: {
+      id: "ui-ux-design",
+      title: "UI/UX Design",
+      description:
+        "Design intuitive digital products through UX research, user task flows, Figma design systems with Auto-Layout, interactive Smart Animate prototypes, and WCAG AA accessibility.",
+      slug: "ui-ux-design",
+      min_progress_pct: 80,
+    },
+  },
+];
+
+const getCourseTheme = (slugOrTitle: string) => {
+  const s = slugOrTitle.toLowerCase();
+  if (s.includes("ai") || s.includes("automation")) {
+    return {
+      gradient: "from-violet-600 via-purple-600 to-indigo-700",
+      accentBorder: "group-hover:!border-purple-300",
+      shadow: "shadow-purple-500/20",
+      pillBg: "bg-purple-50 text-purple-700 border-purple-200/60",
+      barColor: "from-violet-600 via-purple-600 to-indigo-600",
+      iconName: "sparkle" as const,
+    };
+  }
+  if (s.includes("cloud") || s.includes("devops")) {
+    return {
+      gradient: "from-sky-500 via-blue-600 to-indigo-700",
+      accentBorder: "group-hover:!border-sky-300",
+      shadow: "shadow-sky-500/20",
+      pillBg: "bg-sky-50 text-sky-700 border-sky-200/60",
+      barColor: "from-sky-500 via-blue-600 to-indigo-600",
+      iconName: "dashboard" as const,
+    };
+  }
+  if (s.includes("data") || s.includes("analytics")) {
+    return {
+      gradient: "from-emerald-600 via-teal-600 to-cyan-700",
+      accentBorder: "group-hover:!border-emerald-300",
+      shadow: "shadow-emerald-500/20",
+      pillBg: "bg-emerald-50 text-emerald-700 border-emerald-200/60",
+      barColor: "from-emerald-600 via-teal-600 to-cyan-600",
+      iconName: "progress" as const,
+    };
+  }
+  if (s.includes("marketing") || s.includes("digital")) {
+    return {
+      gradient: "from-amber-500 via-orange-600 to-rose-600",
+      accentBorder: "group-hover:!border-amber-300",
+      shadow: "shadow-amber-500/20",
+      pillBg: "bg-amber-50 text-amber-700 border-amber-200/60",
+      barColor: "from-amber-500 via-orange-600 to-rose-500",
+      iconName: "target" as const,
+    };
+  }
+  if (s.includes("ui") || s.includes("ux") || s.includes("design")) {
+    return {
+      gradient: "from-fuchsia-600 via-pink-600 to-rose-600",
+      accentBorder: "group-hover:!border-pink-300",
+      shadow: "shadow-pink-500/20",
+      pillBg: "bg-pink-50 text-pink-700 border-pink-200/60",
+      barColor: "from-fuchsia-600 via-pink-600 to-rose-500",
+      iconName: "pencil" as const,
+    };
+  }
+  return {
+    gradient: "from-blue-600 via-indigo-600 to-blue-700",
+    accentBorder: "group-hover:!border-blue-300",
+    shadow: "shadow-blue-500/20",
+    pillBg: "bg-blue-50 text-blue-700 border-blue-200/60",
+    barColor: "from-blue-600 via-indigo-600 to-emerald-500",
+    iconName: "courses" as const,
+  };
+};
+
+const getCourseTags = (slugOrTitle: string): string[] => {
+  const s = slugOrTitle.toLowerCase();
+  if (s.includes("ai") || s.includes("automation"))
+    return ["LLM Prompting", "Python SDK", "RAG Systems", "AI Agents", "n8n", "Evals"];
+  if (s.includes("cloud") || s.includes("devops"))
+    return ["Linux", "Docker", "AWS Cloud", "GitHub Actions", "Terraform", "Kubernetes"];
+  if (s.includes("data") || s.includes("analytics"))
+    return ["Excel Analytics", "Advanced SQL", "Pandas", "EDA", "Power BI", "A/B Testing"];
+  if (s.includes("marketing") || s.includes("digital"))
+    return ["Growth Funnels", "Technical SEO", "Meta Ads", "Copywriting", "Klaviyo", "GA4"];
+  if (s.includes("ui") || s.includes("ux") || s.includes("design"))
+    return ["Design Thinking", "Task Flows", "Figma", "Auto-Layout", "WCAG AA", "Prototyping"];
+  return ["HTML5 & CSS3", "JavaScript", "SQL", "Node.js", "React", "Git"];
+};
 
 export default function StudentCourses() {
   const [enrollments, setEnrollments] = useState<any[]>([]);
@@ -31,7 +194,7 @@ export default function StudentCourses() {
         const [enrollmentResult, moduleResult] = await Promise.all([
           supabase
             .from("enrollments")
-            .select("id,status,course_id,course:courses(title,description,slug,min_progress_pct)"),
+            .select("id,status,course_id,course:courses(id,title,description,slug,min_progress_pct)"),
           supabase
             .from("modules")
             .select("id,title,course_id,lessons(id,status)")
@@ -50,22 +213,7 @@ export default function StudentCourses() {
   }, [refreshTick]);
 
   const displayCourses = useMemo(() => {
-    return enrollments.length > 0
-      ? enrollments
-      : [
-          {
-            id: "full-stack-web",
-            status: "active",
-            course_id: "full-stack-web",
-            course: {
-              title: "Full Stack Web Development",
-              description:
-                "A comprehensive journey across HTML & CSS, JavaScript, SQL databases, Node.js & Express APIs, React, and Git basics. Build job-ready full-stack applications.",
-              slug: "full-stack-web",
-              min_progress_pct: 80,
-            },
-          },
-        ];
+    return enrollments.length > 0 ? enrollments : DEFAULT_COURSES;
   }, [enrollments]);
 
   const filteredCourses = useMemo(() => {
@@ -85,8 +233,6 @@ export default function StudentCourses() {
       return matchesSearch;
     });
   }, [displayCourses, searchQuery, activeTab, refreshTick]);
-
-  const fullStackDuration = formatMinutesToHuman(getCourseTotalMinutes(FULL_STACK_MODULES));
 
   if (loading) {
     return (
@@ -121,7 +267,7 @@ export default function StudentCourses() {
             My Learning Tracks
           </h1>
           <p className="mt-1.5 text-sm text-slate-500 max-w-2xl">
-            Explore sequential curriculum tracks, interactive cheat sheets, practice assessments, and real-world project deliverables.
+            Explore sequential curriculum tracks, interactive cheat sheets, practice assessments, and real-world project deliverables across software engineering, AI, cloud, data, and design.
           </p>
         </div>
 
@@ -176,21 +322,18 @@ export default function StudentCourses() {
       {/* Course Cards Grid */}
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {filteredCourses.map(enrollment => {
-          const courseModules = modules.filter(module => module.course_id === enrollment.course_id);
-          const isFullStack =
-            enrollment.course?.slug === "full-stack-web" ||
-            !enrollment.course?.slug ||
-            enrollment.course?.title?.toLowerCase().includes("full stack");
-          const totalSubCoursesCount = isFullStack ? FULL_STACK_MODULES.length : courseModules.length || 1;
+          const courseCurriculum = getCurriculumForCourse(
+            enrollment.course?.slug || enrollment.course?.title || enrollment.course_id
+          );
+          const totalSubCoursesCount = courseCurriculum.length;
           const progress = getCourseProgress(enrollment);
           const totalLessons = progress.totalLessons;
           const completedLessons = progress.completedLessons;
           const pct = progress.progressPct;
-          const tags = isFullStack
-            ? ["HTML5", "CSS3", "JavaScript", "SQL", "Node.js", "React", "Git"]
-            : courseModules.length
-            ? courseModules.slice(0, 5).map(m => m.title)
-            : ["Web Engineering"];
+          const trackDuration = formatMinutesToHuman(getCourseTotalMinutes(courseCurriculum));
+          const courseIdentifier = enrollment.course?.slug || enrollment.course?.title || "";
+          const theme = getCourseTheme(courseIdentifier);
+          const tags = getCourseTags(courseIdentifier);
 
           return (
             <Link
@@ -198,12 +341,12 @@ export default function StudentCourses() {
               to={`/student/course/${enrollment.id}`}
               className="group block rounded-3xl outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
             >
-              <Card className="h-full !rounded-3xl !border-slate-200/90 !p-0 !shadow-xs transition-all duration-300 group-hover:-translate-y-1.5 group-hover:!border-blue-300 group-hover:!shadow-xl flex flex-col justify-between overflow-hidden bg-white">
+              <Card className={`h-full !rounded-3xl !border-slate-200/90 !p-0 !shadow-xs transition-all duration-300 group-hover:-translate-y-1.5 ${theme.accentBorder} group-hover:!shadow-xl flex flex-col justify-between overflow-hidden bg-white`}>
                 <div className="p-6">
                   {/* Top Header Row with Icon and Progress Ring / Pill */}
                   <div className="flex items-start justify-between gap-4">
-                    <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
-                      <Icon name="courses" size={26} />
+                    <span className={`grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br ${theme.gradient} text-white shadow-md ${theme.shadow} group-hover:scale-105 transition-transform`}>
+                      <Icon name={theme.iconName} size={26} />
                     </span>
 
                     <span
@@ -222,7 +365,7 @@ export default function StudentCourses() {
 
                   {/* Badges */}
                   <div className="mt-5 flex items-center gap-2">
-                    <span className="rounded-md bg-blue-50 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-blue-700 border border-blue-200/50">
+                    <span className={`rounded-md px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border ${theme.pillBg}`}>
                       Career Accelerator
                     </span>
                     <span className="text-slate-300">·</span>
@@ -244,15 +387,11 @@ export default function StudentCourses() {
                     <span className="font-bold text-slate-700">{totalSubCoursesCount} Sub-Courses</span>
                     <span className="text-slate-300">·</span>
                     <span>{totalLessons} lessons & activities</span>
-                    {isFullStack && (
-                      <>
-                        <span className="text-slate-300">·</span>
-                        <span className="flex items-center gap-1 font-bold text-amber-700">
-                          <Icon name="clock" size={12} className="text-amber-500" />
-                          {fullStackDuration}
-                        </span>
-                      </>
-                    )}
+                    <span className="text-slate-300">·</span>
+                    <span className="flex items-center gap-1 font-bold text-slate-700">
+                      <Icon name="clock" size={12} className="text-amber-500" />
+                      {trackDuration}
+                    </span>
                   </div>
 
                   {/* Progress Bar */}

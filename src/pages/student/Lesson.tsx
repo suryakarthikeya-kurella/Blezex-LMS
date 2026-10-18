@@ -8,6 +8,8 @@ import {
   PracticeQuestion,
   getModuleTotalMinutes,
   formatMinutesToHuman,
+  getCurriculumForCourse,
+  findCurriculumItem,
 } from "../../lib/curriculumData";
 import {
   fetchCourseCurriculum,
@@ -23,7 +25,7 @@ export default function StudentLesson() {
   const { eid, lid } = useParams();
   const navigate = useNavigate();
 
-  const [modules, setModules] = useState<CurriculumModule[]>(FULL_STACK_MODULES);
+  const [modules, setModules] = useState<CurriculumModule[]>(() => getCurriculumForCourse(eid));
   const [completed, setCompleted] = useState<Set<string>>(new Set());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -81,7 +83,10 @@ export default function StudentLesson() {
   const containingModule = useMemo(() => {
     if (!lid) return modules[0];
     const foundMod = modules.find(m => m.items.some(it => it.id === lid));
-    return foundMod || modules[0];
+    if (foundMod) return foundMod;
+    const globalLookup = findCurriculumItem(lid);
+    if (globalLookup) return globalLookup.module;
+    return modules[0];
   }, [modules, lid]);
 
   const containingModuleIndex = useMemo(() => {
