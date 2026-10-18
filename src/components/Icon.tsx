@@ -1,6 +1,6 @@
 import { ReactNode, SVGProps } from "react";
 
-export type IconName = "dashboard" | "courses" | "journey" | "profile" | "progress" | "assignment" | "assessment" | "milestone" | "quiz" | "lock" | "unlock" | "certificate" | "check" | "clock" | "arrow" | "arrowLeft" | "chevronDown" | "chevronRight" | "bell" | "book" | "target" | "video" | "sheet" | "pencil" | "code" | "sidebarCollapse" | "play" | "copy" | "close";
+export type IconName = "dashboard" | "courses" | "journey" | "profile" | "progress" | "assignment" | "assessment" | "milestone" | "quiz" | "lock" | "unlock" | "certificate" | "check" | "clock" | "arrow" | "arrowLeft" | "chevronDown" | "chevronRight" | "bell" | "book" | "target" | "video" | "sheet" | "pencil" | "code" | "sidebarCollapse" | "play" | "copy" | "close" | "search" | "flame" | "sparkle" | "award" | "filter" | "logout";
 
 const paths: Record<IconName, ReactNode> = {
   dashboard: <><rect x="3" y="3" width="8" height="8" rx="1.5" /><rect x="13" y="3" width="8" height="5" rx="1.5" /><rect x="13" y="10" width="8" height="11" rx="1.5" /><rect x="3" y="13" width="8" height="8" rx="1.5" /></>,
@@ -32,6 +32,12 @@ const paths: Record<IconName, ReactNode> = {
   play: <polygon points="6 4 18 12 6 20 6 4" fill="currentColor" stroke="none" />,
   copy: <><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>,
   close: <path d="M18 6 6 18M6 6l12 12" />,
+  search: <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></>,
+  flame: <path d="M8.5 14.5A2.5 2.5 0 0 0 11 17c1.38 0 2.5-1.12 2.5-2.5 0-1.63-1.5-3.5-1.5-3.5s-1.5 1.87-1.5 3.5zm3.5-11C9 7 7 9.5 7 13a5 5 0 0 0 10 0c0-4.5-3-7.5-5-9.5z" />,
+  sparkle: <><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" /><path d="M19 18l.8 2.2L22 21l-2.2.8L19 24l-.8-2.2L16 21l2.2-.8z" /></>,
+  award: <><circle cx="12" cy="8" r="6" /><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.74.51L12 19.5l-4.252 2.426a.5.5 0 0 1-.74-.51l1.515-8.526" /></>,
+  filter: <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />,
+  logout: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>,
 };
 
 export default function Icon({ name, size = 20, ...props }: SVGProps<SVGSVGElement> & { name: IconName; size?: number }) {

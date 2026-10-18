@@ -10,7 +10,7 @@
     scroll-behavior: smooth;
   }
   body {
-    @apply bg-paper text-slate-800 font-body antialiased selection:bg-brand selection:text-white;
+    @apply bg-[#F8FAFC] text-slate-900 font-body antialiased selection:bg-blue-600 selection:text-white;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-display tracking-tight text-inherit;
@@ -22,22 +22,25 @@
 
 @layer components {
   .sketch-card {
-    @apply bg-white border border-hairline rounded-[24px] p-6 transition-all duration-300;
-    box-shadow: 0 10px 30px -15px rgba(17, 24, 39, 0.07);
+    @apply bg-white border border-slate-200/90 rounded-[24px] p-6 transition-all duration-300;
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 1px 3px 0 rgba(15, 23, 42, 0.03);
   }
   .sketch-card.hov:hover {
-    @apply border-ink;
-    transform: translateY(-4px);
-    box-shadow: 6px 6px 0 #111;
+    @apply border-blue-400/80;
+    transform: translateY(-3px);
+    box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.09), 0 4px 12px -2px rgba(59, 130, 246, 0.08);
   }
   .btn {
-    @apply inline-flex items-center justify-center rounded-full bg-ink text-white px-6 py-2.5 text-sm font-bold font-display transition-all duration-200 hover:bg-brand hover:shadow-md disabled:opacity-50;
+    @apply inline-flex items-center justify-center rounded-xl bg-slate-900 text-white px-5 py-2.5 text-sm font-bold font-display transition-all duration-200 hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/20 disabled:opacity-50 active:scale-[0.98];
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white px-5 py-2.5 text-sm font-bold font-display shadow-md shadow-blue-500/20 transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center rounded-full border border-ink px-4 py-1.5 text-xs font-bold hover:bg-ink hover:text-white transition-colors;
+    @apply inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors;
   }
   .inp {
-    @apply w-full rounded-xl border border-hairline bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-ink focus:ring-2 focus:ring-ink/10;
+    @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 text-slate-900 placeholder:text-slate-400;
   }
   .lesson h1, .lesson h2, .lesson h3 {
     @apply mt-6 mb-3 font-display font-bold tracking-tight text-slate-900;

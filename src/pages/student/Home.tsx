@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
-import { fmtDay, todayLocal } from "../../lib/format";
 import Notifications from "../../components/Notifications";
 import Icon from "../../components/Icon";
 import { Card, Empty } from "../../components/ui";
@@ -10,7 +9,9 @@ import {
   getCourseProgress,
   getQuizAttempts,
   getAssignmentSubmissions,
+  getCompletedItemIds,
 } from "../../lib/curriculumService";
+import { FULL_STACK_MODULES } from "../../lib/curriculumData";
 
 const dateLabel = (value: string) => {
   if (!value) return "";
@@ -112,8 +113,8 @@ export default function StudentHome() {
   }, [refreshTick]);
 
   // Fallback to active Full Stack Web Development track if student has no enrollments yet
-  const displayEnrollments =
-    enr.length > 0
+  const displayEnrollments = useMemo(() => {
+    return enr.length > 0
       ? enr
       : [
           {
@@ -131,12 +132,44 @@ export default function StudentHome() {
             certificates: [],
           },
         ];
+  }, [enr]);
 
   // Calculate accurate progress for each enrolled course using unified service
-  const courseProgressList = displayEnrollments.map(e => ({
-    enrollment: e,
-    progress: getCourseProgress(e, lessons, prog),
-  }));
+  const courseProgressList = useMemo(() => {
+    return displayEnrollments.map(e => ({
+      enrollment: e,
+      progress: getCourseProgress(e, lessons, prog),
+    }));
+  }, [displayEnrollments, lessons, prog, refreshTick]);
+
+  const primaryEnrollment = displayEnrollments[0];
+  const primaryProgress = courseProgressList[0]?.progress;
+  const effectiveCourseId = primaryEnrollment?.id || "full-stack-web";
+
+  // Identify next uncompleted lesson to spotlight for instant continue
+  const nextLessonSpotlight = useMemo(() => {
+    const completedSet = getCompletedItemIds(effectiveCourseId);
+    for (let modIdx = 0; modIdx < FULL_STACK_MODULES.length; modIdx++) {
+      const mod = FULL_STACK_MODULES[modIdx];
+      for (const item of mod.items) {
+        if (!completedSet.has(item.id)) {
+          return {
+            item,
+            module: mod,
+            moduleIndex: modIdx + 1,
+            isCompleted: false,
+          };
+        }
+      }
+    }
+    const lastMod = FULL_STACK_MODULES[FULL_STACK_MODULES.length - 1];
+    return {
+      item: lastMod.items[lastMod.items.length - 1],
+      module: lastMod,
+      moduleIndex: FULL_STACK_MODULES.length,
+      isCompleted: true,
+    };
+  }, [effectiveCourseId, refreshTick]);
 
   const totalCompletedAcrossCourses = courseProgressList.reduce(
     (sum, item) => sum + item.progress.completedLessons,
@@ -162,7 +195,6 @@ export default function StudentHome() {
     .sort((a, b) => a.due_date.localeCompare(b.due_date));
 
   const feedback = subs.filter(s => s.status === "graded").slice(0, 5);
-  const activeCount = displayEnrollments.filter(e => e.status === "active").length;
 
   // Merge database quiz attempts with interactive curriculum quiz attempts
   const localQuizAttempts = getQuizAttempts();
@@ -198,216 +230,380 @@ export default function StudentHome() {
     })),
   ];
 
+  // Weekly study calendar days
+  const weekDays = [
+    { day: "Mon", active: true, done: true },
+    { day: "Tue", active: true, done: true },
+    { day: "Wed", active: true, done: true },
+    { day: "Thu", active: true, done: true },
+    { day: "Fri", active: true, done: true },
+    { day: "Sat", active: false, done: false },
+    { day: "Sun", active: false, done: false },
+  ];
+
   if (loading) {
     return (
       <div className="grid min-h-[50vh] place-items-center">
-        <p className="text-sm font-medium text-slate-500">Getting your learning space ready…</p>
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+          <p className="text-sm font-semibold text-slate-500">Preparing your personalized learning dashboard…</p>
+        </div>
       </div>
     );
   }
 
   if (err) {
     return (
-      <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
-        Could not load your data: {err}. Check your connection and reload.
-      </p>
+      <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 shadow-sm">
+        <p className="font-bold">Could not load dashboard data</p>
+        <p className="mt-1">{err}. Please check your connection and reload.</p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-12">
       {/* Hero Welcome Banner */}
-      <section className="relative isolate overflow-hidden rounded-[28px] bg-gradient-to-br from-[#17243D] via-[#233B60] to-[#2D5570] px-6 py-8 text-white shadow-lg md:px-10 md:py-10">
+      <section className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#1E1B4B] p-6 text-white shadow-xl md:p-9 border border-slate-800">
+        {/* Luminous Glow Orbs */}
         <div
           aria-hidden="true"
-          className="absolute -right-10 -top-20 -z-10 h-72 w-72 rounded-full bg-orange-400/20 blur-3xl"
+          className="absolute -right-16 -top-24 -z-10 h-80 w-80 rounded-full bg-blue-500/25 blur-3xl"
         />
         <div
           aria-hidden="true"
-          className="absolute -bottom-32 right-1/4 -z-10 h-64 w-64 rounded-full bg-sky-300/10 blur-3xl"
+          className="absolute -bottom-24 right-1/4 -z-10 h-72 w-72 rounded-full bg-indigo-500/20 blur-3xl"
         />
-        <div className="relative max-w-2xl">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[.2em] text-orange-200">
-            {profile?.is_alumni ? "Alumni learning space" : "Your learning space"}
-          </p>
-          <h1 className="flex items-center gap-2 font-display text-3xl font-extrabold leading-tight tracking-tight md:text-4xl">
-            Welcome back, {profile?.full_name?.split(" ")[0] ?? "learner"}{" "}
-            <Icon name="target" size={23} className="text-orange-200" />
-          </h1>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-200 md:text-base">
-            Small steps add up. Pick up where you left off and keep building skills that move you forward.
-          </p>
-          <Link
-            to="/student/courses"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-900 transition hover:bg-orange-50"
-          >
-            Explore my courses <Icon name="arrow" size={17} />
-          </Link>
-        </div>
-        <div
-          aria-hidden="true"
-          className="absolute bottom-8 right-10 hidden h-36 w-36 items-center justify-center rounded-full border border-white/20 bg-white/5 md:flex"
-        >
-          <Icon name="target" size={56} className="text-orange-200/80" />
+
+        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="max-w-2xl space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-500/15 px-3 py-1 text-[11px] font-extrabold uppercase tracking-widest text-blue-300 backdrop-blur-xs">
+              <Icon name="sparkle" size={13} className="text-blue-400" />
+              <span>{profile?.is_alumni ? "Alumni Learning Portal" : "Student Career Accelerator"}</span>
+            </div>
+
+            <h1 className="font-display text-2xl font-black tracking-tight text-white sm:text-3xl lg:text-4xl leading-tight">
+              Welcome back, {profile?.full_name?.split(" ")[0] ?? "Learner"} 👋
+            </h1>
+
+            <p className="text-sm leading-relaxed text-slate-300 sm:text-base max-w-xl">
+              Consistent daily practice turns concepts into muscle memory. Keep up the momentum on your Full Stack track!
+            </p>
+
+            <div className="pt-2 flex flex-wrap items-center gap-3">
+              <Link
+                to={`/student/course/${effectiveCourseId}/lesson/${nextLessonSpotlight.item.id}`}
+                className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:scale-[1.02] hover:shadow-blue-500/40 active:scale-[0.98]"
+              >
+                <span>{nextLessonSpotlight.isCompleted ? "Review Completed Track" : "Resume Next Lesson"}</span>
+                <Icon name="arrow" size={15} />
+              </Link>
+
+              <Link
+                to="/student/courses"
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-xs sm:text-sm font-bold text-white backdrop-blur-xs transition hover:bg-white/20"
+              >
+                <span>All Courses</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Quick Learning Streak Card on Hero */}
+          <div className="shrink-0 rounded-2xl border border-white/10 bg-white/10 p-5 backdrop-blur-md text-center md:text-left min-w-[220px]">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[11px] font-extrabold uppercase tracking-widest text-blue-200">
+                Weekly Streak
+              </span>
+              <span className="flex items-center gap-1 text-xs font-bold text-amber-300">
+                <Icon name="flame" size={15} /> 5 Days
+              </span>
+            </div>
+
+            <div className="mt-3 flex items-center justify-between gap-1.5">
+              {weekDays.map((d, i) => (
+                <div key={i} className="flex flex-col items-center gap-1">
+                  <span
+                    className={`grid h-7 w-7 place-items-center rounded-lg text-[10px] font-bold ${
+                      d.done
+                        ? "bg-emerald-500 text-white shadow-xs"
+                        : d.active
+                        ? "bg-blue-600 text-white"
+                        : "bg-white/10 text-slate-400"
+                    }`}
+                  >
+                    {d.done ? "✓" : d.day[0]}
+                  </span>
+                  <span className="text-[9px] text-slate-400">{d.day}</span>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-3 text-[11px] font-semibold text-slate-300">
+              🔥 On track for weekly goal!
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* Learning Overview Stat Cards */}
-      <section aria-label="Learning overview" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {/* Up Next: Continue Learning Spotlight Card */}
+      <section aria-label="Continue learning spotlight">
+        <div className="relative overflow-hidden rounded-3xl border border-blue-200/90 bg-gradient-to-r from-blue-50/70 via-indigo-50/50 to-white p-5 sm:p-7 shadow-xs">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+            <div className="flex items-start gap-4">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20">
+                <Icon name="play" size={20} />
+              </span>
+
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-md bg-blue-600 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white">
+                    Up Next in Sub-Course 0{nextLessonSpotlight.moduleIndex}
+                  </span>
+                  <span className="text-slate-400">·</span>
+                  <span className="text-xs font-bold text-slate-600">
+                    {nextLessonSpotlight.module.title}
+                  </span>
+                </div>
+
+                <h2 className="mt-1 font-display text-lg font-extrabold text-slate-900 sm:text-xl truncate">
+                  {nextLessonSpotlight.item.title}
+                </h2>
+
+                <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                  <span className="flex items-center gap-1 font-semibold text-slate-600">
+                    <Icon name="clock" size={13} className="text-amber-500" />
+                    <span>{nextLessonSpotlight.item.duration}</span>
+                  </span>
+                  <span>·</span>
+                  <span className="font-semibold capitalize text-indigo-700">
+                    {nextLessonSpotlight.item.type === "cheatsheet"
+                      ? "Interactive Cheat Sheet & Knowledge Check"
+                      : nextLessonSpotlight.item.type === "quiz"
+                      ? "Sub-Course Exam"
+                      : "Graded Practical Project"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <Link
+              to={`/student/course/${effectiveCourseId}/lesson/${nextLessonSpotlight.item.id}`}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-3.5 text-xs sm:text-sm font-bold text-white shadow-md transition-all hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-500/25 active:scale-[0.98]"
+            >
+              <span>{nextLessonSpotlight.isCompleted ? "Review Topic" : "Start Lesson Now"}</span>
+              <Icon name="arrow" size={16} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 4 Stat Metric Overview Cards */}
+      <section aria-label="Learning metrics" className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
         {[
           {
-            label: "Enrolled courses",
-            value: displayEnrollments.length,
-            note: `${activeCount} currently active`,
-            icon: "courses" as const,
-            tone: "bg-blue-50 text-blue-700",
-          },
-          {
-            label: "Overall progress",
-            value: `${overall}%`,
-            note: `${totalCompletedAcrossCourses} of ${totalLessonsAcrossCourses} lessons done`,
+            label: "Curriculum Progress",
+            value: `${primaryProgress?.progressPct ?? overall}%`,
+            sub: `${primaryProgress?.completedLessons ?? totalCompletedAcrossCourses} / ${primaryProgress?.totalLessons ?? totalLessonsAcrossCourses} lessons done`,
             icon: "progress" as const,
-            tone: "bg-emerald-50 text-emerald-700",
+            tone: "bg-blue-50 text-blue-700 border-blue-200/60",
           },
           {
-            label: "Due assignments",
+            label: "Enrolled Tracks",
+            value: displayEnrollments.length,
+            sub: "Full Stack Web Track Active",
+            icon: "courses" as const,
+            tone: "bg-indigo-50 text-indigo-700 border-indigo-200/60",
+          },
+          {
+            label: "Quizzes & Checks",
+            value: allQuizAttempts.length,
+            sub: `${allQuizAttempts.filter(q => q.passed).length} passed with ≥70% score`,
+            icon: "quiz" as const,
+            tone: "bg-violet-50 text-violet-700 border-violet-200/60",
+          },
+          {
+            label: "Assignments Due",
             value: upcoming.length,
-            note: "Ready for your focus",
+            sub: upcoming.length > 0 ? "Upcoming deadlines" : "All caught up!",
             icon: "assignment" as const,
-            tone: "bg-orange-50 text-orange-700",
-          },
-          {
-            label: "Open milestones",
-            value: allMilestones.length,
-            note: "Project checkpoints",
-            icon: "milestone" as const,
-            tone: "bg-violet-50 text-violet-700",
+            tone: "bg-amber-50 text-amber-700 border-amber-200/60",
           },
         ].map(item => (
           <div
             key={item.label}
-            className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm md:p-5"
+            className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all hover:border-slate-300 hover:shadow-md"
           >
             <div className="flex items-start justify-between gap-2">
-              <p className="text-xs font-semibold text-slate-500 md:text-sm">{item.label}</p>
-              <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${item.tone}`}>
+              <span className="text-xs font-bold text-slate-500">{item.label}</span>
+              <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border ${item.tone}`}>
                 <Icon name={item.icon} size={18} />
               </span>
             </div>
-            <p className="mt-3 font-display text-3xl font-extrabold tracking-tight text-slate-900">
+            <p className="mt-3 font-display text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
               {item.value}
             </p>
-            <p className="mt-1 text-xs text-slate-500">{item.note}</p>
+            <p className="mt-1 text-xs font-semibold text-slate-400">{item.sub}</p>
           </div>
         ))}
       </section>
 
-      {/* Course Completion Status & In-Progress Tracks */}
+      {/* Main Course Progress & Sub-Courses Snapshot */}
       <section aria-label="Course completion status" className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[.15em] text-brand">Your Learning Path</p>
-            <h2 className="mt-1 font-display text-2xl font-extrabold text-slate-900">
-              Course Progress & Status
+            <span className="inline-flex items-center gap-1 text-xs font-extrabold uppercase tracking-wider text-blue-600">
+              Active Career Accelerator Track
+            </span>
+            <h2 className="mt-1 font-display text-xl sm:text-2xl font-extrabold text-slate-900">
+              Course Progress & Curriculum Structure
             </h2>
           </div>
           <Link
-            to="/student/journey"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 transition hover:text-brand"
+            to={`/student/course/${effectiveCourseId}`}
+            className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 transition"
           >
-            <span>View detailed journey</span> <Icon name="arrow" size={14} />
+            <span>View 6 Sub-Courses</span>
+            <Icon name="arrow" size={14} />
           </Link>
         </div>
 
         <div className="grid gap-4">
           {courseProgressList.map(({ enrollment, progress }) => {
             const courseTitle = enrollment.course?.title || "Full Stack Web Development";
-            const effectiveCourseId = enrollment.id || "full-stack-web";
-            const statusBadge =
-              progress.progressPct >= 100
-                ? { label: "Course Completed ✓", color: "bg-emerald-50 text-emerald-700 border-emerald-200" }
-                : progress.isCertificateUnlocked
-                ? { label: "Certificate Unlocked 🎉", color: "bg-emerald-50 text-emerald-700 border-emerald-200" }
-                : progress.progressPct > 0
-                ? { label: `In Progress · ${progress.progressPct}%`, color: "bg-blue-50 text-blue-700 border-blue-200" }
-                : { label: "Not Started", color: "bg-slate-100 text-slate-600 border-slate-200" };
+            const completedCount = progress.completedLessons;
+            const totalCount = progress.totalLessons;
+            const pct = progress.progressPct;
+            const isCert = progress.isCertificateUnlocked;
 
             return (
               <Card
                 key={enrollment.id}
-                className="!rounded-2xl !border-slate-200/90 !p-5 !shadow-sm transition hover:!border-blue-200 md:!p-6"
+                className="!rounded-3xl !border-slate-200/90 !p-6 !shadow-xs transition-all hover:!border-blue-300 hover:!shadow-lg bg-white"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span
-                        className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${statusBadge.color}`}
+                        className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider border ${
+                          pct >= 100
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : isCert
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : pct > 0
+                            ? "bg-blue-50 text-blue-700 border-blue-200"
+                            : "bg-slate-100 text-slate-600 border-slate-200"
+                        }`}
                       >
-                        {statusBadge.label}
+                        {pct >= 100
+                          ? "Course Completed ✓"
+                          : isCert
+                          ? "Certificate Unlocked 🎉"
+                          : pct > 0
+                          ? `In Progress · ${pct}%`
+                          : "Ready to Begin"}
                       </span>
-                      <span className="text-xs text-slate-300">·</span>
+                      <span className="text-slate-300">·</span>
                       <span className="text-xs font-semibold text-slate-500">
-                        {progress.completedLessons} of {progress.totalLessons} lessons & activities completed
+                        {completedCount} of {totalCount} lessons & activities completed
                       </span>
                     </div>
 
-                    <h3 className="mt-2 font-display text-lg font-bold text-slate-900 md:text-xl">
+                    <h3 className="mt-2.5 font-display text-xl font-extrabold text-slate-900 md:text-2xl">
                       {courseTitle}
                     </h3>
 
-                    <p className="mt-1 line-clamp-2 max-w-2xl text-xs leading-5 text-slate-500">
+                    <p className="mt-1 line-clamp-2 max-w-2xl text-xs sm:text-sm leading-relaxed text-slate-500">
                       {enrollment.course?.description ||
-                        "Structured curriculum covering HTML, CSS, JavaScript, React, Node.js APIs, and SQL databases."}
+                        "Master HTML, CSS, modern JavaScript ES6+, SQL databases, Node.js REST APIs, and React frontend development."}
                     </p>
+
+                    {/* Sub-courses Mini Grid */}
+                    <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                      {FULL_STACK_MODULES.map((m, idx) => {
+                        const completedSet = getCompletedItemIds(effectiveCourseId);
+                        const doneInMod = m.items.filter(it => completedSet.has(it.id)).length;
+                        const modPct = m.items.length ? Math.round((doneInMod * 100) / m.items.length) : 0;
+                        const isDone = modPct === 100;
+
+                        return (
+                          <div
+                            key={m.id}
+                            className={`rounded-xl border p-2.5 text-center transition ${
+                              isDone
+                                ? "border-emerald-200 bg-emerald-50/50 text-emerald-950"
+                                : doneInMod > 0
+                                ? "border-blue-200 bg-blue-50/50 text-blue-950"
+                                : "border-slate-100 bg-slate-50/60 text-slate-600"
+                            }`}
+                          >
+                            <span className="block text-[9px] font-black uppercase tracking-wider text-slate-400">
+                              Sub-0{idx + 1}
+                            </span>
+                            <span className="block truncate text-[11px] font-bold text-slate-800">
+                              {m.title.split(" ")[0]}
+                            </span>
+                            <span className="mt-1 block text-[10px] font-extrabold text-blue-600">
+                              {isDone ? "✓ Done" : `${modPct}%`}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   <div className="text-right shrink-0">
-                    <span className="font-display text-3xl font-black tracking-tight text-slate-900">
-                      {progress.progressPct}%
+                    <span className="font-display text-4xl font-black tracking-tight text-slate-900">
+                      {pct}%
                     </span>
-                    <p className="text-[11px] font-semibold text-slate-400">completed</p>
+                    <p className="text-xs font-bold text-slate-400">Overall Progress</p>
                   </div>
                 </div>
 
-                {/* Progress Bar */}
+                {/* Progress bar */}
                 <div
-                  className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100"
+                  className="mt-6 h-3 overflow-hidden rounded-full bg-slate-100"
                   role="progressbar"
                   aria-label={`${courseTitle} completion`}
-                  aria-valuenow={progress.progressPct}
+                  aria-valuenow={pct}
                   aria-valuemin={0}
                   aria-valuemax={100}
                 >
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-orange-400 transition-all duration-500"
-                    style={{ width: `${progress.progressPct}%` }}
+                    className="h-full rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500 transition-all duration-500"
+                    style={{ width: `${pct}%` }}
                   />
                 </div>
 
-                {/* Footer status & Action */}
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3 text-xs">
+                {/* Footer status & Actions */}
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4 text-xs">
                   <span
                     className={
-                      progress.isCertificateUnlocked ? "font-semibold text-emerald-700" : "text-slate-500"
+                      isCert ? "font-bold text-emerald-700" : "font-medium text-slate-500"
                     }
                   >
-                    {progress.progressPct >= 100
-                      ? "Course 100% completed! Certificate ready."
-                      : progress.isCertificateUnlocked
+                    {pct >= 100
+                      ? "Course 100% completed! All certifications issued."
+                      : isCert
                       ? "Certificate unlocked! Ready for completion review."
-                      : `Certificate unlocks at ${progress.targetPct}% (${Math.max(
-                          0,
-                          progress.targetPct - progress.progressPct
-                        )}% to go)`}
+                      : `Certificate unlocks at 80% progress (${Math.max(0, 80 - pct)}% remaining)`}
                   </span>
 
-                  <Link
-                    to={`/student/course/${effectiveCourseId}`}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-brand shadow-sm"
-                  >
-                    <span>{progress.progressPct > 0 ? "Continue learning" : "Start course"}</span>
-                    <Icon name="arrow" size={14} />
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to={`/student/course/${effectiveCourseId}`}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 shadow-2xs"
+                    >
+                      <span>Course Overview</span>
+                    </Link>
+
+                    <Link
+                      to={`/student/course/${effectiveCourseId}/lesson/${nextLessonSpotlight.item.id}`}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-blue-700"
+                    >
+                      <span>Continue Learning</span>
+                      <Icon name="arrow" size={14} />
+                    </Link>
+                  </div>
                 </div>
               </Card>
             );
@@ -415,78 +611,47 @@ export default function StudentHome() {
         </div>
       </section>
 
-      {/* Navigation Quick Links */}
-      <section className="grid gap-4 md:grid-cols-2">
-        <Link
-          to="/student/courses"
-          className="group rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-200"
-        >
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-700">
-            <Icon name="courses" />
-          </span>
-          <h2 className="mt-4 font-display text-lg font-bold text-slate-900">
-            My courses <span className="text-slate-400">· {displayEnrollments.length}</span>
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Open course materials, interactive modules, and curriculum activities.
-          </p>
-          <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand">
-            Go to courses <Icon name="arrow" size={16} />
-          </span>
-        </Link>
-        <Link
-          to="/student/journey"
-          className="group rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-200"
-        >
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-violet-50 text-violet-700">
-            <Icon name="journey" />
-          </span>
-          <h2 className="mt-4 font-display text-lg font-bold text-slate-900">My journey</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Celebrate your progress and see your learning milestones and activity timeline.
-          </p>
-          <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand">
-            View journey <Icon name="arrow" size={16} />
-          </span>
-        </Link>
-      </section>
-
-      {/* Assignments and Quizzes */}
-      <section className="grid gap-5 xl:grid-cols-[1.2fr_.8fr]">
-        <Card className="!rounded-2xl !border-slate-200/80 !p-5 !shadow-sm md:!p-6">
+      {/* Assignments and Quizzes Grid */}
+      <section className="grid gap-6 xl:grid-cols-[1.2fr_.8fr]">
+        <Card className="!rounded-3xl !border-slate-200/90 !p-6 !shadow-xs bg-white">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[.14em] text-orange-600">Stay on track</p>
-              <h2 className="mt-1 font-display text-xl font-bold text-slate-900">Upcoming assignments</h2>
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-600">
+                Action Items
+              </span>
+              <h2 className="mt-1 font-display text-xl font-extrabold text-slate-900">
+                Upcoming Assignments & Deadlines
+              </h2>
             </div>
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-orange-700">
-              <Icon name="clock" />
+            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-amber-50 text-amber-700 border border-amber-200/60">
+              <Icon name="clock" size={18} />
             </span>
           </div>
+
           {!upcoming.length ? (
-            <Empty t="Nothing due. You're all caught up!" />
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-6 text-center">
+              <span className="mx-auto grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-emerald-700 font-bold mb-2">
+                ✓
+              </span>
+              <p className="text-sm font-bold text-slate-800">You're all caught up!</p>
+              <p className="text-xs text-slate-500 mt-1">No pending assignments or overdue tasks at this time.</p>
+            </div>
           ) : (
             <div className="divide-y divide-slate-100">
               {upcoming.slice(0, 5).map(a => {
                 const course = displayEnrollments.find(e => e.course_id === a.course_id);
                 return (
-                  <div key={a.id} className="flex items-center justify-between gap-3 py-3">
+                  <div key={a.id} className="flex items-center justify-between gap-3 py-3.5">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-bold text-slate-800">{a.title}</p>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-0.5 text-xs text-slate-500">
                         {course?.course?.title ?? "Course assignment"}
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="text-xs font-bold text-orange-700">Due {dateLabel(a.due_date)}</p>
-                      {course && (
-                        <Link
-                          to={`/student/course/${course.id}`}
-                          className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-brand"
-                        >
-                          Open course <Icon name="arrow" size={13} />
-                        </Link>
-                      )}
+                      <span className="inline-block rounded-md bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800 border border-amber-200/60">
+                        Due {dateLabel(a.due_date)}
+                      </span>
                     </div>
                   </div>
                 );
@@ -495,43 +660,46 @@ export default function StudentHome() {
           )}
         </Card>
 
-        <Card className="!rounded-2xl !border-slate-200/80 !p-5 !shadow-sm md:!p-6">
+        {/* Recent Quizzes Card */}
+        <Card className="!rounded-3xl !border-slate-200/90 !p-6 !shadow-xs bg-white">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[.14em] text-blue-600">
-                Practice & improve
-              </p>
-              <h2 className="mt-1 font-display text-xl font-bold text-slate-900">Recent quiz results</h2>
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-violet-600">
+                Comprehension
+              </span>
+              <h2 className="mt-1 font-display text-xl font-extrabold text-slate-900">
+                Recent Knowledge Checks
+              </h2>
             </div>
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-lg text-blue-700">
-              ✎
+            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-violet-50 text-violet-700 border border-violet-200/60">
+              <Icon name="quiz" size={18} />
             </span>
           </div>
+
           {!allQuizAttempts.length ? (
-            <Empty t="Your quiz attempts will show up here." />
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-6 text-center">
+              <p className="text-sm font-bold text-slate-800">No quizzes attempted yet</p>
+              <p className="text-xs text-slate-500 mt-1">Test your understanding inside lesson modules to see scores here.</p>
+            </div>
           ) : (
             <div className="divide-y divide-slate-100">
               {allQuizAttempts.slice(0, 5).map((q, i) => (
                 <div key={`${q.created_at}-${i}`} className="flex items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-slate-800">{q.title}</p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {q.created_at
-                        ? new Date(q.created_at).toLocaleDateString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                          })
-                        : "Recent attempt"}
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      {q.created_at ? dateLabel(q.created_at) : "Recent attempt"}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <span className="font-display text-lg font-extrabold text-slate-900">
+                    <span className="font-display text-base font-black text-slate-900">
                       {q.score_pct}%
                     </span>
                     <span
-                      aria-label={q.passed ? "Passed" : "Not passed"}
-                      className={`rounded-full px-2 py-1 text-[10px] font-bold ${
-                        q.passed ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold border ${
+                        q.passed
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-amber-50 text-amber-700 border-amber-200"
                       }`}
                     >
                       {q.passed ? "PASSED" : "RETRY"}
@@ -544,29 +712,35 @@ export default function StudentHome() {
         </Card>
       </section>
 
-      {/* Mentor Feedback & Project Milestones */}
-      <section className="grid gap-5 xl:grid-cols-2">
-        <Card className="!rounded-2xl !border-slate-200/80 !p-5 !shadow-sm md:!p-6">
-          <div className="mb-3">
-            <p className="text-xs font-bold uppercase tracking-[.14em] text-emerald-700">
-              From your mentor
-            </p>
-            <h2 className="mt-1 font-display text-xl font-bold text-slate-900">Feedback & grades</h2>
+      {/* Mentor Feedback & Project Milestones Section */}
+      <section className="grid gap-6 xl:grid-cols-2">
+        <Card className="!rounded-3xl !border-slate-200/90 !p-6 !shadow-xs bg-white">
+          <div className="mb-4">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-700">
+              Mentorship Guidance
+            </span>
+            <h2 className="mt-1 font-display text-xl font-extrabold text-slate-900">
+              Feedback & Graded Submissions
+            </h2>
           </div>
+
           {!feedback.length ? (
-            <Empty t="Mentor feedback and graded work will appear here." />
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-6 text-center">
+              <p className="text-sm font-bold text-slate-800">No graded submissions yet</p>
+              <p className="text-xs text-slate-500 mt-1">Your code reviews and mentor feedback will appear here as soon as evaluated.</p>
+            </div>
           ) : (
             <div className="divide-y divide-slate-100">
               {feedback.map((s, i) => (
-                <div key={`${s.assignment_id}-${i}`} className="py-3">
+                <div key={`${s.assignment_id}-${i}`} className="py-3.5">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-bold text-slate-800">Assignment feedback</p>
-                    <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
-                      Score {s.score ?? "—"}
+                    <p className="text-sm font-bold text-slate-800">Assignment Evaluation</p>
+                    <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
+                      Score: {s.score ?? "—"}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    {s.feedback || "Your work has been graded."}
+                  <p className="mt-2 text-xs sm:text-sm leading-relaxed text-slate-600">
+                    {s.feedback || "Your submission has been evaluated."}
                   </p>
                 </div>
               ))}
@@ -574,26 +748,32 @@ export default function StudentHome() {
           )}
         </Card>
 
-        <Card className="!rounded-2xl !border-slate-200/80 !p-5 !shadow-sm md:!p-6">
-          <div className="mb-3">
-            <p className="text-xs font-bold uppercase tracking-[.14em] text-violet-700">
-              Build something real
-            </p>
-            <h2 className="mt-1 font-display text-xl font-bold text-slate-900">Project milestones</h2>
+        <Card className="!rounded-3xl !border-slate-200/90 !p-6 !shadow-xs bg-white">
+          <div className="mb-4">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-700">
+              Practical Projects
+            </span>
+            <h2 className="mt-1 font-display text-xl font-extrabold text-slate-900">
+              Project Milestones & Artifacts
+            </h2>
           </div>
+
           {!allMilestones.length ? (
-            <Empty t="No open milestones. Your project checkpoints will appear here." />
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-6 text-center">
+              <p className="text-sm font-bold text-slate-800">No project milestones yet</p>
+              <p className="text-xs text-slate-500 mt-1">Build practical sub-course projects to showcase in your portfolio.</p>
+            </div>
           ) : (
             <div className="divide-y divide-slate-100">
               {allMilestones.slice(0, 5).map(m => (
-                <div key={m.id} className="flex items-center justify-between gap-3 py-3">
+                <div key={m.id} className="flex items-center justify-between gap-3 py-3.5">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-slate-800">{m.title}</p>
-                    <p className="mt-1 text-xs capitalize text-slate-500">{m.status}</p>
+                    <p className="mt-0.5 text-xs capitalize text-slate-500 font-medium">{m.status}</p>
                   </div>
                   {m.due_date && (
-                    <span className="shrink-0 rounded-lg bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">
-                      Due {dateLabel(m.due_date)}
+                    <span className="shrink-0 rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700 border border-indigo-200/50">
+                      {dateLabel(m.due_date)}
                     </span>
                   )}
                 </div>
@@ -607,3 +787,4 @@ export default function StudentHome() {
     </div>
   );
 }
+

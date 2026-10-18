@@ -68,43 +68,218 @@ export default function Profile() {
     if (!error) { setPw(""); setPw2(""); }
   };
 
-  return <div className="mx-auto max-w-4xl space-y-6">
-    <header><p className="text-xs font-bold uppercase tracking-[.16em] text-brand">Your account</p><h1 className="mt-1 font-display text-3xl font-extrabold tracking-tight text-slate-900">Profile</h1><p className="mt-2 text-sm text-slate-500">Keep your personal and education details up to date.</p></header>
-    <Msg m={msg} />
-    <form onSubmit={saveProfile} className="space-y-5">
-      <Card className="!rounded-2xl !border-slate-200 !p-5 !shadow-sm md:!p-7">
-        <div className="mb-5 flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-700"><Icon name="profile" /></span><div><h2 className="font-display text-lg font-bold text-slate-900">Personal details</h2><p className="text-xs text-slate-500">Your basic account information</p></div></div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="text-sm font-semibold text-slate-700">Full name<input className={`${inputClass} mt-1.5`} autoComplete="name" value={details.full_name} onChange={event => change("full_name", event.target.value)} /></label>
-          <label className="text-sm font-semibold text-slate-700">Email address<input className={`${inputClass} mt-1.5 bg-slate-50 text-slate-500`} type="email" autoComplete="email" value={profile?.email ?? ""} readOnly aria-describedby="email-note" /><span id="email-note" className="mt-1 block text-xs font-normal text-slate-400">Email is managed by your account administrator.</span></label>
-          <div className="text-sm font-semibold text-slate-700">Account type<div className="mt-1.5 flex h-12 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-sm font-medium capitalize text-slate-600"><Icon name="profile" size={17} />{profile?.role}{profile?.is_alumni ? " · alumni" : ""}</div></div>
+  return (
+    <div className="mx-auto max-w-4xl space-y-7 pb-12">
+      <header className="border-b border-slate-200/80 pb-5">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-blue-700 shadow-2xs">
+          <Icon name="profile" size={13} />
+          <span>Account Settings</span>
+        </span>
+        <h1 className="mt-2.5 font-display text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+          Student Profile
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Manage your personal details, academic background, and security credentials.
+        </p>
+      </header>
+
+      <Msg m={msg} />
+
+      <form onSubmit={saveProfile} className="space-y-6">
+        <Card className="!rounded-3xl !border-slate-200/90 !p-6 !shadow-xs md:!p-8 bg-white">
+          <div className="mb-6 flex items-center gap-3">
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20">
+              <Icon name="profile" size={20} />
+            </span>
+            <div>
+              <h2 className="font-display text-xl font-extrabold text-slate-900">Personal Information</h2>
+              <p className="text-xs text-slate-500">Your core identity details</p>
+            </div>
+          </div>
+          <div className="grid gap-5 md:grid-cols-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Full Name
+              <input
+                className={`${inputClass} mt-2`}
+                autoComplete="name"
+                value={details.full_name}
+                onChange={event => change("full_name", event.target.value)}
+              />
+            </label>
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Email Address
+              <input
+                className={`${inputClass} mt-2 bg-slate-50 text-slate-500 cursor-not-allowed`}
+                type="email"
+                autoComplete="email"
+                value={profile?.email ?? ""}
+                readOnly
+                aria-describedby="email-note"
+              />
+              <span id="email-note" className="mt-1.5 block text-[11px] font-normal text-slate-400">
+                Managed by your account administrator.
+              </span>
+            </label>
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Account Role
+              <div className="mt-2 flex h-12 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-bold capitalize text-slate-700">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{profile?.role} {profile?.is_alumni ? "· Alumni" : "· Active Learner"}</span>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {profile?.role === "student" && (
+          <>
+            <Card className="!rounded-3xl !border-slate-200/90 !p-6 !shadow-xs md:!p-8 bg-white">
+              <div className="mb-6 flex items-center gap-3">
+                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 to-purple-600 text-white shadow-md shadow-violet-500/20">
+                  <Icon name="book" size={20} />
+                </span>
+                <div>
+                  <h2 className="font-display text-xl font-extrabold text-slate-900">Academic Background</h2>
+                  <p className="text-xs text-slate-500">Education and study specialization</p>
+                </div>
+              </div>
+              <div className="grid gap-5 md:grid-cols-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Education Level
+                  <select
+                    className={`${inputClass} mt-2`}
+                    value={details.education_level}
+                    onChange={event => change("education_level", event.target.value)}
+                  >
+                    <option value="">Select education level</option>
+                    <option>High school</option>
+                    <option>Diploma</option>
+                    <option>Undergraduate</option>
+                    <option>Graduate</option>
+                    <option>Postgraduate</option>
+                    <option>Other</option>
+                  </select>
+                </label>
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Institution
+                  <input
+                    className={`${inputClass} mt-2`}
+                    autoComplete="organization"
+                    placeholder="School, college, or university"
+                    value={details.institution}
+                    onChange={event => change("institution", event.target.value)}
+                  />
+                </label>
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Field of Study
+                  <input
+                    className={`${inputClass} mt-2`}
+                    placeholder="e.g. Computer Science / Engineering"
+                    value={details.field_of_study}
+                    onChange={event => change("field_of_study", event.target.value)}
+                  />
+                </label>
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Graduation Year
+                  <input
+                    className={`${inputClass} mt-2`}
+                    type="number"
+                    min="1900"
+                    max="2200"
+                    inputMode="numeric"
+                    placeholder="e.g. 2026"
+                    value={details.graduation_year}
+                    onChange={event => change("graduation_year", event.target.value)}
+                  />
+                </label>
+              </div>
+            </Card>
+
+            <Card className="!rounded-3xl !border-slate-200/90 !p-6 !shadow-xs md:!p-8 bg-white">
+              <div className="mb-6 flex items-center gap-3">
+                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/20">
+                  <Icon name="bell" size={20} />
+                </span>
+                <div>
+                  <h2 className="font-display text-xl font-extrabold text-slate-900">Family & Emergency Contact</h2>
+                  <p className="text-xs text-slate-500">Contact person for student support or verification</p>
+                </div>
+              </div>
+              <div className="grid gap-5 md:grid-cols-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Contact Name
+                  <input
+                    className={`${inputClass} mt-2`}
+                    autoComplete="off"
+                    placeholder="Parent, guardian, or trusted contact"
+                    value={details.emergency_contact_name}
+                    onChange={event => change("emergency_contact_name", event.target.value)}
+                  />
+                </label>
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Contact Phone
+                  <input
+                    className={`${inputClass} mt-2`}
+                    type="tel"
+                    autoComplete="off"
+                    placeholder="Include country/area code"
+                    value={details.emergency_contact_phone}
+                    onChange={event => change("emergency_contact_phone", event.target.value)}
+                  />
+                </label>
+              </div>
+            </Card>
+          </>
+        )}
+
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-7 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] hover:shadow-lg disabled:cursor-wait disabled:opacity-60"
+            disabled={saving}
+          >
+            {saving ? "Saving Changes…" : "Save Profile"} {!saving && <Icon name="check" size={17} />}
+          </button>
         </div>
+      </form>
+
+      <Card className="!rounded-3xl !border-slate-200/90 !p-6 !shadow-xs md:!p-8 bg-white">
+        <div className="mb-6 flex items-center gap-3">
+          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-slate-900 text-white shadow-xs">
+            <Icon name="lock" size={20} />
+          </span>
+          <div>
+            <h2 className="font-display text-xl font-extrabold text-slate-900">Password & Security</h2>
+            <p className="text-xs text-slate-500">Update your access password</p>
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <input
+            aria-label="New password"
+            type="password"
+            autoComplete="new-password"
+            className={inputClass}
+            placeholder="New password (min. 8 characters)"
+            value={pw}
+            onChange={event => setPw(event.target.value)}
+          />
+          <input
+            aria-label="Confirm password"
+            type="password"
+            autoComplete="new-password"
+            className={inputClass}
+            placeholder="Confirm new password"
+            value={pw2}
+            onChange={event => setPw2(event.target.value)}
+          />
+        </div>
+        <button
+          type="button"
+          className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-5 py-2.5 text-xs font-bold text-slate-800 transition hover:bg-slate-100 hover:border-slate-300"
+          onClick={savePw}
+        >
+          Update Password
+        </button>
       </Card>
-      {profile?.role === "student" && <>
-        <Card className="!rounded-2xl !border-slate-200 !p-5 !shadow-sm md:!p-7">
-          <div className="mb-5 flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-violet-50 text-violet-700"><Icon name="book" /></span><div><h2 className="font-display text-lg font-bold text-slate-900">Education details</h2><p className="text-xs text-slate-500">Optional information to personalize your learning experience</p></div></div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="text-sm font-semibold text-slate-700">Education level<select className={`${inputClass} mt-1.5`} value={details.education_level} onChange={event => change("education_level", event.target.value)}><option value="">Select education level</option><option>High school</option><option>Diploma</option><option>Undergraduate</option><option>Graduate</option><option>Postgraduate</option><option>Other</option></select></label>
-            <label className="text-sm font-semibold text-slate-700">Institution<input className={`${inputClass} mt-1.5`} autoComplete="organization" placeholder="School, college, or university" value={details.institution} onChange={event => change("institution", event.target.value)} /></label>
-            <label className="text-sm font-semibold text-slate-700">Field of study<input className={`${inputClass} mt-1.5`} placeholder="e.g. Computer Science" value={details.field_of_study} onChange={event => change("field_of_study", event.target.value)} /></label>
-            <label className="text-sm font-semibold text-slate-700">Graduation year<input className={`${inputClass} mt-1.5`} type="number" min="1900" max="2200" inputMode="numeric" placeholder="e.g. 2027" value={details.graduation_year} onChange={event => change("graduation_year", event.target.value)} /></label>
-          </div>
-        </Card>
-        <Card className="!rounded-2xl !border-slate-200 !p-5 !shadow-sm md:!p-7">
-          <div className="mb-5 flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-orange-700"><Icon name="bell" /></span><div><h2 className="font-display text-lg font-bold text-slate-900">Family / emergency contact</h2><p className="text-xs text-slate-500">Optional; used only if we need to reach someone about your learning support</p></div></div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="text-sm font-semibold text-slate-700">Contact name<input className={`${inputClass} mt-1.5`} autoComplete="off" placeholder="Parent, guardian, or trusted contact" value={details.emergency_contact_name} onChange={event => change("emergency_contact_name", event.target.value)} /></label>
-            <label className="text-sm font-semibold text-slate-700">Contact phone<input className={`${inputClass} mt-1.5`} type="tel" autoComplete="off" placeholder="Include country code if needed" value={details.emergency_contact_phone} onChange={event => change("emergency_contact_phone", event.target.value)} /></label>
-          </div>
-        </Card>
-      </>}
-      <div className="flex justify-end"><button className="inline-flex items-center gap-2 rounded-xl bg-ink px-5 py-3 text-sm font-bold text-white transition hover:bg-brand disabled:cursor-wait disabled:opacity-60" disabled={saving}>{saving ? "Saving…" : "Save profile"} {!saving && <Icon name="check" size={17} />}</button></div>
-    </form>
-    <Card className="!rounded-2xl !border-slate-200 !p-5 !shadow-sm md:!p-7">
-      <div className="mb-5 flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-700"><Icon name="lock" /></span><div><h2 className="font-display text-lg font-bold text-slate-900">Password & security</h2><p className="text-xs text-slate-500">Choose a strong password to protect your account</p></div></div>
-      <div className="grid gap-3 md:grid-cols-2"><input aria-label="New password" type="password" autoComplete="new-password" className={inputClass} placeholder="New password" value={pw} onChange={event => setPw(event.target.value)} />
-        <input aria-label="Confirm password" type="password" autoComplete="new-password" className={inputClass} placeholder="Confirm new password" value={pw2} onChange={event => setPw2(event.target.value)} /></div>
-      <button className="mt-3 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50" onClick={savePw}>Update password</button>
-    </Card>
-  </div>;
+    </div>
+  );
 }

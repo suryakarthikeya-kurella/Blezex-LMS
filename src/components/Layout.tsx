@@ -2,58 +2,238 @@ import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import Icon, { IconName } from "./Icon";
 import AppShell from "./AppShell";
-const nav = { student: [["/student", "Dashboard"], ["/student/courses", "My courses"], ["/student/journey", "My journey"]] } as const;
+
+const nav = {
+  student: [
+    { to: "/student", label: "Dashboard", icon: "dashboard" as IconName },
+    { to: "/student/courses", label: "My Courses", icon: "courses" as IconName },
+    { to: "/student/journey", label: "My Journey", icon: "journey" as IconName },
+  ],
+} as const;
+
 export default function Layout() {
-  const { profile, loading, signOut } = useAuth(); const loc = useLocation();
-  // Parent of every guarded route: it must redirect itself, returning null hid the route Guards (blank page after sign-out).
-  if (loading) return <p className="p-8">Loading…</p>;
+  const { profile, loading, signOut } = useAuth();
+  const loc = useLocation();
+
+  if (loading) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#F8FAFC]">
+        <div className="flex flex-col items-center gap-3 text-sm font-semibold text-slate-500">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+          <span>Loading learning space…</span>
+        </div>
+      </div>
+    );
+  }
+
   if (!profile) return <Navigate to="/login" replace />;
   if (profile.role !== "student") return <AppShell />;
-  const links = [...nav.student, ["/profile", "Profile"]];
+
+  const links = [
+    ...nav.student,
+    { to: "/profile", label: "Profile", icon: "profile" as IconName },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#F6F8FC] text-slate-800">
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:bg-white focus:p-2">Skip to content</a>
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-slate-200 bg-white px-5 py-6 lg:flex">
-        <Link to="/student" className="flex items-center gap-3 px-2">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand text-lg font-extrabold text-white">B</span>
-          <span className="font-display text-xl font-extrabold tracking-tight text-ink">Blez<span className="text-brand">X</span><span className="ml-1 text-sm font-medium text-slate-400">learn</span></span>
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 selection:bg-blue-600 selection:text-white">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-slate-900 focus:px-4 focus:py-2 focus:text-white focus:shadow-lg"
+      >
+        Skip to content
+      </a>
+
+      {/* Desktop Fixed Left Sidebar */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200/90 bg-white px-5 py-6 lg:flex">
+        {/* Brand Header */}
+        <Link to="/student" className="group flex items-center gap-3 px-1.5">
+          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 text-lg font-black text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
+            B
+          </span>
+          <div className="flex flex-col">
+            <span className="font-display text-xl font-extrabold tracking-tight text-slate-900">
+              Blez<span className="text-blue-600">eX</span>
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 -mt-0.5">
+              Career Accelerator
+            </span>
+          </div>
         </Link>
-        <p className="mb-3 mt-10 px-3 text-[11px] font-bold uppercase tracking-[.16em] text-slate-400">Learning space</p>
+
+        {/* Section Label */}
+        <div className="mb-2 mt-8 px-2.5 flex items-center justify-between text-[11px] font-extrabold uppercase tracking-[.18em] text-slate-400">
+          <span>Learning Space</span>
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" title="Live System" />
+        </div>
+
+        {/* Navigation Items */}
         <nav aria-label="Main" className="space-y-1">
-          {links.map(([to, label]) => {
-            const active = loc.pathname === to || (to === "/profile" && loc.pathname.startsWith("/profile")) || (to === "/student/courses" && loc.pathname.startsWith("/student/course/"));
-            const iconName: IconName = to === "/profile" ? "profile" : to === "/student" ? "dashboard" : to === "/student/courses" ? "courses" : "journey";
-            return <Link key={to} to={to} aria-current={active ? "page" : undefined} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${active ? "bg-orange-50 text-brand" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"}`}>
-              <Icon name={iconName} size={19} />{label}
-            </Link>;
+          {links.map(({ to, label, icon }) => {
+            const active =
+              loc.pathname === to ||
+              (to === "/profile" && loc.pathname.startsWith("/profile")) ||
+              (to === "/student/courses" && loc.pathname.startsWith("/student/course/"));
+
+            return (
+              <Link
+                key={to}
+                to={to}
+                aria-current={active ? "page" : undefined}
+                className={`group relative flex items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-bold transition-all duration-150 ${
+                  active
+                    ? "bg-blue-50/90 text-blue-700 shadow-xs"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                }`}
+              >
+                {active && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-blue-600" />
+                )}
+                <span
+                  className={`grid h-8 w-8 place-items-center rounded-xl transition-colors ${
+                    active
+                      ? "bg-blue-600 text-white shadow-xs"
+                      : "bg-slate-100 text-slate-500 group-hover:bg-slate-200/80 group-hover:text-slate-800"
+                  }`}
+                >
+                  <Icon name={icon} size={16} />
+                </span>
+                <span>{label}</span>
+              </Link>
+            );
           })}
         </nav>
-        <div className="mt-auto rounded-2xl bg-slate-50 p-4">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-100 font-bold text-brand">{profile.full_name?.charAt(0)?.toUpperCase() ?? "S"}</span>
-            <div className="min-w-0"><p className="truncate text-sm font-bold text-slate-800">{profile.full_name}</p><p className="text-xs capitalize text-slate-500">{profile.is_alumni ? "Alumni" : "Student"}</p></div>
+
+        {/* Learning Streak / Motivation Card in Sidebar */}
+        <div className="mt-6 rounded-2xl border border-slate-200/80 bg-gradient-to-br from-amber-50/60 via-white to-orange-50/40 p-4 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-amber-700">
+              <Icon name="flame" size={15} className="text-amber-500" />
+              <span>Daily Streak</span>
+            </span>
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold text-amber-800">
+              Active
+            </span>
           </div>
-          <button className="mt-4 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900" onClick={signOut}>Sign out</button>
+          <p className="mt-2 text-xs font-semibold text-slate-600">
+            Keep learning daily to maintain your momentum & unlock certifications!
+          </p>
+        </div>
+
+        {/* User Profile Footer Card */}
+        <div className="mt-auto rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs">
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-sm font-extrabold text-white shadow-xs">
+              {profile.full_name?.charAt(0)?.toUpperCase() ?? "S"}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-slate-900">
+                {profile.full_name}
+              </p>
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <span className="capitalize">{profile.is_alumni ? "Alumni" : "Active Student"}</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={signOut}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2 text-xs font-bold text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 shadow-2xs"
+          >
+            <Icon name="logout" size={14} />
+            <span>Sign out</span>
+          </button>
         </div>
       </aside>
+
+      {/* Main Workspace Area with Top Header */}
       <div className="min-h-screen lg:pl-64">
-        <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/90 backdrop-blur">
-          <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-2 px-5 py-3 md:px-8 lg:flex-nowrap">
-            <Link to="/student" className="flex items-center gap-2 lg:hidden"><span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand font-extrabold text-white">B</span><span className="font-display font-extrabold text-ink">Blez<span className="text-brand">X</span></span></Link>
-            <p className="hidden text-sm font-medium text-slate-500 lg:block">Your learning journey, all in one place</p>
-            <nav aria-label="Mobile main" className="order-last flex w-full items-center justify-between gap-1 overflow-x-auto lg:hidden">
-              {links.map(([to, label]) => {
-                const active = loc.pathname === to || (to === "/profile" && loc.pathname.startsWith("/profile")) || (to === "/student/courses" && loc.pathname.startsWith("/student/course/"));
-                const iconName: IconName = to === "/profile" ? "profile" : to === "/student" ? "dashboard" : to === "/student/courses" ? "courses" : "journey";
-                return <Link key={to} to={to} aria-current={active ? "page" : undefined} className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-2 text-xs font-semibold ${active ? "bg-ink text-white" : "text-slate-600 hover:bg-slate-100"}`}><Icon name={iconName} size={14} />{label}</Link>;
-              })}
-              <button className="rounded-full px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100" onClick={signOut}>Sign out</button>
-            </nav>
-            <span className="hidden h-9 w-9 items-center justify-center rounded-full bg-orange-100 text-sm font-bold text-brand sm:flex lg:hidden">{profile.full_name?.charAt(0)?.toUpperCase() ?? "S"}</span>
+        {/* Modern Sticky Top Header */}
+        <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/85 backdrop-blur-md">
+          <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-5 py-3 md:px-8">
+            {/* Mobile Brand Logo */}
+            <Link to="/student" className="flex items-center gap-2.5 lg:hidden">
+              <span className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 font-extrabold text-white shadow-xs">
+                B
+              </span>
+              <span className="font-display font-extrabold tracking-tight text-slate-900">
+                Blez<span className="text-blue-600">eX</span>
+              </span>
+            </Link>
+
+            {/* Desktop Header Left Subtext */}
+            <div className="hidden lg:flex items-center gap-2.5 text-xs font-semibold text-slate-500">
+              <span className="rounded-lg bg-blue-50 px-2.5 py-1 text-blue-700 font-bold border border-blue-200/50">
+                Full Stack Career Track
+              </span>
+              <span className="text-slate-300">·</span>
+              <span>Empowering your path to software engineering roles</span>
+            </div>
+
+            {/* Top Right Quick Badges */}
+            <div className="flex items-center gap-3">
+              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-amber-50/80 px-3 py-1 text-xs font-bold text-amber-800 shadow-2xs">
+                <Icon name="flame" size={14} className="text-amber-500" />
+                <span>Daily Streak Active</span>
+              </span>
+
+              <Link
+                to="/profile"
+                className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-blue-100 text-xs font-extrabold text-blue-700">
+                  {profile.full_name?.charAt(0)?.toUpperCase() ?? "S"}
+                </span>
+                <span className="hidden md:inline truncate max-w-[120px]">
+                  {profile.full_name?.split(" ")[0]}
+                </span>
+              </Link>
+            </div>
           </div>
+
+          {/* Mobile Bottom Navigation Bar */}
+          <nav
+            aria-label="Mobile main"
+            className="flex items-center justify-around border-t border-slate-100 bg-white px-3 py-2 lg:hidden"
+          >
+            {links.map(({ to, label, icon }) => {
+              const active =
+                loc.pathname === to ||
+                (to === "/profile" && loc.pathname.startsWith("/profile")) ||
+                (to === "/student/courses" && loc.pathname.startsWith("/student/course/"));
+
+              return (
+                <Link
+                  key={to}
+                  to={to}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex flex-col items-center gap-1 rounded-xl px-3 py-1 text-[11px] font-bold transition ${
+                    active ? "text-blue-600 font-extrabold" : "text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  <Icon name={icon} size={18} />
+                  <span>{label}</span>
+                </Link>
+              );
+            })}
+            <button
+              type="button"
+              onClick={signOut}
+              className="flex flex-col items-center gap-1 rounded-xl px-3 py-1 text-[11px] font-bold text-slate-500 hover:text-slate-900"
+            >
+              <Icon name="logout" size={18} />
+              <span>Exit</span>
+            </button>
+          </nav>
         </header>
-        <main id="main" className="mx-auto max-w-[1440px] p-5 md:p-8"><Outlet /></main>
+
+        {/* Main Content View Outlet */}
+        <main id="main" className="mx-auto max-w-[1440px] p-5 md:p-8 animate-in fade-in duration-300">
+          <Outlet />
+        </main>
       </div>
     </div>
   );
 }
+

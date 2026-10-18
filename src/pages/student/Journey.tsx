@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Icon from "../../components/Icon";
 import { supabase } from "../../lib/supabase";
-import { Card, Empty } from "../../components/ui";
+import { Card } from "../../components/ui";
 import {
   getCourseProgress,
   getQuizAttempts,
@@ -18,8 +18,9 @@ export default function StudentJourney() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [refreshTick, setRefreshTick] = useState(0);
+  const [eventFilter, setEventFilter] = useState<"all" | "lesson" | "quiz" | "milestone">("all");
 
-  // Listen for progress updates so changes in Lesson or other tabs reflect instantly
+  // Listen for progress updates so changes in Lesson reflect instantly
   useEffect(() => {
     const handleUpdate = () => setRefreshTick(t => t + 1);
     window.addEventListener("blezex:progress-updated", handleUpdate);
@@ -94,22 +95,6 @@ export default function StudentJourney() {
     };
   }, [refreshTick]);
 
-  if (loading) {
-    return (
-      <div className="grid min-h-[40vh] place-items-center text-sm font-medium text-slate-500">
-        Loading your journey…
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
-        Could not load your journey: {error}
-      </p>
-    );
-  }
-
   // Fallback to active Full Stack Web Development course if no enrollments in DB
   const defaultEnrollment = {
     id: "full-stack-web",
@@ -129,10 +114,12 @@ export default function StudentJourney() {
   const displayEnrollments = enrollments.length > 0 ? enrollments : [defaultEnrollment];
 
   // Calculate accurate progress for each enrolled course using unified service
-  const courseProgressList = displayEnrollments.map(e => ({
-    enrollment: e,
-    progress: getCourseProgress(e, lessons, progress),
-  }));
+  const courseProgressList = useMemo(() => {
+    return displayEnrollments.map(e => ({
+      enrollment: e,
+      progress: getCourseProgress(e, lessons, progress),
+    }));
+  }, [displayEnrollments, lessons, progress, refreshTick]);
 
   const totalLessons = courseProgressList.reduce(
     (sum, item) => sum + item.progress.totalLessons,
@@ -157,92 +144,140 @@ export default function StudentJourney() {
     (enrollment.certificates ?? []).filter((certificate: any) => certificate.status === "issued")
   );
 
-  // Full timeline combining curriculum activities (lessons, quizzes, projects) and DB rows
-  const journeyEvents = getAllJourneyEvents(
-    displayEnrollments[0]?.id || "full-stack-web",
-    progress,
-    lessons,
-    displayEnrollments,
-    attempts,
-    milestones
-  ).slice(0, 20);
+  // Full timeline combining curriculum activities and DB rows
+  const allEvents = useMemo(() => {
+    return getAllJourneyEvents(
+      displayEnrollments[0]?.id || "full-stack-web",
+      progress,
+      lessons,
+      displayEnrollments,
+      attempts,
+      milestones
+    );
+  }, [displayEnrollments, progress, lessons, attempts, milestones, refreshTick]);
+
+  const filteredEvents = useMemo(() => {
+    if (eventFilter === "all") return allEvents;
+    return allEvents.filter(e => e.kind === eventFilter);
+  }, [allEvents, eventFilter]);
+
+  if (loading) {
+    return (
+      <div className="grid min-h-[40vh] place-items-center text-sm font-semibold text-slate-500">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+          <span>Loading your learning journey…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 shadow-sm">
+        <p className="font-bold">Error loading journey</p>
+        <p className="mt-1">{error}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-7">
-      <header className="rounded-[26px] bg-gradient-to-br from-[#17243D] via-[#233B60] to-[#31516B] p-6 text-white shadow-sm md:p-8">
-        <p className="text-xs font-bold uppercase tracking-[.16em] text-orange-200">
-          Every step counts
-        </p>
-        <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="font-display text-3xl font-extrabold tracking-tight">My journey</h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-200">
-              See the progress you have made, milestones you have reached, and what is next.
+    <div className="space-y-8 pb-12">
+      {/* Hero Banner */}
+      <header className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#1E1B4B] p-6 text-white shadow-xl md:p-9 border border-slate-800">
+        <div
+          aria-hidden="true"
+          className="absolute -right-16 -top-20 -z-10 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute -bottom-20 right-1/4 -z-10 h-64 w-64 rounded-full bg-violet-500/20 blur-3xl"
+        />
+
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div className="max-w-2xl space-y-2.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-400/30 bg-blue-500/15 px-3 py-1 text-[11px] font-extrabold uppercase tracking-widest text-blue-300">
+              <Icon name="award" size={13} className="text-blue-400" />
+              <span>Career Milestones</span>
+            </span>
+
+            <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight">
+              My Learning Journey
+            </h1>
+
+            <p className="text-sm sm:text-base leading-relaxed text-slate-300">
+              Every lesson, knowledge check, and practical project builds your software engineering capability. Review your accomplishments below.
             </p>
           </div>
+
           <Link
             to="/student/courses"
-            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-slate-900 transition hover:bg-orange-50 shadow-sm"
+            className="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-xs sm:text-sm font-bold text-slate-900 shadow-md transition hover:bg-blue-50"
           >
-            <Icon name="courses" size={17} /> All courses
+            <Icon name="courses" size={16} />
+            <span>Explore Courses</span>
           </Link>
         </div>
       </header>
 
-      {/* Overview Stat Cards */}
-      <section aria-label="Journey achievements" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {/* 4 Stat Achievement Metric Cards */}
+      <section aria-label="Journey achievements" className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
         {[
           {
-            label: "Overall progress",
+            label: "Overall Track Progress",
             value: `${overallProgress}%`,
-            note: `${completedLessons} of ${totalLessons} lessons`,
+            sub: `${completedLessons} of ${totalLessons} topics done`,
             icon: "progress" as const,
-            style: "bg-blue-50 text-blue-700",
+            tone: "bg-blue-50 text-blue-700 border-blue-200/60",
           },
           {
-            label: "Completed lessons",
+            label: "Completed Lessons",
             value: completedLessons,
-            note: "Learning milestones",
+            sub: "Pedagogical modules",
             icon: "book" as const,
-            style: "bg-emerald-50 text-emerald-700",
+            tone: "bg-emerald-50 text-emerald-700 border-emerald-200/60",
           },
           {
-            label: "Quizzes passed",
+            label: "Quizzes Passed",
             value: passedQuizzes,
-            note: "Knowledge checks",
+            sub: "Validated comprehension",
             icon: "quiz" as const,
-            style: "bg-violet-50 text-violet-700",
+            tone: "bg-violet-50 text-violet-700 border-violet-200/60",
           },
           {
-            label: "Certificates earned",
+            label: "Certificates Earned",
             value: earnedCertificates.length,
-            note: overallProgress >= 80 ? "Eligible for certificate" : "Verified achievements",
+            sub: overallProgress >= 80 ? "Eligible for Review" : "Unlocks at 80%",
             icon: "certificate" as const,
-            style: "bg-orange-50 text-orange-700",
+            tone: "bg-amber-50 text-amber-700 border-amber-200/60",
           },
         ].map(item => (
           <div
             key={item.label}
-            className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm md:p-5"
+            className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all hover:border-slate-300 hover:shadow-md"
           >
             <div className="flex items-start justify-between gap-2">
-              <p className="text-xs font-semibold text-slate-500 md:text-sm">{item.label}</p>
-              <span className={`grid h-9 w-9 place-items-center rounded-xl ${item.style}`}>
+              <span className="text-xs font-bold text-slate-500">{item.label}</span>
+              <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border ${item.tone}`}>
                 <Icon name={item.icon} size={18} />
               </span>
             </div>
-            <p className="mt-3 font-display text-3xl font-extrabold text-slate-900">{item.value}</p>
-            <p className="mt-1 text-xs text-slate-500">{item.note}</p>
+            <p className="mt-3 font-display text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+              {item.value}
+            </p>
+            <p className="mt-1 text-xs font-semibold text-slate-400">{item.sub}</p>
           </div>
         ))}
       </section>
 
-      {/* Course Milestones Section */}
-      <section>
-        <div className="mb-4">
-          <p className="text-xs font-bold uppercase tracking-[.15em] text-brand">Your progress</p>
-          <h2 className="mt-1 font-display text-2xl font-extrabold text-slate-900">
-            Course milestones
+      {/* Course Milestones Cards */}
+      <section className="space-y-4">
+        <div>
+          <span className="text-[10px] font-extrabold uppercase tracking-widest text-blue-600">
+            Active Milestones
+          </span>
+          <h2 className="mt-1 font-display text-xl sm:text-2xl font-extrabold text-slate-900">
+            Course Tracks & Thresholds
           </h2>
         </div>
 
@@ -260,28 +295,28 @@ export default function StudentJourney() {
             return (
               <Card
                 key={enrollment.id}
-                className="!rounded-2xl !border-slate-200/80 !p-5 !shadow-sm transition hover:!border-blue-200 md:!p-6"
+                className="!rounded-3xl !border-slate-200/90 !p-6 !shadow-xs transition-all hover:!border-blue-300 hover:!shadow-lg bg-white"
               >
-                <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <h3 className="font-display text-lg font-bold text-slate-900 md:text-xl">
+                    <h3 className="font-display text-lg sm:text-xl font-extrabold text-slate-900">
                       {courseTitle}
                     </h3>
-                    <p className="mt-1 text-xs font-medium text-slate-500">
+                    <p className="mt-1 text-xs font-semibold text-slate-500">
                       {done} of {total} lessons & activities completed
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="font-display text-2xl font-black text-slate-900">{pct}%</span>
+                    <span className="font-display text-3xl font-black text-slate-900">{pct}%</span>
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      {pct >= 100 ? "Completed" : pct > 0 ? "In Progress" : "Not Started"}
+                      {pct >= 100 ? "Completed ✓" : pct > 0 ? "In Progress" : "Not Started"}
                     </p>
                   </div>
                 </div>
 
                 {/* Progress bar */}
                 <div
-                  className="mt-3.5 h-2.5 overflow-hidden rounded-full bg-slate-100"
+                  className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100"
                   role="progressbar"
                   aria-label={`${courseTitle} progress`}
                   aria-valuenow={pct}
@@ -289,24 +324,25 @@ export default function StudentJourney() {
                   aria-valuemax={100}
                 >
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-orange-400 transition-all duration-500"
+                    className="h-full rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500 transition-all duration-500"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
 
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs border-t border-slate-100 pt-3">
-                  <p className={isUnlocked ? "font-semibold text-emerald-700" : "text-slate-500"}>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs border-t border-slate-100 pt-3.5">
+                  <p className={isUnlocked ? "font-bold text-emerald-700" : "font-medium text-slate-500"}>
                     {certificate
                       ? "Certificate earned ✓"
                       : isUnlocked
                       ? "Certificate unlocked · awaiting course completion review"
-                      : `Certificate unlocks at ${target}% · ${Math.max(0, target - pct)}% to go`}
+                      : `Certificate unlocks at ${target}% · ${Math.max(0, target - pct)}% remaining`}
                   </p>
                   <Link
                     to={`/student/course/${effectiveCourseId}`}
-                    className="inline-flex items-center gap-1 font-bold text-brand hover:text-orange-700"
+                    className="inline-flex items-center gap-1.5 font-bold text-blue-600 hover:text-blue-800 transition"
                   >
-                    Continue course <Icon name="arrow" size={15} />
+                    <span>Continue Track</span>
+                    <Icon name="arrow" size={14} />
                   </Link>
                 </div>
               </Card>
@@ -315,30 +351,63 @@ export default function StudentJourney() {
         </div>
       </section>
 
-      {/* Activity Timeline */}
-      <section>
-        <div className="mb-4">
-          <p className="text-xs font-bold uppercase tracking-[.15em] text-blue-700">
-            Your recent activity
-          </p>
-          <h2 className="mt-1 font-display text-2xl font-extrabold text-slate-900">
-            Journey timeline
-          </h2>
+      {/* Timeline Section with Filter Tabs */}
+      <section className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-violet-600">
+              Live Activity Stream
+            </span>
+            <h2 className="mt-1 font-display text-xl sm:text-2xl font-extrabold text-slate-900">
+              Learning Activity Timeline
+            </h2>
+          </div>
+
+          {/* Event Filter Tabs */}
+          <div className="flex items-center gap-1 rounded-2xl border border-slate-200 bg-slate-100/80 p-1">
+            {[
+              { id: "all", label: `All (${allEvents.length})` },
+              { id: "lesson", label: "Lessons" },
+              { id: "quiz", label: "Quizzes" },
+              { id: "milestone", label: "Projects" },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setEventFilter(tab.id as any)}
+                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+                  eventFilter === tab.id
+                    ? "bg-white text-slate-900 shadow-xs"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <Card className="!rounded-2xl !border-slate-200/80 !p-5 !shadow-sm md:!p-6">
-          {!journeyEvents.length ? (
-            <Empty t="Your lesson completions, quizzes, and project submissions will appear here." />
+
+        <Card className="!rounded-3xl !border-slate-200/90 !p-6 !shadow-xs bg-white">
+          {!filteredEvents.length ? (
+            <div className="py-8 text-center">
+              <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-400 mb-2">
+                <Icon name="journey" size={20} />
+              </span>
+              <p className="text-sm font-bold text-slate-800">No activity recorded for this filter</p>
+              <p className="text-xs text-slate-500 mt-1">Complete lessons and practice tests to build your history.</p>
+            </div>
           ) : (
-            <ol className="space-y-5">
-              {journeyEvents.map((event: any) => (
-                <li key={event.key} className="flex gap-3.5">
+            <ol className="relative space-y-6 pl-4 border-l-2 border-slate-100 ml-3">
+              {filteredEvents.map((event: any) => (
+                <li key={event.key} className="relative pl-6">
+                  {/* Timeline Dot Node */}
                   <span
-                    className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl ${
+                    className={`absolute -left-[27px] top-0 grid h-7 w-7 place-items-center rounded-full text-white shadow-xs ${
                       event.kind === "lesson"
-                        ? "bg-emerald-50 text-emerald-700"
+                        ? "bg-emerald-500 ring-4 ring-emerald-50"
                         : event.kind === "quiz"
-                        ? "bg-violet-50 text-violet-700"
-                        : "bg-blue-50 text-blue-700"
+                        ? "bg-violet-600 ring-4 ring-violet-50"
+                        : "bg-blue-600 ring-4 ring-blue-50"
                     }`}
                   >
                     <Icon
@@ -349,25 +418,49 @@ export default function StudentJourney() {
                           ? "quiz"
                           : "milestone"
                       }
-                      size={17}
+                      size={13}
                     />
                   </span>
-                  <div className="min-w-0 flex-1 border-b border-slate-100 pb-4 last:border-0 last:pb-0">
-                    <div className="flex flex-wrap justify-between gap-2">
-                      <p className="text-sm font-bold text-slate-800">{event.title}</p>
-                      <time className="text-xs text-slate-400">
+
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 transition hover:bg-slate-50">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-sm font-bold text-slate-900">
+                        {event.title}
+                      </span>
+                      <time className="text-xs font-semibold text-slate-400">
                         {event.created_at
                           ? new Date(event.created_at).toLocaleDateString(undefined, {
                               month: "short",
                               day: "numeric",
                               year: "numeric",
                             })
-                          : ""}
+                          : "Recent"}
                       </time>
                     </div>
+
                     {event.detail && (
-                      <p className="mt-1 text-xs text-slate-500">{event.detail}</p>
+                      <p className="mt-1 text-xs text-slate-500 font-medium leading-relaxed">
+                        {event.detail}
+                      </p>
                     )}
+
+                    <div className="mt-2.5 flex items-center gap-2">
+                      <span
+                        className={`rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${
+                          event.kind === "lesson"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : event.kind === "quiz"
+                            ? "bg-violet-100 text-violet-800"
+                            : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
+                        {event.kind === "lesson"
+                          ? "Lesson Completed"
+                          : event.kind === "quiz"
+                          ? "Knowledge Check"
+                          : "Project Submission"}
+                      </span>
+                    </div>
                   </div>
                 </li>
               ))}
@@ -378,3 +471,4 @@ export default function StudentJourney() {
     </div>
   );
 }
+
