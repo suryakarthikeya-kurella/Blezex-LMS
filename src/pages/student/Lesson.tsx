@@ -24,7 +24,6 @@ export default function StudentLesson() {
 
   const [modules, setModules] = useState<CurriculumModule[]>(FULL_STACK_MODULES);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
-  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -69,27 +68,38 @@ export default function StudentLesson() {
     return () => { cancelled = true; };
   }, [eid]);
 
-  const allItems: CurriculumItem[] = useMemo(() => modules.flatMap(m => m.items), [modules]);
+  // Find which sub-course contains the current lesson lid
+  const containingModule = useMemo(() => {
+    if (!lid) return modules[0];
+    const foundMod = modules.find(m => m.items.some(it => it.id === lid));
+    return foundMod || modules[0];
+  }, [modules, lid]);
 
-  // Find active item, default to first item if not found
+  const containingModuleIndex = useMemo(() => {
+    return modules.findIndex(m => m.id === containingModule?.id);
+  }, [modules, containingModule]);
+
+  // Lessons belonging ONLY to the active sub-course
+  const subCourseLessons: CurriculumItem[] = useMemo(() => {
+    return containingModule?.items || [];
+  }, [containingModule]);
+
+  // Find active item within this sub-course
   const activeItemIndex = useMemo(() => {
     if (!lid) return 0;
-    const idx = allItems.findIndex(it => it.id === lid);
+    const idx = subCourseLessons.findIndex(it => it.id === lid);
     return idx !== -1 ? idx : 0;
-  }, [lid, allItems]);
+  }, [lid, subCourseLessons]);
 
-  const activeItem: CurriculumItem = allItems[activeItemIndex] || allItems[0];
+  const activeItem: CurriculumItem = subCourseLessons[activeItemIndex] || subCourseLessons[0];
 
-  const containingModule = useMemo(() => {
-    return modules.find(m => m.id === activeItem?.moduleId) || modules[0];
-  }, [modules, activeItem]);
+  const completedInSubCourse = useMemo(() => {
+    return subCourseLessons.filter(it => completed.has(it.id)).length;
+  }, [subCourseLessons, completed]);
 
-  // When opening a lesson, ONLY that particular sub-course should open (collapse all others)
-  useEffect(() => {
-    if (containingModule?.id) {
-      setExpandedModules(new Set([containingModule.id]));
-    }
-  }, [containingModule?.id, lid]);
+  const subCoursePct = subCourseLessons.length
+    ? Math.round((completedInSubCourse * 100) / subCourseLessons.length)
+    : 0;
 
   // Reset view mode and assignment state when switching lessons
   useEffect(() => {
@@ -98,16 +108,6 @@ export default function StudentLesson() {
     setAssignmentText("");
     setAssignmentLink("");
   }, [lid]);
-
-  // Accordion toggle: opening one sub-course closes all others
-  const toggleModuleAccordion = (modId: string) => {
-    setExpandedModules(prev => {
-      if (prev.has(modId)) {
-        return new Set();
-      }
-      return new Set([modId]);
-    });
-  };
 
   const isCurrentDone = completed.has(activeItem?.id);
 
@@ -125,8 +125,8 @@ export default function StudentLesson() {
     syncCompletedToSupabase(effectiveEid, activeItem.id, true);
   };
 
-  const prevItem = activeItemIndex > 0 ? allItems[activeItemIndex - 1] : null;
-  const nextItem = activeItemIndex < allItems.length - 1 ? allItems[activeItemIndex + 1] : null;
+  const prevItem = activeItemIndex > 0 ? subCourseLessons[activeItemIndex - 1] : null;
+  const nextItem = activeItemIndex < subCourseLessons.length - 1 ? subCourseLessons[activeItemIndex + 1] : null;
 
   const getItemIcon = (type: CurriculumItem["type"]): IconName => {
     switch (type) {
@@ -245,173 +245,122 @@ export default function StudentLesson() {
         </button>
       </div>
 
-      {/* Module Accordions with Vertical Timeline */}
-      <div className="flex-1 overflow-y-auto px-2 py-3">
-        {modules.map((mod, modIdx) => {
-          const unlocked = isCurriculumModuleUnlocked(modIdx, modules, completed);
-          const isExpanded = expandedModules.has(mod.id);
-          const modItems = mod.items;
-          const completedInMod = modItems.filter(it => completed.has(it.id)).length;
-          const isCurrentMod = mod.id === containingModule?.id;
+      {/* Active Sub-Course Header Card (Only this sub-course is shown) */}
+      {containingModule && (
+        <div className="border-b border-white/[0.08] bg-gradient-to-b from-blue-950/40 via-slate-900/60 to-[#0b1120] p-4">
+          <div className="flex items-center justify-between gap-2">
+            <span className="rounded bg-blue-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-blue-300 border border-blue-400/20">
+              Sub-Course 0{containingModuleIndex + 1}
+            </span>
+            <span className="text-[10px] font-semibold text-slate-400">
+              0{containingModuleIndex + 1} of 0{modules.length}
+            </span>
+          </div>
 
-          return (
-            <div key={mod.id} className="mb-2 overflow-hidden rounded-xl border border-white/[0.06] bg-slate-900/40">
-              {/* Module Header */}
-              <button
-                type="button"
-                onClick={() => toggleModuleAccordion(mod.id)}
-                className={`flex w-full items-center justify-between px-3.5 py-3 text-left transition ${
-                  isCurrentMod
-                    ? "bg-gradient-to-r from-blue-950/60 to-slate-900/80 text-white"
-                    : "text-slate-300 hover:bg-white/[0.04]"
+          <h2 className="mt-2 font-display text-xs font-bold leading-snug text-white">
+            {containingModule.title}
+          </h2>
+
+          <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-400">
+            <span className="flex items-center gap-1">
+              <Icon name="clock" size={11} className="text-amber-500" />
+              <span>{formatMinutesToHuman(getModuleTotalMinutes(containingModule))}</span>
+            </span>
+            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-blue-300">
+              {completedInSubCourse}/{subCourseLessons.length} Completed
+            </span>
+          </div>
+
+          {/* Sub-course progress bar */}
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              className={`h-full transition-all duration-300 ${
+                subCoursePct >= 100
+                  ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                  : "bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+              }`}
+              style={{ width: `${subCoursePct}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Vertical Timeline Lessons List (Only for this sub-course) */}
+      <div className="flex-1 overflow-y-auto px-2 py-3">
+        <div className="relative space-y-0.5 py-1">
+          {subCourseLessons.map((item, itemIdx) => {
+            const isActive = item.id === activeItem?.id;
+            const isItemDone = completed.has(item.id);
+            const iconName = getItemIcon(item.type);
+            const badge = getItemBadge(item.type);
+
+            return (
+              <Link
+                key={item.id}
+                to={`/student/course/${effectiveEid}/lesson/${item.id}`}
+                onClick={() => setMobileDrawerOpen(false)}
+                className={`group relative flex items-center gap-3 rounded-lg mx-1 px-3 py-2 transition-all duration-150 ${
+                  isActive
+                    ? "bg-gradient-to-r from-blue-600/25 via-indigo-600/20 to-purple-600/10 text-white font-bold shadow-[0_0_15px_rgba(59,130,246,0.15)] ring-1 ring-blue-500/30"
+                    : "text-slate-300 hover:bg-white/[0.05] hover:text-white"
                 }`}
               >
-                <div className="min-w-0 flex-1 pr-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-blue-300">
-                      Sub-Course 0{modIdx + 1}
-                    </span>
-                    {!unlocked && <Icon name="lock" size={11} className="shrink-0 text-amber-400" />}
-                  </div>
-                  <span className="mt-1 block font-display text-xs font-bold leading-snug truncate">
-                    {mod.title}
-                  </span>
-                  <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
-                    <span className="flex items-center gap-1">
-                      <Icon name="clock" size={11} className="text-amber-500" /> {formatMinutesToHuman(getModuleTotalMinutes(mod))}
-                    </span>
-                    <span>·</span>
-                    <span className="rounded-full bg-white/10 px-2 py-0.2 text-[10px] font-bold text-blue-300">
-                      {completedInMod}/{modItems.length}
-                    </span>
-                  </div>
-                </div>
-                <span className="grid h-6 w-6 place-items-center rounded-md bg-white/5 text-slate-400">
-                  <Icon
-                    name={isExpanded ? "chevronDown" : "chevronRight"}
-                    size={14}
+                {/* Vertical connector line segments (perfectly centered behind circle) */}
+                {itemIdx > 0 && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-[22px] top-0 h-1/2 w-0.5 -translate-x-1/2 bg-blue-500/35 pointer-events-none"
                   />
+                )}
+                {itemIdx < subCourseLessons.length - 1 && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-[22px] top-1/2 -bottom-1 w-0.5 -translate-x-1/2 bg-blue-500/35 pointer-events-none"
+                  />
+                )}
+
+                {/* Timeline Node Circle */}
+                <span
+                  className={`relative z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold transition ${
+                    isItemDone
+                      ? "bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400/40"
+                      : isActive
+                      ? "bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.6)] ring-4 ring-blue-500/30"
+                      : "bg-[#0b1120] text-slate-500 ring-2 ring-white/15 group-hover:ring-white/40"
+                  }`}
+                >
+                  {isItemDone ? (
+                    <Icon name="check" size={11} />
+                  ) : isActive ? (
+                    <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                  ) : (
+                    <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
+                  )}
                 </span>
-              </button>
 
-              {/* Items in Module (Vertical Timeline) */}
-              {isExpanded && (
-                <div className="relative border-t border-white/[0.04] py-1.5">
-                  <div className="space-y-0.5">
-                    {modItems.map((item, itemIdx) => {
-                      const isActive = item.id === activeItem?.id;
-                      const isItemDone = completed.has(item.id);
-                      const iconName = getItemIcon(item.type);
-                      const badge = getItemBadge(item.type);
-
-                      if (!unlocked) {
-                        return (
-                          <div
-                            key={item.id}
-                            className="relative flex items-center gap-3 rounded-lg mx-1 px-3 py-2 opacity-40"
-                          >
-                            {/* Vertical connector line segments (perfectly centered behind circle) */}
-                            {itemIdx > 0 && (
-                              <span
-                                aria-hidden="true"
-                                className="absolute left-[22px] top-0 h-1/2 w-0.5 -translate-x-1/2 bg-blue-500/35 pointer-events-none"
-                              />
-                            )}
-                            {itemIdx < modItems.length - 1 && (
-                              <span
-                                aria-hidden="true"
-                                className="absolute left-[22px] top-1/2 -bottom-1 w-0.5 -translate-x-1/2 bg-blue-500/35 pointer-events-none"
-                              />
-                            )}
-
-                            <span className="relative z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#0b1120] text-slate-500 ring-2 ring-white/10">
-                              <Icon name="lock" size={10} />
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <span className="block truncate text-xs text-slate-400">{item.title}</span>
-                              <span className="mt-0.5 flex items-center gap-1 text-[10px] text-slate-500">
-                                <Icon name="clock" size={10} /> {item.duration}
-                              </span>
-                            </div>
-                            <span className="shrink-0 text-slate-600">
-                              <Icon name={iconName} size={14} />
-                            </span>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <Link
-                          key={item.id}
-                          to={`/student/course/${effectiveEid}/lesson/${item.id}`}
-                          onClick={() => setMobileDrawerOpen(false)}
-                          className={`group relative flex items-center gap-3 rounded-lg mx-1 px-3 py-2 transition-all duration-150 ${
-                            isActive
-                              ? "bg-gradient-to-r from-blue-600/25 via-indigo-600/20 to-purple-600/10 text-white font-bold shadow-[0_0_15px_rgba(59,130,246,0.15)] ring-1 ring-blue-500/30"
-                              : "text-slate-300 hover:bg-white/[0.05] hover:text-white"
-                          }`}
-                        >
-                          {/* Vertical connector line segments (perfectly centered behind circle) */}
-                          {itemIdx > 0 && (
-                            <span
-                              aria-hidden="true"
-                              className="absolute left-[22px] top-0 h-1/2 w-0.5 -translate-x-1/2 bg-blue-500/35 pointer-events-none"
-                            />
-                          )}
-                          {itemIdx < modItems.length - 1 && (
-                            <span
-                              aria-hidden="true"
-                              className="absolute left-[22px] top-1/2 -bottom-1 w-0.5 -translate-x-1/2 bg-blue-500/35 pointer-events-none"
-                            />
-                          )}
-
-                          {/* Timeline Node Circle */}
-                          <span
-                            className={`relative z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold transition ${
-                              isItemDone
-                                ? "bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400/40"
-                                : isActive
-                                ? "bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.6)] ring-4 ring-blue-500/30"
-                                : "bg-[#0b1120] text-slate-500 ring-2 ring-white/15 group-hover:ring-white/40"
-                            }`}
-                          >
-                            {isItemDone ? (
-                              <Icon name="check" size={11} />
-                            ) : isActive ? (
-                              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                            ) : (
-                              <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
-                            )}
-                          </span>
-
-                          {/* Details */}
-                          <div className="min-w-0 flex-1">
-                            <span className={`block truncate text-xs leading-snug ${isActive ? "text-white" : "text-slate-300"}`}>
-                              {item.title}
-                            </span>
-                            <div className="mt-0.5 flex items-center gap-2 text-[10px] text-slate-400">
-                              <span className={`rounded px-1.5 py-0.2 border text-[9px] font-bold uppercase tracking-wider ${badge.color}`}>
-                                {badge.label}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Icon name="clock" size={9} /> {item.duration}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Right Type Icon */}
-                          <span className={`shrink-0 transition ${isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300"}`}>
-                            <Icon name={iconName} size={15} />
-                          </span>
-                        </Link>
-                      );
-                    })}
+                {/* Details */}
+                <div className="min-w-0 flex-1">
+                  <span className={`block truncate text-xs leading-snug ${isActive ? "text-white" : "text-slate-300"}`}>
+                    {item.title}
+                  </span>
+                  <div className="mt-0.5 flex items-center gap-2 text-[10px] text-slate-400">
+                    <span className={`rounded px-1.5 py-0.2 border text-[9px] font-bold uppercase tracking-wider ${badge.color}`}>
+                      {badge.label}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Icon name="clock" size={9} /> {item.duration}
+                    </span>
                   </div>
                 </div>
-              )}
-            </div>
-          );
-        })}
+
+                {/* Right Type Icon */}
+                <span className={`shrink-0 transition ${isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300"}`}>
+                  <Icon name={iconName} size={15} />
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -459,11 +408,16 @@ export default function StudentLesson() {
             </button>
 
             <nav aria-label="Breadcrumb" className="flex items-center gap-2 truncate text-xs md:text-sm">
-              <span className="hidden sm:inline font-semibold text-slate-400">Full Stack Web</span>
+              <Link to="/student/courses" className="hidden sm:inline font-semibold text-slate-400 hover:text-slate-600">
+                Full Stack Web
+              </Link>
               <span className="hidden sm:inline text-slate-300">&gt;</span>
-              <span className="rounded-lg bg-blue-50 px-2.5 py-1 font-bold text-blue-700 border border-blue-200/50 truncate max-w-[220px]">
-                Sub-Course {containingModule ? modules.findIndex(m => m.id === containingModule.id) + 1 : ""}: {containingModule?.title}
-              </span>
+              <Link
+                to={`/student/course/${effectiveEid}`}
+                className="rounded-lg bg-blue-50 px-2.5 py-1 font-bold text-blue-700 border border-blue-200/50 truncate max-w-[220px] hover:bg-blue-100 transition"
+              >
+                Sub-Course {containingModuleIndex >= 0 ? containingModuleIndex + 1 : ""}: {containingModule?.title}
+              </Link>
               <span className="text-slate-300">&gt;</span>
               <span className="font-bold text-slate-900 truncate">{activeItem?.title}</span>
             </nav>
@@ -988,12 +942,20 @@ export default function StudentLesson() {
                           </button>
                         </div>
 
-                        {nextItem && (
+                        {nextItem ? (
                           <Link
                             to={`/student/course/${effectiveEid}/lesson/${nextItem.id}`}
                             className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-blue-700"
                           >
                             <span>Proceed to Next Item</span>
+                            <Icon name="arrow" size={14} />
+                          </Link>
+                        ) : (
+                          <Link
+                            to={`/student/course/${effectiveEid}`}
+                            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-blue-700"
+                          >
+                            <span>Back to Sub-Courses</span>
                             <Icon name="arrow" size={14} />
                           </Link>
                         )}
@@ -1159,7 +1121,13 @@ export default function StudentLesson() {
                   <Icon name="arrow" size={15} />
                 </Link>
               ) : (
-                <div />
+                <Link
+                  to={`/student/course/${effectiveEid}`}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  <span>Back to Sub-Courses</span>
+                  <Icon name="arrow" size={15} />
+                </Link>
               )}
             </div>
 
