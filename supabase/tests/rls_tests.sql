@@ -42,32 +42,32 @@ select pg_temp.ok((select score_pct from submit_quiz('40000000-0000-0000-0000-00
 insert into submissions(assignment_id,enrollment_id,text_response) values ('60000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','x');
 update submissions set score=100, status='graded';
 select pg_temp.ok((select score from submissions) is null and (select status from submissions)='submitted', 'student cannot self-grade');
-reset role;
+reset role; select set_config('request.jwt.claims','',true);
 
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000b1');
 select pg_temp.ok((select count(*) from enrollments)=1, 'mentor sees only assigned enrollments');
 select pg_temp.ok((select count(*) from profiles where id='00000000-0000-0000-0000-0000000000c2')=0, 'mentor cannot see unrelated students');
 select pg_temp.ok((select count(*) from submissions)=1, 'mentor sees assigned submissions');
-reset role;
+reset role; select set_config('request.jwt.claims','',true);
 
 -- revoking one enrollment hides only that course
 update enrollments set status='revoked' where id='30000000-0000-0000-0000-000000000001';
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
 select pg_temp.ok((select count(*) from lessons)=0, 'revoked enrollment loses lesson access');
-reset role;
+reset role; select set_config('request.jwt.claims','',true);
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000c2');
 select pg_temp.ok((select count(*) from lessons)=1, 'other students unaffected by revoke');
-reset role;
+reset role; select set_config('request.jwt.claims','',true);
 
 -- suspended accounts lose all access
 update profiles set status='suspended' where id='00000000-0000-0000-0000-0000000000c2';
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000c2');
 select pg_temp.ok((select count(*) from enrollments)=0 and (select count(*) from lessons)=0, 'suspended user sees nothing');
-reset role;
+reset role; select set_config('request.jwt.claims','',true);
 
 -- anon has no table access
 set local role anon;
 do $$ begin begin perform count(*) from profiles; raise exception 'FAILED: anon can read profiles'; exception when insufficient_privilege then null; end; end $$;
-reset role;
+reset role; select set_config('request.jwt.claims','',true);
 do $$ begin raise notice 'ALL RLS TESTS PASSED'; end $$;
 rollback;

@@ -2,3 +2,6 @@ Source of truth: `supabase/migrations/0001_schema.sql` (core), `0002_features.sq
 Deletion/archival: enrollments reference profiles/courses with RESTRICT (history preserved); revoke instead of delete; courses can be `archived`; children of a deleted course/quiz cascade.
 Scores are on a 0–100 scale for assignments; evaluations use their own `max_score`.
 Report views (security_invoker): v_report_enrollments, _completion, _mentor_workload, _attendance, _evaluations, _certificates.
+
+## Migration 0003 (integrity & hardening)
+Server-assigned `position` (lessons, modules, quiz questions); audit triggers (profile status, certificates, course status); `guard_enrollment_status` + cert revoke on revoke; RPCs `complete_enrollment`, `add_quiz_question`; score CHECKs (NOT VALID, existing rows untouched); per-session attendance (`unique(enrollment_id, session_id)`); `guard_submission` limits mentors to grading; `lesson_in_enrollment` policy for progress; `guard_notification`; eligibility treats "no sessions" as n/a and blocks suspended users; pinned `search_path`; hot-path indexes.

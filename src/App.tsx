@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { ReactNode } from "react";
+import { lazy, ReactNode, Suspense } from "react";
 import { useAuth } from "./lib/auth";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
@@ -38,6 +38,7 @@ export default function App() {
   if (recovery || profile?.must_change_password) return <SetPassword />;
   const A = (c: ReactNode) => <Guard role="admin">{c}</Guard>;
   return (
+    <Suspense fallback={<p className="p-8">Loading…</p>}>
     <Routes>
       <Route path="/" element={<Root />} />
       <Route path="/login" element={<Login />} />
@@ -61,5 +62,6 @@ export default function App() {
       </Route>
       <Route path="*" element={<Root />} />
     </Routes>
+    </Suspense>
   );
 }

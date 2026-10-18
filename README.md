@@ -35,7 +35,7 @@ Push to GitHub → Netlify "Import project" → build `npm run build`, publish `
 Supabase free projects pause after inactivity and have DB/bandwidth/user caps; Netlify free has build/bandwidth caps. Check current quotas before launch.
 
 ## Checks
-`npm run typecheck` · `npm test` · `npm run build`. Authorization tests: paste `supabase/tests/rls_tests.sql` into the SQL Editor of a DEV project (rolls back). Manual smoke test: `docs/TEST_PLAN.md`.
+`npm run typecheck` · `npm test` · `npm run build` · `npm run test:db` (applies every migration to a throwaway local PostgreSQL and runs the RLS + integrity SQL suites; needs PostgreSQL server binaries) · `npm run test:all`. Existing projects: back up, then apply `0003_integrity_hardening.sql` (additive; existing rows are not rewritten).
 
 ## Added since v1
 Quizzes, project milestones, sessions + attendance, evaluations, completion rules + certificate eligibility, alumni, notifications, reports, audit log, password reset/first-login flow, profile page, pagination/sorting.
