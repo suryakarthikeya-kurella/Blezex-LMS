@@ -561,65 +561,249 @@ export default function StudentCourse() {
                 </div>
               </div>
 
-              {/* Drawer Topics List (matching Image 1 topic cards) */}
-              <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-3 bg-slate-50/40">
-                {selectedSubCourse.items.map((item, itemIdx) => {
-                  const isDone = completed.has(item.id);
+              {/* Drawer Topics List: Hierarchical Modules & Course Assessment */}
+              <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 bg-slate-50/40">
+                {selectedSubCourse.modules && selectedSubCourse.modules.length > 0 ? (
+                  <>
+                    {/* Render Each Module in the Sub-Course */}
+                    {selectedSubCourse.modules.map((mod, modIdx) => {
+                      const modCompletedCount = mod.items.filter(it => completed.has(it.id)).length;
+                      const isModDone = mod.items.length > 0 && modCompletedCount === mod.items.length;
 
-                  let itemLabel = "TOPIC";
-                  if (item.type === "quiz") itemLabel = "SUB-COURSE EXAM";
-                  else if (item.type === "assignment") itemLabel = "GRADED PROJECT";
-                  else if (item.type === "practice") itemLabel = "PRACTICE LAB";
-
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => {
-                        setSelectedSubCourse(null);
-                        navigate(`/student/course/${effectiveEid}/lesson/${item.id}`);
-                      }}
-                      className="group flex items-center justify-between gap-3.5 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all hover:border-blue-400 hover:shadow-md cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                        {/* Checkmark circle or item index */}
-                        {isDone ? (
-                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-500 text-white shadow-xs">
-                            <Icon name="check" size={16} />
-                          </span>
-                        ) : (
-                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-slate-200 bg-slate-100 text-xs font-bold text-slate-600 group-hover:border-blue-500 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors shadow-xs">
-                            {itemIdx + 1}
-                          </span>
-                        )}
-
-                        <div className="min-w-0 flex-1">
-                          <span className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
-                            {itemLabel}
-                          </span>
-                          <span className="mt-0.5 block font-display text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors truncate">
-                            {item.title}
-                          </span>
-                          <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
-                            <span className="flex items-center gap-1">
-                              <Icon name="clock" size={11} /> {item.duration}
+                      return (
+                        <div key={mod.id} className="space-y-3">
+                          {/* Module Header Card */}
+                          <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl bg-slate-100/90 border border-slate-200/80">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-blue-600 text-[11px] font-black text-white shadow-xs">
+                                {modIdx + 1}
+                              </span>
+                              <div>
+                                <span className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                  MODULE {modIdx + 1}
+                                </span>
+                                <h3 className="font-display text-xs font-bold text-slate-800 truncate">
+                                  {mod.title}
+                                </h3>
+                              </div>
+                            </div>
+                            <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
+                              isModDone ? "bg-emerald-100 text-emerald-800" : "bg-white text-slate-600 border border-slate-200"
+                            }`}>
+                              {modCompletedCount}/{mod.items.length} Done
                             </span>
-                            {isDone && (
-                              <>
-                                <span>·</span>
-                                <span className="font-bold text-emerald-600">Completed</span>
-                              </>
-                            )}
+                          </div>
+
+                          {/* Items inside this module */}
+                          <div className="space-y-2 pl-2 border-l-2 border-blue-500/20 ml-3">
+                            {mod.items.map((item, itemIdx) => {
+                              const isDone = completed.has(item.id);
+
+                              let itemBadge = { label: "LESSON", color: "text-blue-600 bg-blue-50 border-blue-200" };
+                              if (item.isModuleQuiz) {
+                                itemBadge = { label: "MODULE MCQS", color: "text-purple-700 bg-purple-50 border-purple-200" };
+                              } else if (item.isModuleAssessment) {
+                                itemBadge = { label: "MODULE ASSESSMENT", color: "text-amber-800 bg-amber-50 border-amber-200" };
+                              } else if (item.type === "quiz") {
+                                itemBadge = { label: "EXAM", color: "text-purple-700 bg-purple-50 border-purple-200" };
+                              } else if (item.type === "assignment") {
+                                itemBadge = { label: "LAB PROJECT", color: "text-emerald-700 bg-emerald-50 border-emerald-200" };
+                              }
+
+                              return (
+                                <div
+                                  key={item.id}
+                                  onClick={() => {
+                                    setSelectedSubCourse(null);
+                                    navigate(`/student/course/${effectiveEid}/lesson/${item.id}`);
+                                  }}
+                                  className="group flex items-center justify-between gap-3 rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-xs transition-all hover:border-blue-400 hover:shadow-md cursor-pointer"
+                                >
+                                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    {isDone ? (
+                                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-emerald-500 text-white shadow-xs">
+                                        <Icon name="check" size={14} />
+                                      </span>
+                                    ) : (
+                                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-slate-200 bg-slate-50 text-xs font-bold text-slate-600 group-hover:border-blue-500 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors shadow-xs">
+                                        {itemIdx + 1}
+                                      </span>
+                                    )}
+
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`inline-block rounded px-1.5 py-0.2 border text-[9px] font-black uppercase tracking-wider ${itemBadge.color}`}>
+                                          {itemBadge.label}
+                                        </span>
+                                        {item.questions && item.questions.length > 0 && (
+                                          <span className="text-[10px] text-slate-400 font-medium">
+                                            {item.questions.length} Questions
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className="mt-0.5 block font-display text-xs font-bold text-slate-800 group-hover:text-blue-600 transition-colors truncate">
+                                        {item.title}
+                                      </span>
+                                      <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-400">
+                                        <span className="flex items-center gap-1">
+                                          <Icon name="clock" size={10} /> {item.duration}
+                                        </span>
+                                        {isDone && (
+                                          <>
+                                            <span>·</span>
+                                            <span className="font-bold text-emerald-600">Completed</span>
+                                          </>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all">
+                                    <Icon name="chevronRight" size={16} />
+                                  </span>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
-                      </div>
+                      );
+                    })}
 
-                      {/* Right Chevron Arrow */}
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all">
-                        <Icon name="chevronRight" size={18} />
-                      </span>
-                    </div>
-                  );
-                })}
+                    {/* Sub-Course Final Assessment Section */}
+                    {(selectedSubCourse.courseAssessment || selectedSubCourse.courseProject) && (
+                      <div className="mt-6 pt-4 border-t-2 border-slate-200 space-y-3">
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-amber-50 to-purple-50 border border-amber-200/80">
+                          <Icon name="sparkle" size={16} className="text-amber-600" />
+                          <div>
+                            <span className="block text-[10px] font-black uppercase tracking-widest text-amber-700">
+                              SUB-COURSE CAPSTONE
+                            </span>
+                            <h3 className="font-display text-xs font-bold text-slate-900">
+                              Final Course Assessment & Certification
+                            </h3>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 pl-2 border-l-2 border-amber-500/40 ml-3">
+                          {[selectedSubCourse.courseAssessment, selectedSubCourse.courseProject].filter(Boolean).map((assessmentItem, aIdx) => {
+                            if (!assessmentItem) return null;
+                            const isDone = completed.has(assessmentItem.id);
+
+                            return (
+                              <div
+                                key={assessmentItem.id}
+                                onClick={() => {
+                                  setSelectedSubCourse(null);
+                                  navigate(`/student/course/${effectiveEid}/lesson/${assessmentItem.id}`);
+                                }}
+                                className="group flex items-center justify-between gap-3 rounded-xl border border-amber-200/80 bg-white p-3.5 shadow-xs transition-all hover:border-amber-400 hover:shadow-md cursor-pointer"
+                              >
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  {isDone ? (
+                                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-emerald-500 text-white shadow-xs">
+                                      <Icon name="check" size={14} />
+                                    </span>
+                                  ) : (
+                                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-amber-300 bg-amber-50 text-xs font-black text-amber-700 shadow-xs">
+                                      ★
+                                    </span>
+                                  )}
+
+                                  <div className="min-w-0 flex-1">
+                                    <span className="inline-block rounded px-1.5 py-0.2 border text-[9px] font-black uppercase tracking-wider bg-amber-50 text-amber-800 border-amber-200">
+                                      {assessmentItem.type === "quiz" ? "COURSE FINAL EXAM" : "CAPSTONE PROJECT"}
+                                    </span>
+                                    <span className="mt-0.5 block font-display text-xs font-bold text-slate-800 group-hover:text-amber-700 transition-colors truncate">
+                                      {assessmentItem.title}
+                                    </span>
+                                    <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-400">
+                                      <span className="flex items-center gap-1">
+                                        <Icon name="clock" size={10} /> {assessmentItem.duration}
+                                      </span>
+                                      {assessmentItem.questions && (
+                                        <>
+                                          <span>·</span>
+                                          <span>{assessmentItem.questions.length} Questions</span>
+                                        </>
+                                      )}
+                                      {isDone && (
+                                        <>
+                                          <span>·</span>
+                                          <span className="font-bold text-emerald-600">Completed</span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-amber-500 group-hover:text-amber-700 group-hover:translate-x-0.5 transition-all">
+                                  <Icon name="chevronRight" size={16} />
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  /* Flat Fallback */
+                  selectedSubCourse.items.map((item, itemIdx) => {
+                    const isDone = completed.has(item.id);
+
+                    let itemLabel = "TOPIC";
+                    if (item.type === "quiz") itemLabel = "SUB-COURSE EXAM";
+                    else if (item.type === "assignment") itemLabel = "GRADED PROJECT";
+                    else if (item.type === "practice") itemLabel = "PRACTICE LAB";
+
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => {
+                          setSelectedSubCourse(null);
+                          navigate(`/student/course/${effectiveEid}/lesson/${item.id}`);
+                        }}
+                        className="group flex items-center justify-between gap-3.5 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all hover:border-blue-400 hover:shadow-md cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                          {isDone ? (
+                            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-500 text-white shadow-xs">
+                              <Icon name="check" size={16} />
+                            </span>
+                          ) : (
+                            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-slate-200 bg-slate-100 text-xs font-bold text-slate-600 group-hover:border-blue-500 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors shadow-xs">
+                              {itemIdx + 1}
+                            </span>
+                          )}
+
+                          <div className="min-w-0 flex-1">
+                            <span className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                              {itemLabel}
+                            </span>
+                            <span className="mt-0.5 block font-display text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors truncate">
+                              {item.title}
+                            </span>
+                            <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
+                              <span className="flex items-center gap-1">
+                                <Icon name="clock" size={11} /> {item.duration}
+                              </span>
+                              {isDone && (
+                                <>
+                                  <span>·</span>
+                                  <span className="font-bold text-emerald-600">Completed</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all">
+                          <Icon name="chevronRight" size={18} />
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
               </div>
 
               {/* Drawer Footer */}

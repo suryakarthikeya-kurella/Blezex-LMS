@@ -1,13 +1,14 @@
-import { CurriculumModule } from "../curriculumTypes";
+import { CurriculumSubCourse, CurriculumSubModule, CurriculumItem } from "../curriculumTypes";
 
-export const gitBasicsModule: CurriculumModule = {
-  id: "mod-git-basics",
-  title: "Git Basics",
-  position: 6,
-  duration: "4 hours, 20 mins",
-  description: "Master modern version control with Git and GitHub: repository configuration, staging area lifecycle, commit hygiene, branching strategies, fast-forward and 3-way merges, merge conflict resolution, remotes (push/pull/fetch), pull requests, and collaboration workflows.",
-  items: [
-    {
+// =========================================================================
+// SUB-COURSE 6: VERSION CONTROL & COLLABORATION WITH GIT & GITHUB
+// =========================================================================
+
+// =========================================================================
+// MODULE 1: LOCAL GIT WORKFLOW & VERSION CONTROL FUNDAMENTALS
+// =========================================================================
+
+const gitLesson01: CurriculumItem = {
       id: "item-git-01-intro-setup",
       moduleId: "mod-git-basics",
       moduleTitle: "Git Basics",
@@ -183,8 +184,9 @@ export const gitBasicsModule: CurriculumModule = {
           explanation: "git config --list --show-origin outputs every active configuration key alongside the exact file path where it was defined."
         }
       ]
-    },
-    {
+    };
+
+const gitLesson02: CurriculumItem = {
       id: "item-git-02-workflow-staging",
       moduleId: "mod-git-basics",
       moduleTitle: "Git Basics",
@@ -354,8 +356,73 @@ export const gitBasicsModule: CurriculumModule = {
           explanation: "git restore --staged <file> removes the file from the staging area while preserving all edits intact in your working directory."
         }
       ]
-    },
-    {
+    };
+
+// Module 1 Quiz & Assessment
+const gitModule01Quiz: CurriculumItem = {
+  id: "item-git-m1-quiz",
+  subCourseId: "mod-git-basics",
+  subCourseTitle: "Git Basics",
+  subCoursePosition: 6,
+  moduleId: "module-git-01-local-workflow",
+  moduleTitle: "Module 1: Local Git Workflow & Fundamentals",
+  modulePosition: 1,
+  title: "Module 1 MCQs: Local Git Workflow, Staging & Commit Hygiene",
+  duration: "25 mins",
+  type: "quiz",
+  position: 3,
+  isModuleQuiz: true,
+  contentHeading: "Module 1 Assessment: Git Fundamentals Knowledge Check",
+  contentDescription: "Evaluate your understanding of Distributed VCS, git init, staging area transitions, commit messages, git log, diffing, and .gitignore patterns.",
+  questions: [
+    ...gitLesson01.questions!.slice(0, 7),
+    ...gitLesson02.questions!.slice(0, 8)
+  ]
+};
+
+const gitModule01Assessment: CurriculumItem = {
+  id: "item-git-m1-assessment",
+  subCourseId: "mod-git-basics",
+  subCourseTitle: "Git Basics",
+  subCoursePosition: 6,
+  moduleId: "module-git-01-local-workflow",
+  moduleTitle: "Module 1: Local Git Workflow & Fundamentals",
+  modulePosition: 1,
+  title: "Module 1 Assessment: Local Repository Initialization & Commit Hygiene Lab",
+  duration: "45 mins",
+  type: "assignment",
+  position: 4,
+  isModuleAssessment: true,
+  contentHeading: "Module 1 Practical Challenge: Local Commit Hygiene & Ignored Assets",
+  contentDescription: "Initialize a clean local Git repository, configure global user identity, author a comprehensive .gitignore file, and record 3 atomic conventional commits.",
+  assignmentPrompt: {
+    instructions: "Execute local Git setup and staging workflow:\n1. Initialize a new Git repository with default branch 'main'.\n2. Configure .gitignore ignoring node_modules, .env, and dist/.\n3. Author 3 atomic commits following Conventional Commits (feat, chore, docs).\n4. Run git log --oneline and submit your terminal output.",
+    deliverables: [
+      "Terminal transcript showing repository initialization and status",
+      "Contents of .gitignore properly excluding sensitive assets",
+      "Git commit history with semantic commit prefixes"
+    ]
+  }
+};
+
+const gitModule01: CurriculumSubModule = {
+  id: "module-git-01-local-workflow",
+  subCourseId: "mod-git-basics",
+  title: "Module 1: Local Git Workflow & Fundamentals",
+  description: "Master local version control mechanics: repository initialization, staging area lifecycle, atomic commit hygiene, diffing modifications, and configuring .gitignore.",
+  position: 1,
+  duration: "2 hours, 10 mins",
+  lessons: [gitLesson01, gitLesson02],
+  moduleQuiz: gitModule01Quiz,
+  moduleAssessment: gitModule01Assessment,
+  items: [gitLesson01, gitLesson02, gitModule01Quiz, gitModule01Assessment]
+};
+
+// =========================================================================
+// MODULE 2: BRANCHING STRATEGIES & REMOTE COLLABORATION WITH GITHUB
+// =========================================================================
+
+const gitLesson03: CurriculumItem = {
       id: "item-git-03-branching-merging",
       moduleId: "mod-git-basics",
       moduleTitle: "Git Basics",
@@ -526,8 +593,9 @@ export const gitBasicsModule: CurriculumModule = {
           explanation: "git merge --abort terminates the conflict resolution process and reconstructs the pre-merge state of your working directory."
         }
       ]
-    },
-    {
+    };
+
+const gitLesson04: CurriculumItem = {
       id: "item-git-04-remotes-github",
       moduleId: "mod-git-basics",
       moduleTitle: "Git Basics",
@@ -698,8 +766,74 @@ export const gitBasicsModule: CurriculumModule = {
           explanation: "git revert creates a brand new inverse commit, making it safe for public shared branches because it preserves linear commit history."
         }
       ]
-    },
-    {
+    };
+
+// Module 2 Quiz & Assessment
+const gitModule02Quiz: CurriculumItem = {
+  id: "item-git-m2-quiz",
+  subCourseId: "mod-git-basics",
+  subCourseTitle: "Git Basics",
+  subCoursePosition: 6,
+  moduleId: "module-git-02-branching-remotes",
+  moduleTitle: "Module 2: Branching Strategies & Remote Collaboration",
+  modulePosition: 2,
+  title: "Module 2 MCQs: Branching, Fast-Forward Merges & GitHub Remotes",
+  duration: "25 mins",
+  type: "quiz",
+  position: 7,
+  isModuleQuiz: true,
+  contentHeading: "Module 2 Assessment: Branching & Remote Workflow Check",
+  contentDescription: "Evaluate your understanding of git branch, checkout/switch, fast-forward vs 3-way merges, merge conflicts, git push, fetch vs pull, and Pull Request reviews.",
+  questions: [
+    ...gitLesson03.questions!.slice(0, 7),
+    ...gitLesson04.questions!.slice(0, 8)
+  ]
+};
+
+const gitModule02Assessment: CurriculumItem = {
+  id: "item-git-m2-assessment",
+  subCourseId: "mod-git-basics",
+  subCourseTitle: "Git Basics",
+  subCoursePosition: 6,
+  moduleId: "module-git-02-branching-remotes",
+  moduleTitle: "Module 2: Branching Strategies & Remote Collaboration",
+  modulePosition: 2,
+  title: "Module 2 Assessment: Feature Branching, Remote Sync & PR Workflow",
+  duration: "50 mins",
+  type: "assignment",
+  position: 8,
+  isModuleAssessment: true,
+  contentHeading: "Module 2 Practical Challenge: Collaborative GitHub Workflow",
+  contentDescription: "Connect your local repository to a remote GitHub repository, create and push an isolated feature branch, open a Pull Request, and perform a clean merge.",
+  assignmentPrompt: {
+    instructions: "Demonstrate remote team collaboration workflows:\n1. Add remote 'origin' pointing to your GitHub repository.\n2. Create a branch 'feature/contact-page' and make changes.\n3. Push branch to GitHub using 'git push -u origin feature/contact-page'.\n4. Open a Pull Request on GitHub and merge it into main.",
+    deliverables: [
+      "GitHub Pull Request link and merge confirmation",
+      "Terminal output of 'git remote -v' and 'git branch -a'",
+      "Local sync confirmation using 'git pull origin main'"
+    ]
+  }
+};
+
+const gitModule02: CurriculumSubModule = {
+  id: "module-git-02-branching-remotes",
+  subCourseId: "mod-git-basics",
+  title: "Module 2: Branching Strategies & Remote Collaboration",
+  description: "Master team collaboration with Git and GitHub: feature branching, fast-forward and 3-way merges, merge conflict resolution, remote repositories (push/pull/fetch), and Pull Requests.",
+  position: 2,
+  duration: "2 hours, 20 mins",
+  lessons: [gitLesson03, gitLesson04],
+  moduleQuiz: gitModule02Quiz,
+  moduleAssessment: gitModule02Assessment,
+  items: [gitLesson03, gitLesson04, gitModule02Quiz, gitModule02Assessment]
+};
+
+// =========================================================================
+// SUB-COURSE FINAL ASSESSMENT
+// =========================================================================
+
+const gitSubCourseExam: CurriculumItem = {
+  ...({
       id: "item-git-05-module-assessment",
       moduleId: "mod-git-basics",
       moduleTitle: "Git Basics",
@@ -1012,8 +1146,14 @@ export const gitBasicsModule: CurriculumModule = {
           explanation: "Rewriting shared history with git reset breaks teammates' local clones. git revert appends a new commit that undoes changes safely."
         }
       ]
-    },
-    {
+    }),
+  title: "Sub-Course Assessment: Git & GitHub Comprehensive Certification Exam",
+  isSubCourseAssessment: true,
+  position: 9
+};
+
+const gitSubCourseProject: CurriculumItem = {
+  ...({
       id: "item-git-06-graded-assignment",
       moduleId: "mod-git-basics",
       moduleTitle: "Git Basics",
@@ -1067,6 +1207,30 @@ Project Scenario & Requirements:
           "Safe deletion of the merged feature branch with 'git branch -d feature/dark-theme'."
         ]
       }
-    }
+    }),
+  title: "Sub-Course Capstone Project: Git Feature Workflow & Merge Conflict Resolution",
+  isSubCourseAssessment: true,
+  position: 10
+};
+
+export const gitBasicsSubCourse: CurriculumSubCourse = {
+  id: "mod-git-basics",
+  title: "Version Control with Git & GitHub",
+  position: 6,
+  duration: "5 hours, 10 mins",
+  description: "Master modern version control with Git and GitHub: repository configuration, staging area lifecycle, commit hygiene, branching strategies, fast-forward and 3-way merges, merge conflict resolution, remotes (push/pull/fetch), pull requests, and collaborative workflows.",
+  modules: [gitModule01, gitModule02],
+  courseAssessment: gitSubCourseExam,
+  courseProject: gitSubCourseProject,
+  items: [
+    ...gitModule01.items,
+    ...gitModule02.items,
+    gitSubCourseExam,
+    gitSubCourseProject
   ]
 };
+
+/**
+ * Backward compatibility alias
+ */
+export const gitBasicsModule = gitBasicsSubCourse;
