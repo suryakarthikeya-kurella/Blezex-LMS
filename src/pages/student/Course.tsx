@@ -160,12 +160,15 @@ export default function StudentCourse() {
     const unlocked = isCurriculumModuleUnlocked(index, subCourses, completed);
     if (!unlocked) {
       const prevSub = subCourses[index - 1];
+      const prevItems = prevSub?.items || [];
+      const prevDone = prevItems.filter(it => completed.has(it.id)).length;
       setLockAlertMessage(
-        `Note: Complete Sub-Course ${index} (${prevSub?.title || "previous"}) to earn official certification credits. You can explore all modules below.`
+        `🔒 Sub-Course ${index + 1} (${subCourse.title}) is locked. You must complete all topics in Sub-Course ${index} (${prevSub?.title || "the previous course"}) first (${prevDone}/${prevItems.length} completed).`
       );
-    } else {
-      setLockAlertMessage(null);
+      setSelectedSubCourse(null);
+      return;
     }
+    setLockAlertMessage(null);
     setSelectedSubCourse(subCourse);
   };
 
@@ -319,13 +322,16 @@ export default function StudentCourse() {
                 const subCoursePct = items.length ? Math.round((doneCount * 100) / items.length) : 0;
                 const tags = SUB_COURSE_TAGS[subCourse.id] || ["WEB", "DEV"];
                 const duration = formatMinutesToHuman(getModuleTotalMinutes(subCourse));
+                const prevSub = idx > 0 ? subCourses[idx - 1] : null;
 
                 return (
                   <div
                     key={subCourse.id}
                     onClick={() => handleSubCourseClick(subCourse, idx)}
-                    className={`group relative flex flex-col justify-between rounded-3xl border bg-white p-5 sm:p-6 shadow-xs transition-all duration-200 cursor-pointer hover:-translate-y-1 hover:border-blue-400 hover:shadow-lg ${
-                      !unlocked ? "border-slate-200 bg-slate-50/70" : "border-slate-200/90"
+                    className={`group relative flex flex-col justify-between rounded-3xl border p-5 sm:p-6 shadow-xs transition-all duration-200 ${
+                      !unlocked
+                        ? "border-slate-200 bg-slate-50/70 opacity-75 cursor-not-allowed select-none"
+                        : "border-slate-200/90 bg-white cursor-pointer hover:-translate-y-1 hover:border-blue-400 hover:shadow-lg"
                     }`}
                   >
                     <div>
@@ -334,16 +340,16 @@ export default function StudentCourse() {
                         <span
                           className={`grid h-12 w-12 place-items-center rounded-2xl transition-all shadow-xs ${
                             !unlocked
-                              ? "bg-slate-200 text-slate-500"
+                              ? "bg-slate-200 text-slate-400"
                               : isAllDone
                               ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-emerald-500/25"
                               : "bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-blue-500/20"
                           }`}
                         >
-                          {renderSubCourseIcon(subCourse.id)}
+                          {!unlocked ? <Icon name="lock" size={20} /> : renderSubCourseIcon(subCourse.id)}
                         </span>
 
-                        {/* Top-right Status Indicator (like green checkmark in image) */}
+                        {/* Top-right Status Indicator */}
                         <div>
                           {isAllDone ? (
                             <span
@@ -354,10 +360,10 @@ export default function StudentCourse() {
                             </span>
                           ) : !unlocked ? (
                             <span
-                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-500"
+                              className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-500 shadow-xs"
                               title="Locked"
                             >
-                              <Icon name="lock" size={11} /> Locked
+                              <Icon name="lock" size={12} /> Locked
                             </span>
                           ) : doneCount > 0 ? (
                             <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700">
@@ -376,12 +382,21 @@ export default function StudentCourse() {
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                           Sub-Course {idx + 1}
                         </span>
-                        <h3 className="mt-0.5 font-display text-base font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                        <h3 className={`mt-0.5 font-display text-base font-extrabold transition-colors line-clamp-1 ${
+                          !unlocked ? "text-slate-500" : "text-slate-900 group-hover:text-blue-600"
+                        }`}>
                           {idx + 1}. {subCourse.title}
                         </h3>
                         <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-slate-500">
                           {subCourse.description}
                         </p>
+
+                        {!unlocked && prevSub && (
+                          <div className="mt-2.5 flex items-center gap-1.5 rounded-xl border border-amber-200/80 bg-amber-50/70 px-2.5 py-1 text-[11px] font-semibold text-amber-800">
+                            <Icon name="lock" size={12} className="shrink-0 text-amber-600" />
+                            <span className="truncate">Finish Sub-Course {idx} ({prevSub.title}) to unlock</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Meta: Topics count and duration */}
@@ -394,12 +409,16 @@ export default function StudentCourse() {
                         </span>
                       </div>
 
-                      {/* Tags / Pills (like HTML, CSS, BOOTSTRAP in image) */}
+                      {/* Tags / Pills */}
                       <div className="mt-3.5 flex flex-wrap gap-1.5">
                         {tags.map(tag => (
                           <span
                             key={tag}
-                            className="rounded-md border border-slate-200/80 bg-slate-100/80 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-600"
+                            className={`rounded-md border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
+                              !unlocked
+                                ? "border-slate-200 bg-slate-100/50 text-slate-400"
+                                : "border-slate-200/80 bg-slate-100/80 text-slate-600"
+                            }`}
                           >
                             {tag}
                           </span>
@@ -407,24 +426,35 @@ export default function StudentCourse() {
                       </div>
                     </div>
 
-                    {/* Bottom Progress Bar */}
+                    {/* Bottom Progress Bar / Locked Status */}
                     <div className="mt-5 border-t border-slate-100 pt-3">
-                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-400">
-                        <span>Progress</span>
-                        <span className={isAllDone ? "text-emerald-600" : unlocked && doneCount > 0 ? "text-blue-600" : ""}>
-                          {subCoursePct}%
-                        </span>
-                      </div>
-                      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className={`h-full transition-all duration-300 ${
-                            isAllDone
-                              ? "bg-emerald-500"
-                              : "bg-gradient-to-r from-blue-600 to-indigo-600"
-                          }`}
-                          style={{ width: `${subCoursePct}%` }}
-                        />
-                      </div>
+                      {!unlocked ? (
+                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-400">
+                          <span className="flex items-center gap-1.5 text-amber-700">
+                            <Icon name="lock" size={12} /> Locked
+                          </span>
+                          <span className="text-[10px] font-medium text-slate-400">Complete prior course first</span>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-between text-[11px] font-bold text-slate-400">
+                            <span>Progress</span>
+                            <span className={isAllDone ? "text-emerald-600" : doneCount > 0 ? "text-blue-600" : ""}>
+                              {subCoursePct}%
+                            </span>
+                          </div>
+                          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                            <div
+                              className={`h-full transition-all duration-300 ${
+                                isAllDone
+                                  ? "bg-emerald-500"
+                                  : "bg-gradient-to-r from-blue-600 to-indigo-600"
+                              }`}
+                              style={{ width: `${subCoursePct}%` }}
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 );

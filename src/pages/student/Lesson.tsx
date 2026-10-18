@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Icon, { IconName } from "../../components/Icon";
 import {
   FULL_STACK_MODULES,
@@ -21,6 +21,7 @@ import {
 
 export default function StudentLesson() {
   const { eid, lid } = useParams();
+  const navigate = useNavigate();
 
   const [modules, setModules] = useState<CurriculumModule[]>(FULL_STACK_MODULES);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
@@ -108,6 +109,22 @@ export default function StudentLesson() {
   const subCoursePct = subCourseLessons.length
     ? Math.round((completedInSubCourse * 100) / subCourseLessons.length)
     : 0;
+
+  const isCurrentSubCourseUnlocked = useMemo(() => {
+    if (modules.length === 0 || containingModuleIndex <= 0) return true;
+    return isCurriculumModuleUnlocked(containingModuleIndex, modules, completed);
+  }, [containingModuleIndex, modules, completed]);
+
+  const nextSubCourse = useMemo(() => {
+    if (containingModuleIndex >= 0 && containingModuleIndex < modules.length - 1) {
+      return modules[containingModuleIndex + 1];
+    }
+    return null;
+  }, [containingModuleIndex, modules]);
+
+  const isCurrentSubCourseAllDone = useMemo(() => {
+    return subCourseLessons.length > 0 && subCourseLessons.every(it => completed.has(it.id));
+  }, [subCourseLessons, completed]);
 
   // Reset view mode and assignment state when switching lessons
   useEffect(() => {
@@ -243,6 +260,60 @@ export default function StudentLesson() {
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
           </div>
           <p className="mt-5 text-sm font-bold tracking-wide text-slate-300">Loading BlezeX Learning Environment…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // --- LOCKED SUB-COURSE SHIELD ---
+  if (!isCurrentSubCourseUnlocked) {
+    const prevSub = containingModuleIndex > 0 ? modules[containingModuleIndex - 1] : null;
+    const prevItems = prevSub?.items || [];
+    const prevDone = prevItems.filter(it => completed.has(it.id)).length;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0f1d] p-6 text-white">
+        <div className="max-w-md w-full rounded-3xl border border-amber-500/30 bg-slate-900/95 p-8 text-center shadow-2xl backdrop-blur-md">
+          <span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-inner">
+            <Icon name="lock" size={32} />
+          </span>
+          <span className="mt-4 inline-block text-[10px] font-black uppercase tracking-widest text-amber-400">
+            COURSE LOCKED
+          </span>
+          <h2 className="mt-1 font-display text-2xl font-extrabold text-white">
+            {containingModule?.title || "Sub-Course Locked"}
+          </h2>
+          <p className="mt-3 text-xs leading-relaxed text-slate-300">
+            This lesson is part of a locked sub-course. You must finish all lessons and assessments in{" "}
+            <strong className="text-amber-300">{prevSub?.title || "the previous course"}</strong> first ({prevDone}/{prevItems.length} completed).
+          </p>
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              to={`/student/course/${effectiveEid}`}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-5 py-2.5 text-xs font-bold text-slate-200 hover:bg-slate-700 transition"
+            >
+              <Icon name="arrowLeft" size={14} /> Back to Course Track
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                // Find first incomplete lesson in earliest unlocked subcourse
+                for (let i = 0; i < modules.length; i++) {
+                  if (isCurriculumModuleUnlocked(i, modules, completed)) {
+                    const incomplete = modules[i].items.find(it => !completed.has(it.id));
+                    if (incomplete) {
+                      navigate(`/student/course/${effectiveEid}/lesson/${incomplete.id}`);
+                      return;
+                    }
+                  }
+                }
+                navigate(`/student/course/${effectiveEid}`);
+              }}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:from-blue-500 hover:to-indigo-500 transition"
+            >
+              <span>Go to Active Lesson</span>
+              <Icon name="arrow" size={14} />
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1144,12 +1215,20 @@ export default function StudentLesson() {
                             <span>Proceed to Next Item</span>
                             <Icon name="arrow" size={14} />
                           </Link>
+                        ) : nextSubCourse && (isCurrentSubCourseAllDone || isCurrentDone) ? (
+                          <Link
+                            to={`/student/course/${effectiveEid}/lesson/${nextSubCourse.items[0]?.id}`}
+                            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:from-emerald-500 hover:to-teal-500"
+                          >
+                            <span>Next Course: {nextSubCourse.title}</span>
+                            <Icon name="arrow" size={14} />
+                          </Link>
                         ) : (
                           <Link
                             to={`/student/course/${effectiveEid}`}
                             className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-blue-700"
                           >
-                            <span>Back to Sub-Courses</span>
+                            <span>Back to Course Track</span>
                             <Icon name="arrow" size={14} />
                           </Link>
                         )}
@@ -1314,12 +1393,20 @@ export default function StudentLesson() {
                   <span>Next</span>
                   <Icon name="arrow" size={15} />
                 </Link>
+              ) : nextSubCourse && (isCurrentSubCourseAllDone || isCurrentDone) ? (
+                <Link
+                  to={`/student/course/${effectiveEid}/lesson/${nextSubCourse.items[0]?.id}`}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:from-emerald-500 hover:to-teal-500"
+                >
+                  <span>Next Course: {nextSubCourse.title}</span>
+                  <Icon name="arrow" size={15} />
+                </Link>
               ) : (
                 <Link
                   to={`/student/course/${effectiveEid}`}
                   className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
                 >
-                  <span>Back to Sub-Courses</span>
+                  <span>Back to Course Track</span>
                   <Icon name="arrow" size={15} />
                 </Link>
               )}
