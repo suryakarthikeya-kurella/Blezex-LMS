@@ -14,11 +14,11 @@ const lesson131: CurriculumItem = {
   moduleId: "module-git-02-everyday-workflow",
   moduleTitle: "Module 2: Everyday Workflow",
   modulePosition: 2,
-  title: "131. Initialize, Clone and Inspect",
+  title: "Initialize, Clone and Inspect",
   duration: "30 mins",
   type: "cheatsheet",
   position: 1,
-  contentHeading: "Lesson 131: Initialize, Clone and Inspect",
+  contentHeading: "Initialize, Clone and Inspect",
   contentDescription: "Master initializing new repositories with git init, cloning remote projects with git clone, inspecting status with git status, viewing log graphs with git log, and comparing revisions with git diff.",
   codeSnippet: {
     language: "bash",
@@ -39,7 +39,7 @@ git diff`
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Planting a Seed vs Buying a Potted Plant",
+      title: "Core Concept: Planting a Seed vs Buying a Potted Plant",
       explanation: "Starting a project in Git happens in one of two ways. 1) `git init` is planting a seed in an empty flower pot: you start with an empty folder on your desktop, run `git init`, and Git creates a hidden `.git` brain inside it. It has zero history, waiting for you to create your first commit. 2) `git clone` is going to a garden nursery and buying a fully grown, healthy potted plant: you provide a GitHub URL, and Git downloads the ENTIRE plant—every branch, every commit from the past 5 years, and sets up your remote connection automatically!",
       bullets: [
         "`git init`: Creates a new, blank local Git repository (`.git` directory).",
@@ -48,7 +48,7 @@ git diff`
       ]
     },
     {
-      title: "2. The Daily Inspection Toolkit",
+      title: "The Daily Inspection Toolkit",
       explanation: "Run these 3 commands constantly throughout your working day:",
       table: {
         headers: ["Command", "What It Shows", "When to Run"],
@@ -60,7 +60,7 @@ git diff`
       }
     },
     {
-      title: "3. Concept in Depth: Advanced `git log` Formatting",
+      title: "Concept in Depth: Advanced `git log` Formatting",
       explanation: "Raw `git log` can be verbose and hard to read. Professional developers use clean formatting flags:",
       bullets: [
         "`--oneline`: Compresses each commit into a 7-character short hash and subject line.",
@@ -70,7 +70,7 @@ git diff`
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these beginner workflow mistakes:",
       bullets: [
         "Nesting Repositories: Running `git init` inside a folder that is already inside an existing Git repository. This creates confusing nested sub-repositories.",
@@ -79,7 +79,7 @@ git diff`
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Clone an open-source repository or practice repo. Inspect the status with `git status`. Use `git log --oneline -n 10` to view the 10 most recent commits. Use `git show <hash>` to inspect the exact diff introduced by the latest commit."
     }
   ],
@@ -216,11 +216,11 @@ const lesson132: CurriculumItem = {
   moduleId: "module-git-02-everyday-workflow",
   moduleTitle: "Module 2: Everyday Workflow",
   modulePosition: 2,
-  title: "132. Stage and Commit Changes",
+  title: "Stage and Commit Changes",
   duration: "30 mins",
   type: "cheatsheet",
   position: 2,
-  contentHeading: "Lesson 132: Stage and Commit Changes",
+  contentHeading: "Stage and Commit Changes",
   contentDescription: "Master staging files with git add, reviewing staged changes with git diff --staged, crafting professional commit messages, and understanding commit immutability.",
   codeSnippet: {
     language: "bash",
@@ -239,7 +239,7 @@ git commit -m "Add responsive course card component and styles"
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Packing a Shipping Box",
+      title: "Core Concept: Packing a Shipping Box",
       explanation: "Think of `git add` as placing items inside a cardboard shipping box, and `git commit` as sealing the box with shipping tape and printing a clear label on the outside. You don't throw your dirty laundry, a half-eaten sandwich, and your birthday present all into the same shipping box! You pack only the birthday present, seal it, and write 'Birthday gift for Alice' on the box. Then you pack your laundry into a separate box. Each commit should represent ONE coherent, logical change with an accurate label!",
       bullets: [
         "`git add <file>`: Moves changes into the staging box.",
@@ -248,7 +248,7 @@ git commit -m "Add responsive course card component and styles"
       ]
     },
     {
-      title: "2. The Anatomy of a Professional Commit Message",
+      title: "The Anatomy of a Professional Commit Message",
       explanation: "Industry-standard commit messages follow the Imperative Mood guideline:",
       table: {
         headers: ["Standard", "Good Example (Imperative)", "Bad Example (Vague / Past tense)"],
@@ -261,7 +261,7 @@ git commit -m "Add responsive course card component and styles"
       }
     },
     {
-      title: "3. Concept in Depth: Interactive Patch Staging (`git add -p`)",
+      title: "Concept in Depth: Interactive Patch Staging (`git add -p`)",
       explanation: "What if you edited 50 lines in `App.jsx`, but 20 lines fix a bug and 30 lines start a new feature? You can split the file during staging using `git add -p` (patch mode):",
       bullets: [
         "Git divides the file changes into individual chunks called 'hunks'.",
@@ -270,7 +270,7 @@ git commit -m "Add responsive course card component and styles"
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these commit mistakes:",
       bullets: [
         "Vague Commit Messages: Writing messages like `updates`, `wip`, `fixed`, or `asdf`. Six months later, nobody will know what was changed or why.",
@@ -279,7 +279,7 @@ git commit -m "Add responsive course card component and styles"
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create two focused commits in a test repository. Commit 1: Add a header to `index.html`. Commit 2: Add styles to `styles.css`. Ensure each commit message uses the imperative mood and verify the history with `git log --oneline`."
     }
   ],
@@ -416,11 +416,11 @@ const lesson133: CurriculumItem = {
   moduleId: "module-git-02-everyday-workflow",
   moduleTitle: "Module 2: Everyday Workflow",
   modulePosition: 2,
-  title: "133. Ignore Files and Inspect Diffs",
+  title: "Ignore Files and Inspect Diffs",
   duration: "30 mins",
   type: "cheatsheet",
   position: 3,
-  contentHeading: "Lesson 133: Ignore Files and Inspect Diffs",
+  contentHeading: "Ignore Files and Inspect Diffs",
   contentDescription: "Master configuring .gitignore patterns, preventing committing secrets, local dependencies (node_modules), and build artifacts (dist), untracking accidentally committed files with git rm --cached, and reading unified diffs.",
   codeSnippet: {
     language: "bash",
@@ -446,7 +446,7 @@ Thumbs.db
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The Do Not Disturb Sign on the Hotel Door",
+      title: "Core Concept: The Do Not Disturb Sign on the Hotel Door",
       explanation: "Imagine a hotel maid walking down the hallway. If a guest puts a 'Do Not Disturb' sign on their door, the maid walks right past and ignores that room completely. A `.gitignore` file is your project's 'Do Not Disturb' sign for Git! It lists all the temporary junk files, operating system clutter, huge 500MB `node_modules` folders, and private `.env` password files that Git should NEVER look at, stage, or upload to GitHub. Without `.gitignore`, running `git add .` would drag 50,000 junk files into your repository!",
       bullets: [
         "`.gitignore`: A plain text file placed at the root of your repository.",
@@ -455,7 +455,7 @@ Thumbs.db
       ]
     },
     {
-      title: "2. The 3 Things You Must NEVER Commit to Git",
+      title: "The 3 Things You Must NEVER Commit to Git",
       explanation: "Memorize these three categories of forbidden files:",
       table: {
         headers: ["Category", "Why It is Forbidden", "Examples to Ignore"],
@@ -467,7 +467,7 @@ Thumbs.db
       }
     },
     {
-      title: "3. Concept in Depth: How to Untrack an Already Committed File",
+      title: "Concept in Depth: How to Untrack an Already Committed File",
       explanation: "A vital Git rule: Adding a file to `.gitignore` only works if the file is currently UNTRACKED. If you already committed `.env` in the past, Git will continue tracking it! To stop tracking it without deleting your local copy from your hard drive, run:",
       bullets: [
         "`git rm --cached .env`: Removes `.env` from the staging index and repository history.",
@@ -476,7 +476,7 @@ Thumbs.db
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these ignore file mistakes:",
       bullets: [
         "Committing `.env` and pushing to GitHub: Once pushed, the secret is in public Git history forever, even if deleted in a later commit! You must immediately revoke and rotate the compromised password or token.",
@@ -485,7 +485,7 @@ Thumbs.db
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create a `.gitignore` file that ignores `node_modules/`, `dist/`, and `.env`. Create a test `.env` file containing `SECRET_KEY=123`. Run `git status` and verify that Git completely ignores the `.env` file."
     }
   ],
@@ -622,11 +622,11 @@ const lesson134: CurriculumItem = {
   moduleId: "module-git-02-everyday-workflow",
   moduleTitle: "Module 2: Everyday Workflow",
   modulePosition: 2,
-  title: "134. Undoing Changes Safely",
+  title: "Undoing Changes Safely",
   duration: "30 mins",
   type: "cheatsheet",
   position: 4,
-  contentHeading: "Lesson 134: Undoing Changes Safely",
+  contentHeading: "Undoing Changes Safely",
   contentDescription: "Master the safe recovery toolkit in Git: discarding working tree changes with git restore, un-staging files with git restore --staged, safe public history rollback with git revert, and understanding the risks of git reset --hard.",
   codeSnippet: {
     language: "bash",
@@ -646,7 +646,7 @@ git revert <commit-hash>
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Eraser vs Bank Correction Entry",
+      title: "Core Concept: Eraser vs Bank Correction Entry",
       explanation: "Imagine you are writing in your personal journal at home. If you write a sentence you don't like, you can take a pencil eraser, rub it out vigorously, and pretend it never happened (`git restore` or `git reset`). But imagine you work as an accountant at a bank. If you accidentally credit an extra $500 to a customer's account and send out their bank statement (shared public history), you CANNOT take an eraser to the bank's public ledger and rip pages out of the book! That is accounting fraud! Instead, you write a brand-new correcting transaction: 'Adjustment: -$500 to correct error' (`git revert`). Everyone sees what happened, no history is erased, and the balance is restored perfectly!",
       bullets: [
         "`git restore <file>`: Discards uncommitted working changes.",
@@ -655,7 +655,7 @@ git revert <commit-hash>
       ]
     },
     {
-      title: "2. The Recovery Decision Matrix",
+      title: "The Recovery Decision Matrix",
       explanation: "Choose the exact right undo command for your situation:",
       table: {
         headers: ["What You Want to Undo", "Has it Been Pushed to GitHub?", "Command to Use", "Risk Level"],
@@ -668,7 +668,7 @@ git revert <commit-hash>
       }
     },
     {
-      title: "3. Concept in Depth: The Danger of `git reset --hard`",
+      title: "Concept in Depth: The Danger of `git reset --hard`",
       explanation: "`git reset --hard` moves your branch pointer backward AND wipes out all unstaged and staged changes in your working tree:",
       bullets: [
         "Irreversible Loss: Uncommitted changes in your working tree that were never staged or committed are GONE FOREVER. Git cannot recover uncommitted text!",
@@ -676,7 +676,7 @@ git revert <commit-hash>
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these catastrophic recovery mistakes:",
       bullets: [
         "Running `reset --hard` on Shared Branches: Rewriting history on `main` causes massive merge conflicts and breaks teammates' repositories.",
@@ -685,7 +685,7 @@ git revert <commit-hash>
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Make an edit to a file and discard it using `git restore`. Make another edit, stage it with `git add`, and unstage it using `git restore --staged`. Make a commit, and then create a safe inverse rollback using `git revert HEAD`."
     }
   ],

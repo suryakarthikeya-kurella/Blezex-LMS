@@ -14,11 +14,11 @@ const lesson140: CurriculumItem = {
   moduleId: "module-git-04-workflows-recovery",
   moduleTitle: "Module 4: Team Workflows and Recovery",
   modulePosition: 4,
-  title: "140. Tags and Releases",
+  title: "Tags and Releases",
   duration: "30 mins",
   type: "cheatsheet",
   position: 1,
-  contentHeading: "Lesson 140: Tags and Releases",
+  contentHeading: "Tags and Releases",
   contentDescription: "Master marking release milestones with Git tags: lightweight vs annotated tags (git tag -a), Semantic Versioning (SemVer: MAJOR.MINOR.PATCH), publishing tags to remotes, and generating GitHub releases.",
   codeSnippet: {
     language: "bash",
@@ -38,7 +38,7 @@ git push origin v1.0.0
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The Trophy on the Bookshelf",
+      title: "Core Concept: The Trophy on the Bookshelf",
       explanation: "Think of your project history as a long marathon race with thousands of footsteps (commits). A 'Branch' is a runner who keeps running forward every single day. But a 'Tag' is a permanent golden trophy placed at the Mile 10 marker (`v1.0.0`). The trophy NEVER moves, even as the runners keep racing ahead! When customers download your software, they don't download a moving branch; they download the frozen milestone marked by the trophy: `v1.0.0` or `v2.1.0`. And Semantic Versioning is the universal numbering system stamped on that trophy!",
       bullets: [
         "Annotated Tag (`git tag -a`): Contains tagger name, email, date, and release notes (best for releases).",
@@ -48,7 +48,7 @@ git push origin v1.0.0
       ]
     },
     {
-      title: "2. Semantic Versioning (SemVer) Explained",
+      title: "Semantic Versioning (SemVer) Explained",
       explanation: "The global standard for software version numbers:",
       table: {
         headers: ["Segment", "When to Increment", "Example Transition"],
@@ -60,7 +60,7 @@ git push origin v1.0.0
       }
     },
     {
-      title: "3. Concept in Depth: GitHub Releases",
+      title: "Concept in Depth: GitHub Releases",
       explanation: "A GitHub Release is built directly on top of a Git tag. It pairs the immutable Git tag snapshot with downloadable pre-compiled binary packages, automated changelogs, and release release notes for users.",
       bullets: [
         "Tag is the Foundation: Every GitHub release requires a Git tag.",
@@ -68,7 +68,7 @@ git push origin v1.0.0
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these tagging mistakes:",
       bullets: [
         "Expecting `git push` to Push Tags: Running `git push` pushes ONLY branches! You MUST explicitly run `git push origin v1.0.0` or `git push origin --tags`.",
@@ -77,7 +77,7 @@ git push origin v1.0.0
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create an annotated tag `v1.0.0` with a release message. View the tag details with `git show v1.0.0`. Push the tag to your remote repository with `git push origin v1.0.0`. In GitHub, create a new Release based on that tag with release notes."
     }
   ],
@@ -214,11 +214,11 @@ const lesson141: CurriculumItem = {
   moduleId: "module-git-04-workflows-recovery",
   moduleTitle: "Module 4: Team Workflows and Recovery",
   modulePosition: 4,
-  title: "141. GitHub Collaboration and Permissions",
+  title: "GitHub Collaboration and Permissions",
   duration: "30 mins",
   type: "cheatsheet",
   position: 2,
-  contentHeading: "Lesson 141: GitHub Collaboration and Permissions",
+  contentHeading: "GitHub Collaboration and Permissions",
   contentDescription: "Master team collaboration controls: repository permission tiers (Read, Triage, Write, Maintain, Admin), diagnosing HTTP 403 Forbidden errors, SSH authentication vs Personal Access Tokens (PAT), and branch protection rules.",
   codeSnippet: {
     language: "bash",
@@ -238,7 +238,7 @@ git branch -vv
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Keycards at an Office Building",
+      title: "Core Concept: Keycards at an Office Building",
       explanation: "Imagine a modern corporate headquarters. When you walk up to the front glass door, you swipe your electronic keycard (SSH Key or Personal Access Token). That proves WHO you are (Authentication). Once inside, the security computer looks up your role in the company directory (Authorization). If you are an intern, your keycard opens the 1st-floor breakroom (Read Access). It will NOT open the 10th-floor Executive Boardroom (Write/Admin Access)! If you try to swipe into the boardroom, the door beeps red: '403 Forbidden!'. That is GitHub permissions: your SSH key proves your identity, but the repository owner must grant you 'Write' permission before you can push code!",
       bullets: [
         "Authentication: Proving identity via SSH keys or Personal Access Tokens (passwords are disabled for git push).",
@@ -247,7 +247,7 @@ git branch -vv
       ]
     },
     {
-      title: "2. GitHub Permission Levels Explained",
+      title: "GitHub Permission Levels Explained",
       explanation: "Understanding the 5 standard collaborator tiers on GitHub:",
       table: {
         headers: ["Permission Tier", "What the User Can Do", "Best For"],
@@ -261,7 +261,7 @@ git branch -vv
       }
     },
     {
-      title: "3. Concept in Depth: Branch Protection Rules",
+      title: "Concept in Depth: Branch Protection Rules",
       explanation: "On production branches (like `main`), teams configure Branch Protection Rules on GitHub:",
       bullets: [
         "Require a pull request before merging (prohibits direct pushes to main).",
@@ -271,7 +271,7 @@ git branch -vv
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these permission and authentication errors:",
       bullets: [
         "Using GitHub Password in Terminal: GitHub deprecated password authentication for Git in 2021. You must use SSH keys or a Personal Access Token (PAT).",
@@ -280,7 +280,7 @@ git branch -vv
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Generate an SSH key using `ssh-keygen -t ed25519`. Add the public key to your GitHub account settings. Test your connection with `ssh -T git@github.com`. On your test repository, configure a branch protection rule on `main` that requires a pull request and at least 1 approval."
     }
   ],
@@ -417,11 +417,11 @@ const lesson142: CurriculumItem = {
   moduleId: "module-git-04-workflows-recovery",
   moduleTitle: "Module 4: Team Workflows and Recovery",
   modulePosition: 4,
-  title: "142. Team Workflow and Project Hygiene",
+  title: "Team Workflow and Project Hygiene",
   duration: "30 mins",
   type: "cheatsheet",
   position: 3,
-  contentHeading: "Lesson 142: Team Workflow and Project Hygiene",
+  contentHeading: "Team Workflow and Project Hygiene",
   contentDescription: "Master standard collaborative engineering workflows: GitHub Flow vs GitFlow, keeping main deployable at all times, documentation hygiene (README, LICENSE, CONTRIBUTING), and pre-commit linting hooks (Husky).",
   codeSnippet: {
     language: "bash",
@@ -443,7 +443,7 @@ git push -u origin feature/course-reviews
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Operating a Clean Professional Kitchen",
+      title: "Core Concept: Operating a Clean Professional Kitchen",
       explanation: "In a five-star restaurant, chefs don't chop raw chicken on the main serving counter while dirty pots pile up in the sink. The main counter (`main` branch) is kept spotlessly clean and ready to plate meals at any second! Prep cooks work on isolated cutting boards (feature branches). When vegetables are chopped and inspected (code review + CI tests), they are brought to the main counter. After a dish is served, the cutting board is washed and put away (branch deleted). 'Project Hygiene' means keeping your repository clean, documented, tested, and deployable at any moment of the day!",
       bullets: [
         "Deployable `main`: The `main` branch must always compile, pass tests, and be ready for immediate production release.",
@@ -452,7 +452,7 @@ git push -u origin feature/course-reviews
       ]
     },
     {
-      title: "2. GitHub Flow vs Traditional GitFlow",
+      title: "GitHub Flow vs Traditional GitFlow",
       explanation: "Comparing modern workflows with legacy branching models:",
       table: {
         headers: ["Workflow Model", "Characteristics", "When to Use"],
@@ -463,7 +463,7 @@ git push -u origin feature/course-reviews
       }
     },
     {
-      title: "3. Concept in Depth: Pre-Commit Hooks (Husky & Lint-Staged)",
+      title: "Concept in Depth: Pre-Commit Hooks (Husky & Lint-Staged)",
       explanation: "Human discipline alone is not enough. Teams use automated Git hooks (via Husky) to enforce quality gates locally before code can even be committed:",
       bullets: [
         "Pre-commit Hook: Runs ESLint and Prettier on staged files before allowing a commit to be created.",
@@ -472,7 +472,7 @@ git push -u origin feature/course-reviews
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these team hygiene traps:",
       bullets: [
         "Breaking `main`: Merging broken code that causes other developers' builds to fail. Treat breaking `main` as an emergency priority.",
@@ -481,7 +481,7 @@ git push -u origin feature/course-reviews
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Write a team workflow checklist for a 5-person engineering team. Include rules for branch naming, commit message conventions, PR review requirements, and pre-commit linting rules. Create a professional `README.md` with setup steps, test execution, and deployment instructions."
     }
   ],
@@ -618,11 +618,11 @@ const lesson143: CurriculumItem = {
   moduleId: "module-git-04-workflows-recovery",
   moduleTitle: "Module 4: Team Workflows and Recovery",
   modulePosition: 4,
-  title: "143. Reflog and Recovering Lost Commits",
+  title: "Reflog and Recovering Lost Commits",
   duration: "30 mins",
   type: "cheatsheet",
   position: 4,
-  contentHeading: "Lesson 143: Reflog and Recovering Lost Commits",
+  contentHeading: "Reflog and Recovering Lost Commits",
   contentDescription: "Master Git's ultimate safety net: inspecting HEAD reference movements with git reflog, rescuing 'lost' commits after accidental resets or branch deletions, and understanding Git garbage collection.",
   codeSnippet: {
     language: "bash",
@@ -644,7 +644,7 @@ git switch -c rescue-branch e4f5g6h
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The Airplane Flight Data Recorder (Black Box)",
+      title: "Core Concept: The Airplane Flight Data Recorder (Black Box)",
       explanation: "Imagine an airplane with a pilot. If the pilot accidentally flies in the wrong direction or loses their navigation chart, they don't panic—the airplane has a tamper-proof 'Black Box' flight data recorder! The black box records every single move the controls made: 10:01 AM pilot turned left, 10:04 AM pilot adjusted altitude. In Git, `git reflog` is your indestructible black box! Even if you run `git reset --hard` or delete an entire branch, Git does NOT immediately delete the commit objects from disk. Git records every single movement of the `HEAD` pointer in the reflog. As long as you can find the commit hash in `git reflog`, you can rescue your code in 10 seconds!",
       bullets: [
         "`git reflog`: The local reference log recording every time `HEAD` moved (commits, checkouts, resets, merges, rebases).",
@@ -653,7 +653,7 @@ git switch -c rescue-branch e4f5g6h
       ]
     },
     {
-      title: "2. What `git reflog` Tracks vs `git log`",
+      title: "What `git reflog` Tracks vs `git log`",
       explanation: "The crucial difference between the two logs:",
       table: {
         headers: ["Log Tool", "What It Shows", "Can It Find Deleted/Reset Commits?"],
@@ -664,7 +664,7 @@ git switch -c rescue-branch e4f5g6h
       }
     },
     {
-      title: "3. Concept in Depth: Git Garbage Collection (`git gc`)",
+      title: "Concept in Depth: Git Garbage Collection (`git gc`)",
       explanation: "Git does not immediately delete discarded objects. Commits that have no branch pointing to them are called 'dangling' or 'unreachable' objects. Git keeps unreachable objects for at least 30 days (and tracked objects for 90 days) before running automatic garbage collection (`git gc`). That gives you a 30-day safety net to rescue lost work!",
       bullets: [
         "Safety Window: You have weeks to rescue an accidentally deleted commit.",
@@ -672,7 +672,7 @@ git switch -c rescue-branch e4f5g6h
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these recovery traps:",
       bullets: [
         "Relying on Reflog for Uncommitted Work: `git reflog` ONLY tracks commits! If you had uncommitted edits in your working directory and ran `reset --hard`, the reflog cannot rescue them.",
@@ -681,7 +681,7 @@ git switch -c rescue-branch e4f5g6h
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Make a commit with a test file. Run `git reset --hard HEAD~1` to simulate an accidental deletion. Observe that `git log` shows the commit is gone. Open `git reflog`, locate the commit hash, and rescue it by running `git switch -c restored-branch <hash>`. Verify all files are recovered."
     }
   ],

@@ -14,11 +14,11 @@ const lesson104: CurriculumItem = {
   moduleId: "module-react-02-state-interaction",
   moduleTitle: "Module 2: State and Interaction",
   modulePosition: 2,
-  title: "104. Events and State with useState",
+  title: "Events and State with useState",
   duration: "35 mins",
   type: "cheatsheet",
   position: 1,
-  contentHeading: "Lesson 104: Events and State with useState",
+  contentHeading: "Events and State with useState",
   contentDescription: "Understand SyntheticEvent dispatching, the useState hook, state batching, asynchronous updater mechanics, and functional updater closures for reliable state updates.",
   codeSnippet: {
     language: "jsx",
@@ -55,7 +55,7 @@ function Counter() {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: A Classroom Scoreboard",
+      title: "Core Concept: A Classroom Scoreboard",
       explanation: "Imagine a scorekeeper standing in front of a giant digital scoreboard in a sports arena. Normal local variables in a JavaScript function (`let count = 0`) are like writing the score on a piece of paper that gets thrown in the trash can every time a play finishes—the next play, the function runs from scratch and the score is back to 0! But `useState` gives you the permanent digital scoreboard mounted on the arena wall. When you push the button to change the score, React remembers the score across every quarter (re-render) and lights up the new digits for the whole stadium to see!",
       bullets: [
         "State vs Local Variable: Local variables disappear when a function finishes; state persists across re-renders.",
@@ -64,7 +64,7 @@ function Counter() {
       ]
     },
     {
-      title: "2. The Mechanism of `useState` & The Snapshot Rule",
+      title: "The Mechanism of `useState` & The Snapshot Rule",
       explanation: "Calling a state setter does NOT immediately mutate the variable in the currently executing closure. State in React acts like a fixed snapshot for that specific render:",
       table: {
         headers: ["Code", "What Beginners Think Happens", "What ACTUALLY Happens in React"],
@@ -76,7 +76,7 @@ function Counter() {
       }
     },
     {
-      title: "3. Concept in Depth: Passing Handlers vs Invoking Handlers",
+      title: "Concept in Depth: Passing Handlers vs Invoking Handlers",
       explanation: "A classic mistake is invoking the event handler immediately instead of passing a function reference:",
       bullets: [
         "WRONG: `<button onClick={handleClick()}>` — This calls `handleClick()` immediately during rendering, causing an infinite re-render loop if it sets state!",
@@ -85,7 +85,7 @@ function Counter() {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these common state bugs:",
       bullets: [
         "Direct State Mutation: Writing `count = count + 1` does NOT trigger a re-render. Always call the setter `setCount(...)`.",
@@ -94,7 +94,7 @@ function Counter() {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Build an interactive `VoteCounter` with Upvote and Downvote buttons. Ensure the vote tally cannot drop below zero. Implement an 'Undo' button that reverts to the previous count, and log state changes to confirm that updates are batched."
     }
   ],
@@ -231,11 +231,11 @@ const lesson105: CurriculumItem = {
   moduleId: "module-react-02-state-interaction",
   moduleTitle: "Module 2: State and Interaction",
   modulePosition: 2,
-  title: "105. State, Props and Lifting State",
+  title: "State, Props and Lifting State",
   duration: "35 mins",
   type: "cheatsheet",
   position: 2,
-  contentHeading: "Lesson 105: State, Props and Lifting State",
+  contentHeading: "State, Props and Lifting State",
   contentDescription: "Understand the single source of truth principle, distinguishing state from derived values, lifting state up to the nearest common parent, and passing data down via props and events up via callbacks.",
   codeSnippet: {
     language: "jsx",
@@ -291,7 +291,7 @@ function CourseList({ items }) {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The Classroom Projector",
+      title: "Core Concept: The Classroom Projector",
       explanation: "Imagine two students sitting at opposite ends of a classroom. Student A is typing a search query, and Student B wants to see how many results match. Student A cannot whisper directly across the room to Student B—that causes chaos and confusion. Instead, Student A hands their query to the Professor at the front of the classroom (the Parent Component). The Professor projects the query onto the main whiteboard. Now both Student A and Student B (and everyone else) see the exact same synchronized information! That is 'Lifting State Up'.",
       bullets: [
         "Single Source of Truth: When two or more components need to share the same data, find their closest common parent.",
@@ -300,7 +300,7 @@ function CourseList({ items }) {
       ]
     },
     {
-      title: "2. The Golden Rule of Derived State",
+      title: "The Golden Rule of Derived State",
       explanation: "Before creating a new state variable with `useState`, ask yourself three questions:",
       table: {
         headers: ["Question", "If YES...", "If NO..."],
@@ -312,7 +312,7 @@ function CourseList({ items }) {
       }
     },
     {
-      title: "3. Concept in Depth: Callback Functions as Upward Communicators",
+      title: "Concept in Depth: Callback Functions as Upward Communicators",
       explanation: "While props only travel DOWN from parent to child, children can communicate UPWARDS by executing callback functions passed to them by the parent:",
       bullets: [
         "Parent declares: `const [activeId, setActiveId] = useState(null);`",
@@ -322,7 +322,7 @@ function CourseList({ items }) {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these common state synchronization errors:",
       bullets: [
         "Duplicate State: Storing both `items` and `itemCount` in state. If you forget to update `itemCount` when adding an item, they desynchronize! Just use `items.length` directly during render.",
@@ -331,7 +331,7 @@ function CourseList({ items }) {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create a parent `TemperatureConverter` with two child components: `CelsiusInput` and `FahrenheitInput`. When the user types in either input, both inputs must instantly synchronize and reflect the converted temperature. Compute the conversion as derived data during render."
     }
   ],
@@ -468,11 +468,11 @@ const lesson106: CurriculumItem = {
   moduleId: "module-react-02-state-interaction",
   moduleTitle: "Module 2: State and Interaction",
   modulePosition: 2,
-  title: "106. Forms and Controlled Components",
+  title: "Forms and Controlled Components",
   duration: "35 mins",
   type: "cheatsheet",
   position: 3,
-  contentHeading: "Lesson 106: Forms and Controlled Components",
+  contentHeading: "Forms and Controlled Components",
   contentDescription: "Master controlled form inputs (input, textarea, select, checkbox), handling e.preventDefault() on submit, client-side validation, accessible form labels, and multi-field state management.",
   codeSnippet: {
     language: "jsx",
@@ -567,7 +567,7 @@ function StudentRegistrationForm() {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The Puppet on Strings",
+      title: "Core Concept: The Puppet on Strings",
       explanation: "In standard HTML forms, an `<input>` is an independent wild animal: it keeps its own secret memory of what the user types. If you want to check what is typed, you have to inspect the DOM node manually. But in a React 'Controlled Component', the input is a puppet on strings! React holds the strings: the input displays strictly what React state tells it to display via `value={state}`, and when the user presses a key, the input tells React via `onChange={e => setState(e.target.value)}`. React updates state, and the puppet moves its hands. React is in total control 100% of the time!",
       bullets: [
         "Controlled Component: An input element whose value is driven by React state.",
@@ -576,7 +576,7 @@ function StudentRegistrationForm() {
       ]
     },
     {
-      title: "2. Controlled vs Uncontrolled Components",
+      title: "Controlled vs Uncontrolled Components",
       explanation: "Understanding the distinction between controlled inputs and uncontrolled DOM refs:",
       table: {
         headers: ["Feature", "Controlled Component (Recommended)", "Uncontrolled Component (useRef)"],
@@ -589,7 +589,7 @@ function StudentRegistrationForm() {
       }
     },
     {
-      title: "3. Concept in Depth: Generic Multi-Field Form Handler",
+      title: "Concept in Depth: Generic Multi-Field Form Handler",
       explanation: "Rather than writing 10 separate `const [email, setEmail] = useState('')` hooks, use a single state object with a dynamic computed property name:",
       bullets: [
         "`[name]: type === 'checkbox' ? checked : value`: Uses ES6 computed property keys `[e.target.name]` to dynamically update the matching field in state.",
@@ -598,7 +598,7 @@ function StudentRegistrationForm() {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Watch out for these common form errors:",
       bullets: [
         "Forgetting `e.preventDefault()`: Clicking submit causes the entire browser tab to reload and wipe all form data.",
@@ -608,7 +608,7 @@ function StudentRegistrationForm() {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Build a `CourseFeedbackForm` with controlled fields for `studentName`, `rating` (1 to 5), `comments`, and `recommend` (checkbox). Validate that comments have at least 15 characters, display field-specific error messages below each input, and prevent submission if any field is invalid."
     }
   ],
@@ -745,11 +745,11 @@ const lesson107: CurriculumItem = {
   moduleId: "module-react-02-state-interaction",
   moduleTitle: "Module 2: State and Interaction",
   modulePosition: 2,
-  title: "107. State Updates and Immutability",
+  title: "State Updates and Immutability",
   duration: "35 mins",
   type: "cheatsheet",
   position: 4,
-  contentHeading: "Lesson 107: State Updates and Immutability",
+  contentHeading: "State Updates and Immutability",
   contentDescription: "Master immutable state operations in React: creating shallow copies with object spread (...), updating arrays with map, deleting with filter, adding with concat/spread, and updating nested object structures.",
   codeSnippet: {
     language: "jsx",
@@ -799,7 +799,7 @@ function TaskManager() {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Photo Album vs Vandalizing a Painting",
+      title: "Core Concept: Photo Album vs Vandalizing a Painting",
       explanation: "Imagine you own an art gallery. If an artist wants to show a painting during the morning, afternoon, and night, they don't paint over the canvas directly with black ink and destroy the original painting (mutation). Instead, they take a photo of the morning canvas, make a brand-new copy for the afternoon, and another new copy for the night. That way, if anyone wants to compare the morning version to the afternoon version, both paintings exist side-by-side in perfect condition! In React, 'Immutability' means you NEVER mutate an existing object or array in place—you always create a fresh copy with your desired changes.",
       bullets: [
         "Shallow Equality Check: React compares previous state to next state using `Object.is(oldState, newState)`.",
@@ -808,7 +808,7 @@ function TaskManager() {
       ]
     },
     {
-      title: "2. The Immutable Operations Cheat Sheet",
+      title: "The Immutable Operations Cheat Sheet",
       explanation: "Memorize these standard immutable JavaScript patterns:",
       table: {
         headers: ["Operation", "MUTABLE Anti-Pattern (DO NOT USE!)", "IMMUTABLE Pattern (DO THIS!)"],
@@ -822,7 +822,7 @@ function TaskManager() {
       }
     },
     {
-      title: "3. Concept in Depth: Nested State Updates",
+      title: "Concept in Depth: Nested State Updates",
       explanation: "In JavaScript, the spread operator `{ ...object }` is a *shallow* copy. If your state has nested objects or arrays, copying the outer object does NOT copy the inner objects:",
       bullets: [
         "Shallow Copy Hazard: `const copy = { ...user }; copy.profile.bio = 'New';` still mutates the original `profile` object in memory!",
@@ -831,7 +831,7 @@ function TaskManager() {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Deadly state mutation traps:",
       bullets: [
         "Array `.sort()` and `.reverse()`: These native methods mutate the array in place! Always clone first: `[...items].sort((a, b) => ...)`.",
@@ -840,7 +840,7 @@ function TaskManager() {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create a shopping cart state that holds items with `id`, `name`, `price`, and `quantity`. Implement functions for: 1) Adding a new product, 2) Incrementing quantity of an existing item immutably, 3) Decrementing quantity (and removing the item if quantity reaches 0), and 4) Clearing the cart."
     }
   ],

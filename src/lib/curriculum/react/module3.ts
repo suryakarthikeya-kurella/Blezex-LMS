@@ -14,11 +14,11 @@ const lesson108: CurriculumItem = {
   moduleId: "module-react-03-hooks-lifecycle",
   moduleTitle: "Module 3: Hooks and Lifecycle",
   modulePosition: 3,
-  title: "108. useEffect and Dependency Arrays",
+  title: "useEffect and Dependency Arrays",
   duration: "35 mins",
   type: "cheatsheet",
   position: 1,
-  contentHeading: "Lesson 108: useEffect and Dependency Arrays",
+  contentHeading: "useEffect and Dependency Arrays",
   contentDescription: "Understand synchronizing components with external systems, side effect execution timing, dependency array semantics (empty, missing, reactive values), and cleanup functions.",
   codeSnippet: {
     language: "jsx",
@@ -51,7 +51,7 @@ function DocumentTitleSynchronizer({ courseTitle }) {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The Room's Thermostat",
+      title: "Core Concept: The Room's Thermostat",
       explanation: "A React component function is like drawing a picture of a room. It should be fast and pure: given props and state, it outputs JSX. But what if you want to turn on an air conditioner outside the room, start a timer on the microwave, or phone a friend? That is an 'External Side Effect'. `useEffect` is your smart thermostat: it waits until the room is completely drawn and displayed on screen, and THEN synchronizes with the outside world. And if you change the room's temperature setting, it turns off the old cycle (cleanup) and starts the new one!",
       bullets: [
         "Side Effect: Any interaction with outside systems (network, timers, document.title, window event listeners).",
@@ -60,7 +60,7 @@ function DocumentTitleSynchronizer({ courseTitle }) {
       ]
     },
     {
-      title: "2. The 3 Faces of the Dependency Array",
+      title: "The 3 Faces of the Dependency Array",
       explanation: "How React decides when to re-run your effect:",
       table: {
         headers: ["Dependency Array Syntax", "When It Runs", "Common Use Case"],
@@ -72,7 +72,7 @@ function DocumentTitleSynchronizer({ courseTitle }) {
       }
     },
     {
-      title: "3. Concept in Depth: The Invariant of Honest Dependencies",
+      title: "Concept in Depth: The Invariant of Honest Dependencies",
       explanation: "Every reactive value (props, state, or variables defined in the component) that is referenced inside the effect MUST be included in the dependency array. Omitting real dependencies creates 'stale closure bugs' where the effect holds onto outdated state forever.",
       bullets: [
         "Linter Rule: `react-hooks/exhaustive-deps` warns you whenever a dependency is missing.",
@@ -80,7 +80,7 @@ function DocumentTitleSynchronizer({ courseTitle }) {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these classic effect traps:",
       bullets: [
         "Setting State Without Dependencies: Calling `setCount(count + 1)` inside `useEffect` with no dependency array creates an infinite render loop that freezes the browser.",
@@ -89,7 +89,7 @@ function DocumentTitleSynchronizer({ courseTitle }) {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create a `WindowWidthTracker` component. Use `useEffect` to listen to the `window.onresize` event and display the current viewport width in real-time. Ensure you return a cleanup function that properly removes the event listener when the component unmounts."
     }
   ],
@@ -226,11 +226,11 @@ const lesson109: CurriculumItem = {
   moduleId: "module-react-03-hooks-lifecycle",
   moduleTitle: "Module 3: Hooks and Lifecycle",
   modulePosition: 3,
-  title: "109. Fetching Data, Cleanup and Race Conditions",
+  title: "Fetching Data, Cleanup and Race Conditions",
   duration: "35 mins",
   type: "cheatsheet",
   position: 2,
-  contentHeading: "Lesson 109: Fetching Data, Cleanup and Race Conditions",
+  contentHeading: "Fetching Data, Cleanup and Race Conditions",
   contentDescription: "Master requesting asynchronous API data in useEffect, handling HTTP errors, managing loading/empty/error states, and eliminating network race conditions with AbortController or active flags.",
   codeSnippet: {
     language: "jsx",
@@ -298,7 +298,7 @@ function CourseSearchList({ query }) {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Ordering at Two Food Trucks",
+      title: "Core Concept: Ordering at Two Food Trucks",
       explanation: "Imagine you are standing at a festival. You walk up to Food Truck A and order a Burger (Request 1). It is taking 10 minutes. Impatient, you walk to Food Truck B and order Tacos (Request 2). Truck B hands you the Tacos in 2 minutes, and you sit down to eat. 8 minutes later, Truck A finally runs over with your Burger and takes your Tacos away! That is a 'Network Race Condition'! Request 1 was sent first, but arrived LAST, overwriting your newer data with stale data. `AbortController` is how you yell: 'Cancel my Burger!' the moment you order Tacos.",
       bullets: [
         "Race Condition: When asynchronous operations complete out of order, corrupting state with outdated data.",
@@ -307,7 +307,7 @@ function CourseSearchList({ query }) {
       ]
     },
     {
-      title: "2. The 4 Mandatory HTTP States in React",
+      title: "The 4 Mandatory HTTP States in React",
       explanation: "Every professional data-fetching component must handle 4 states explicitly:",
       table: {
         headers: ["State", "Trigger / Condition", "User Experience (UI)"],
@@ -320,7 +320,7 @@ function CourseSearchList({ query }) {
       }
     },
     {
-      title: "3. Concept in Depth: Transport vs Application Failures",
+      title: "Concept in Depth: Transport vs Application Failures",
       explanation: "A common beginner misconception is believing `fetch()` rejects when the server returns 404 or 500. It does NOT! `fetch()` only rejects on network disconnects. You MUST inspect `response.ok`:",
       bullets: [
         "Transport Failure: No internet connection or DNS error -> `fetch()` promise rejects.",
@@ -328,7 +328,7 @@ function CourseSearchList({ query }) {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these data fetching bugs:",
       bullets: [
         "Making the useEffect callback itself `async`: Writing `useEffect(async () => { ... })` is forbidden! An async function returns a Promise, but React expects an effect to return a cleanup function (or nothing). Define an async function *inside* the effect instead.",
@@ -337,7 +337,7 @@ function CourseSearchList({ query }) {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Build a `CourseDetailFetcher` component that accepts a `courseId` prop. When `courseId` changes, fetch course data from a mock endpoint with a 1-second simulated delay. Use `AbortController` to cancel in-flight requests if the user switches courses rapidly, and display loading, error, and detail states."
     }
   ],
@@ -474,11 +474,11 @@ const lesson110: CurriculumItem = {
   moduleId: "module-react-03-hooks-lifecycle",
   moduleTitle: "Module 3: Hooks and Lifecycle",
   modulePosition: 3,
-  title: "110. useRef and DOM References",
+  title: "useRef and DOM References",
   duration: "35 mins",
   type: "cheatsheet",
   position: 3,
-  contentHeading: "Lesson 110: useRef and DOM References",
+  contentHeading: "useRef and DOM References",
   contentDescription: "Understand mutable ref containers, accessing real DOM elements directly (focus, scroll, media playback), storing timer/interval IDs across renders, and the critical distinction between state and refs.",
   codeSnippet: {
     language: "jsx",
@@ -538,7 +538,7 @@ function VideoPlayerWithStopwatch() {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The Sticky Note Behind the Screen",
+      title: "Core Concept: The Sticky Note Behind the Screen",
       explanation: "Remember how `useState` is like a digital arena scoreboard that causes everyone in the stadium to look and cheer (triggers a full re-render)? A `useRef` is like a small yellow sticky note stuck to the *back* of the scorekeeper's desk. The scorekeeper can write on it, erase it, and change the number 1,000 times a minute, and nobody in the stadium notices because changing a ref NEVER triggers a re-render! It also acts like a physical leash to an actual browser DOM element (like an `<input>` or `<video>`) when you need to call native browser methods like `.focus()` or `.scrollIntoView()`.",
       bullets: [
         "Plain JS Object: `useRef(initial)` returns `{ current: initial }`.",
@@ -547,7 +547,7 @@ function VideoPlayerWithStopwatch() {
       ]
     },
     {
-      title: "2. The 2 Main Use Cases for `useRef`",
+      title: "The 2 Main Use Cases for `useRef`",
       explanation: "When should you reach for `useRef`?",
       table: {
         headers: ["Use Case", "Why `useRef` is Used", "Code Example"],
@@ -558,7 +558,7 @@ function VideoPlayerWithStopwatch() {
       }
     },
     {
-      title: "3. Concept in Depth: State vs Ref Decision Matrix",
+      title: "Concept in Depth: State vs Ref Decision Matrix",
       explanation: "Should you use `useState` or `useRef`? Follow this simple test:",
       bullets: [
         "Does changing this value need to be reflected immediately in the rendered JSX on screen? -> Use `useState`.",
@@ -566,7 +566,7 @@ function VideoPlayerWithStopwatch() {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these common ref mistakes:",
       bullets: [
         "Reading or writing `ref.current` during rendering: DO NOT read or write `ref.current` inside the component body during render! Only read or write refs inside event handlers or `useEffect`.",
@@ -575,7 +575,7 @@ function VideoPlayerWithStopwatch() {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Build an auto-focus search modal. When the modal opens, automatically focus the search `<input>` using a DOM ref. Include a timer that tracks how many seconds the modal has been open using a mutable value ref, and verify that the timer update does not re-render the modal content."
     }
   ],
@@ -712,11 +712,11 @@ const lesson111: CurriculumItem = {
   moduleId: "module-react-03-hooks-lifecycle",
   moduleTitle: "Module 3: Hooks and Lifecycle",
   modulePosition: 3,
-  title: "111. Context API and useReducer",
+  title: "Context API and useReducer",
   duration: "35 mins",
   type: "cheatsheet",
   position: 4,
-  contentHeading: "Lesson 111: Context API and useReducer",
+  contentHeading: "Context API and useReducer",
   contentDescription: "Master eliminating prop-drilling with React Context (createContext, useContext, Provider), managing complex state transitions with pure reducers via useReducer, and pairing Context with useReducer for clean global state.",
   codeSnippet: {
     language: "jsx",
@@ -762,7 +762,7 @@ export function useCart() {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The University Wi-Fi vs Carrying Ethernet Cables",
+      title: "Core Concept: The University Wi-Fi vs Carrying Ethernet Cables",
       explanation: "Imagine you are in a 5-story university building. If the ground-floor server wants to send internet data to a student on the 5th floor, 'prop drilling' is like running a physical Ethernet cable from floor 1, through floor 2, through floor 3, and through floor 4, forcing every single professor in between to hold the wire even if they don't care about it! React 'Context' is the University Wi-Fi: the `Provider` broadcasts the signal into the air, and any student on any floor can simply open their laptop and connect directly with `useContext()`. And `useReducer` is the University Registrar: instead of students scribbling all over official records directly, they submit an official 'Action Request Form' (`dispatch({ type: 'ENROLL' })`), and the Registrar processes it following strict, pure rules!",
       bullets: [
         "Context: Broadcasts values down the entire component subtree without manual prop passing.",
@@ -771,12 +771,12 @@ export function useCart() {
       ]
     },
     {
-      title: "2. The useReducer Flow",
+      title: "The useReducer Flow",
       explanation: "How state transitions happen predictably in `useReducer`:",
       diagram: "+-------------------------------------------------------------+\n|                      THE REDUCER CYCLE                      |\n+-------------------------------------------------------------+\n| [User Interaction]: Click 'Enroll Now' button               |\n|            |                                                |\n|            v                                                |\n| [dispatch(action)]: { type: 'ADD_COURSE', payload: course } |\n|            |                                                |\n|            v                                                |\n| [Pure Reducer]: (currentState, action) => nextState         |\n|            |    Must be pure (no side effects, no mutations)|\n|            v                                                |\n| [Subscribed UI]: Re-renders with the newly returned state   |\n+-------------------------------------------------------------+"
     },
     {
-      title: "3. Concept in Depth: Reducers Must Be Pure",
+      title: "Concept in Depth: Reducers Must Be Pure",
       explanation: "A reducer function must be 100% PURE: given the same state and action, it must always return the exact same output:",
       bullets: [
         "No Side Effects: Never call API requests, timers, or `Math.random()` inside a reducer.",
@@ -785,7 +785,7 @@ export function useCart() {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Crucial mistakes when using Context and useReducer:",
       bullets: [
         "Putting Rapidly Changing State into One Giant Context: If a Context value updates, EVERY component that calls `useContext()` on it will re-render! Split unrelated contexts (e.g. `ThemeContext` separate from `CartContext`).",
@@ -794,7 +794,7 @@ export function useCart() {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create a `ThemeContext` that supports 'light' and 'dark' mode. Wrap your application tree in `ThemeProvider`. Build a `ThemeToggle` button in the navbar and a `DashboardCard` in the content area that dynamically reads the current theme from Context without any props."
     }
   ],
@@ -931,11 +931,11 @@ const lesson112: CurriculumItem = {
   moduleId: "module-react-03-hooks-lifecycle",
   moduleTitle: "Module 3: Hooks and Lifecycle",
   modulePosition: 3,
-  title: "112. Custom Hooks and Lifecycle Concepts",
+  title: "Custom Hooks and Lifecycle Concepts",
   duration: "35 mins",
   type: "cheatsheet",
   position: 5,
-  contentHeading: "Lesson 112: Custom Hooks and Lifecycle Concepts",
+  contentHeading: "Custom Hooks and Lifecycle Concepts",
   contentDescription: "Master extracting reusable stateful logic into custom hooks (functions starting with 'use'), understanding render and synchronization lifecycles, and sharing behavior without duplicating code.",
   codeSnippet: {
     language: "jsx",
@@ -986,7 +986,7 @@ function BookmarkButton({ courseId }) {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Custom Recipe Cards",
+      title: "Core Concept: Custom Recipe Cards",
       explanation: "Imagine you are a chef. Every time you make pasta, pizza, or soup, you have to measure garlic, chop onions, and heat olive oil. Writing out the exact same 15 steps in every single recipe is exhausting! So you create a dedicated recipe card called `useGarlicBase()`. Whenever you cook, you just pull out that card and use it. A 'Custom Hook' is your reusable recipe card in React: whenever two or more components need the exact same stateful logic (like debouncing a search query, checking online status, or synchronizing with localStorage), you package it into a function named `useSomething()`. Components share the LOGIC, but each gets its own independent state!",
       bullets: [
         "Naming Convention: MUST begin with `use` (e.g. `useOnlineStatus`, `useFetch`, `useDebounce`) so React linters can enforce the Rules of Hooks.",
@@ -995,7 +995,7 @@ function BookmarkButton({ courseId }) {
       ]
     },
     {
-      title: "2. The Rules of Hooks",
+      title: "The Rules of Hooks",
       explanation: "React enforces two unbreakable rules across all hooks (built-in and custom):",
       table: {
         headers: ["Rule", "What It Prohibits", "Why It Exists"],
@@ -1006,7 +1006,7 @@ function BookmarkButton({ courseId }) {
       }
     },
     {
-      title: "3. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Watch out for these custom hook mistakes:",
       bullets: [
         "Naming without 'use': Naming your custom hook `getLocalStorage()` disables React's linter, allowing hook rule violations to sneak in undetected.",
@@ -1015,7 +1015,7 @@ function BookmarkButton({ courseId }) {
       ]
     },
     {
-      title: "4. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create a custom hook named `useOnlineStatus()` that subscribes to `window.addEventListener('online')` and `window.addEventListener('offline')`. Return a boolean `isOnline`. Consume it in an `AppBanner` component that displays a red warning banner whenever the user loses internet connection."
     }
   ],
@@ -1152,11 +1152,11 @@ const lesson113: CurriculumItem = {
   moduleId: "module-react-03-hooks-lifecycle",
   moduleTitle: "Module 3: Hooks and Lifecycle",
   modulePosition: 3,
-  title: "113. useId and Accessible ID Relationships",
+  title: "useId and Accessible ID Relationships",
   duration: "35 mins",
   type: "cheatsheet",
   position: 6,
-  contentHeading: "Lesson 113: useId and Accessible ID Relationships",
+  contentHeading: "useId and Accessible ID Relationships",
   contentDescription: "Understand generating unique, stable IDs across server and client with useId, linking form controls with htmlFor and aria-describedby, and why useId must never be used as a list key.",
   codeSnippet: {
     language: "jsx",
@@ -1195,7 +1195,7 @@ function FormField({ label, hint, error, ...inputProps }) {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Name Tags at a Twin Convention",
+      title: "Core Concept: Name Tags at a Twin Convention",
       explanation: "Imagine you design a beautiful name tag for an employee: `id='employee-name'`. That works great if there is only one employee on screen. But what if you have a registration form with 3 people: Student, Parent, and Emergency Contact? If all three use the same `id='employee-name'`, the browser gets confused! When the user clicks the label for the Emergency Contact, the browser jumps to the Student's input box! `useId` is a smart automated badge dispenser: it stamps a guaranteed unique, collision-proof ID onto every single component instance (`:r1:`, `:r2:`, `:r3:`).",
       bullets: [
         "Unique & Collision-Free: Guarantees no two inputs on the same webpage share the same HTML ID.",
@@ -1204,7 +1204,7 @@ function FormField({ label, hint, error, ...inputProps }) {
       ]
     },
     {
-      title: "2. The DOs and DON'Ts of `useId`",
+      title: "The DOs and DON'Ts of `useId`",
       explanation: "Important rules to avoid misusing `useId`:",
       table: {
         headers: ["Scenario", "Permitted / Recommended?", "Reason"],
@@ -1216,7 +1216,7 @@ function FormField({ label, hint, error, ...inputProps }) {
       }
     },
     {
-      title: "3. Concept in Depth: Generating Multiple Related IDs",
+      title: "Concept in Depth: Generating Multiple Related IDs",
       explanation: "You do NOT need to call `useId()` 5 times for 5 related fields in the same component. Call `useId()` ONCE and append suffixes:",
       bullets: [
         "`const id = useId();`",
@@ -1226,7 +1226,7 @@ function FormField({ label, hint, error, ...inputProps }) {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these common accessibility mistakes:",
       bullets: [
         "Hardcoding static IDs in reusable components: Writing `<input id='email'>` means if the component is rendered twice on the page, the HTML is invalid.",
@@ -1235,7 +1235,7 @@ function FormField({ label, hint, error, ...inputProps }) {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Build a reusable `PasswordInputField` component using `useId`. Connect the `<label>` to the `<input>` via `htmlFor`, and connect an accessible password requirements helper box via `aria-describedby`. Render the component twice on the same screen (for 'Password' and 'Confirm Password') and verify that both inputs have independent, collision-free IDs."
     }
   ],

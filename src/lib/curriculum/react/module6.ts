@@ -14,11 +14,11 @@ const lesson124: CurriculumItem = {
   moduleId: "module-react-06-production-project",
   moduleTitle: "Module 6: Production React and Project",
   modulePosition: 6,
-  title: "124. Reusable Architecture and Environment Variables",
+  title: "Reusable Architecture and Environment Variables",
   duration: "35 mins",
   type: "cheatsheet",
   position: 1,
-  contentHeading: "Lesson 124: Reusable Architecture and Environment Variables",
+  contentHeading: "Reusable Architecture and Environment Variables",
   contentDescription: "Master enterprise folder architecture (feature-based organization, shared primitives, barrel exports), configuring environment variables securely across staging and production, and establishing clean dependency boundaries.",
   codeSnippet: {
     language: "bash",
@@ -46,7 +46,7 @@ src/
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Organizing a Supermarket vs a Messy Garage",
+      title: "Core Concept: Organizing a Supermarket vs a Messy Garage",
       explanation: "Imagine a chaotic garage where bicycle tires, milk cartons, garden hoses, and cereal boxes are dumped into one giant pile in the middle of the floor. Finding anything takes 30 minutes! In contrast, a modern supermarket is divided into clear departments: Produce, Bakery, Dairy, and Pharmacy. Each department has its own shelves, and shared equipment (like shopping carts) lives at the entrance. In production React, we organize files by 'Feature' (`features/courses/`, `features/auth/`), keeping related components, hooks, and API services co-located together, while generic components (`Button`, `Modal`) live in `shared/`.",
       bullets: [
         "Feature-Based Architecture: Co-locates everything a feature needs (UI, state, network calls) in one folder.",
@@ -55,7 +55,7 @@ src/
       ]
     },
     {
-      title: "2. The 3 Golden Rules of Reusable Architecture",
+      title: "The 3 Golden Rules of Reusable Architecture",
       explanation: "Best practices followed by top engineering teams:",
       table: {
         headers: ["Rule", "What It Dictates", "Why It Matters"],
@@ -67,7 +67,7 @@ src/
       }
     },
     {
-      title: "3. Concept in Depth: Validating Environment Variables at Startup",
+      title: "Concept in Depth: Validating Environment Variables at Startup",
       explanation: "Never let an application boot up if a required environment variable is missing. Create an `env.js` validator:",
       bullets: [
         "Check Required Keys: `if (!import.meta.env.VITE_API_URL) throw new Error('Missing VITE_API_URL');`",
@@ -76,7 +76,7 @@ src/
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these structural errors:",
       bullets: [
         "Organizing strictly by technical type (one giant `components/` folder with 300 files): Becomes unmaintainable in large apps.",
@@ -85,7 +85,7 @@ src/
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Refactor a flat React project into a feature-based folder tree with `features/auth/`, `features/courses/`, and `shared/components/`. Configure `.env.development` and `.env.production` files, and write an `env.js` helper that validates the existence of `VITE_API_BASE_URL` on app startup."
     }
   ],
@@ -222,11 +222,11 @@ const lesson125: CurriculumItem = {
   moduleId: "module-react-06-production-project",
   moduleTitle: "Module 6: Production React and Project",
   modulePosition: 6,
-  title: "125. Build and Deployment",
+  title: "Build and Deployment",
   duration: "35 mins",
   type: "cheatsheet",
   position: 2,
-  contentHeading: "Lesson 125: Build and Deployment",
+  contentHeading: "Build and Deployment",
   contentDescription: "Master production bundling with Vite (npm run build, dist output), asset hashing, cache busting, local previewing (npm run preview), configuring single-page rewrites on Netlify/Vercel/Nginx, and CI/CD automation.",
   codeSnippet: {
     language: "bash",
@@ -250,7 +250,7 @@ npm run preview
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Printing and Shipping the Book",
+      title: "Core Concept: Printing and Shipping the Book",
       explanation: "Developing a React app with `npm run dev` is like writing a book manuscript on loose-leaf paper: you can erase words, shuffle paragraphs, and make live edits instantly. But you cannot ship loose-leaf notes to 100,000 customers! 'Building for Production' (`npm run build`) is the printing press: it compiles all your JSX, removes comments and whitespace (minification), removes unused code (tree-shaking), compresses CSS, and stamps a cryptographic hash onto every file (`index-B3k8sL2q.js`). Now your app is a collection of razor-sharp static files in the `dist/` folder, ready to be served from any global CDN in the world in 10 milliseconds!",
       bullets: [
         "Production Bundle: Minified, tree-shaken, and optimized static HTML, CSS, and JS output in `dist/`.",
@@ -259,7 +259,7 @@ npm run preview
       ]
     },
     {
-      title: "2. The Build Pipeline Steps",
+      title: "The Build Pipeline Steps",
       explanation: "What happens when you run `npm run build`?",
       table: {
         headers: ["Step", "Tool / Action", "Result"],
@@ -273,7 +273,7 @@ npm run preview
       }
     },
     {
-      title: "3. Concept in Depth: SPA Hosting Redirect Rules",
+      title: "Concept in Depth: SPA Hosting Redirect Rules",
       explanation: "Because an SPA has only one physical file (`index.html`), cloud hosting platforms must be instructed to redirect all route requests to `index.html`:",
       bullets: [
         "Netlify (`_redirects` file in public/): `/*   /index.html   200`",
@@ -282,7 +282,7 @@ npm run preview
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these deployment mistakes:",
       bullets: [
         "Testing Only with Dev Server: `npm run dev` has different timing and error handling than production. Always test with `npm run preview` before pushing to production!",
@@ -291,7 +291,7 @@ npm run preview
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Run `npm run build` on your project. Inspect the generated `dist/` directory and note the file sizes and hashed asset names. Run `npm run preview` to test the production build locally. Create a `_redirects` file for Netlify and verify that deep links survive page refresh."
     }
   ],
@@ -428,11 +428,11 @@ const lesson126: CurriculumItem = {
   moduleId: "module-react-06-production-project",
   moduleTitle: "Module 6: Production React and Project",
   modulePosition: 6,
-  title: "126. Final React Project Architecture",
+  title: "Final React Project Architecture",
   duration: "35 mins",
   type: "cheatsheet",
   position: 3,
-  contentHeading: "Lesson 126: Final React Project Architecture",
+  contentHeading: "Final React Project Architecture",
   contentDescription: "Understand assembling all concepts into an enterprise course management platform: routing, state management, API integration, accessible forms, performance memoization, test coverage, and deployment readiness.",
   codeSnippet: {
     language: "jsx",
@@ -462,7 +462,7 @@ const lesson126: CurriculumItem = {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Building a Complete Modern Skyscraper",
+      title: "Core Concept: Building a Complete Modern Skyscraper",
       explanation: "Throughout this course, you have learned how to manufacture every individual component of a skyscraper: the foundation beams (JSX and components), the electrical wiring (state and useState), the plumbing and air ventilation (useEffect and data fetching), the elevator shafts (React Router), the secure keycard locks (Protected Routes), and the fire alarm circuit breakers (Error Boundaries). In Lesson 126, we don't just inspect loose pipes—we assemble the ENTIRE skyscraper! A complete, production-grade Course Management Platform where students can search, filter, enroll, review grades, and authenticate safely.",
       bullets: [
         "Architectural Harmony: Every tool has a dedicated role; no single component does everything.",
@@ -471,7 +471,7 @@ const lesson126: CurriculumItem = {
       ]
     },
     {
-      title: "2. The 7 Acceptance Criteria for the Final Project",
+      title: "The 7 Acceptance Criteria for the Final Project",
       explanation: "Your complete production React project must fulfill these 7 benchmarks:",
       table: {
         headers: ["Benchmark", "Requirement", "Technical Verification"],
@@ -487,7 +487,7 @@ const lesson126: CurriculumItem = {
       }
     },
     {
-      title: "3. Concept in Depth: End-to-End System Flow",
+      title: "Concept in Depth: End-to-End System Flow",
       explanation: "Trace data from user click to database and back:",
       bullets: [
         "1. Student clicks 'Enroll': Handler dispatches an enrollment action.",
@@ -497,7 +497,7 @@ const lesson126: CurriculumItem = {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Watch out for these final project mistakes:",
       bullets: [
         "Skipping Loading / Error States: An app that works only on fast Wi-Fi and crashes when offline is not production-ready.",
@@ -506,7 +506,7 @@ const lesson126: CurriculumItem = {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Deliver the completed application with a comprehensive README detailing project setup, architecture diagram, test execution commands (`npm test`), and deployment link on Vercel or Netlify."
     }
   ],
@@ -643,11 +643,11 @@ const lesson127: CurriculumItem = {
   moduleId: "module-react-06-production-project",
   moduleTitle: "Module 6: Production React and Project",
   modulePosition: 6,
-  title: "127. React DevTools and Profiling",
+  title: "React DevTools and Profiling",
   duration: "35 mins",
   type: "cheatsheet",
   position: 4,
-  contentHeading: "Lesson 127: React DevTools and Profiling",
+  contentHeading: "React DevTools and Profiling",
   contentDescription: "Master inspecting component hierarchies with React Developer Tools, debugging state and props live in the browser, profiling render bottlenecks with Flamegraphs and Ranked charts, and measuring optimization improvements scientifically.",
   codeSnippet: {
     language: "jsx",
@@ -668,7 +668,7 @@ const lesson127: CurriculumItem = {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The Doctor's X-Ray Machine",
+      title: "Core Concept: The Doctor's X-Ray Machine",
       explanation: "When you feel sick, a good doctor doesn't immediately open you up on the operating table with a surgical knife and guess what's wrong! They take an X-ray or an MRI first to see exactly where the problem is. 'React Developer Tools' is your hospital X-ray machine: the 'Components' tab lets you look inside any component to see its live props, state, and hooks in real time. And the 'Profiler' tab is your heart monitor: it records every heartbeat (render), measures how many milliseconds each component took to compute, and highlights in bright yellow the exact component that was running slow. You measure first, diagnose the real issue, make ONE targeted change, and verify the improvement!",
       bullets: [
         "Components Tab: Inspect and edit props, state, and context live in the browser without editing code.",
@@ -677,7 +677,7 @@ const lesson127: CurriculumItem = {
       ]
     },
     {
-      title: "2. The Profiler Views Explained",
+      title: "The Profiler Views Explained",
       explanation: "Understanding how to read React Profiler charts:",
       table: {
         headers: ["Profiler View", "Visual Representation", "What It Tells You"],
@@ -689,7 +689,7 @@ const lesson127: CurriculumItem = {
       }
     },
     {
-      title: "3. Concept in Depth: Highlighting Render Updates Live",
+      title: "Concept in Depth: Highlighting Render Updates Live",
       explanation: "In React DevTools Settings, check 'Highlight updates when components render':",
       bullets: [
         "Visual Flashes: Components that re-render will flash with a colored border on screen in real time.",
@@ -699,7 +699,7 @@ const lesson127: CurriculumItem = {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these profiling mistakes:",
       bullets: [
         "Profiling in Development Mode Only: Dev mode includes heavy React warning checks and is 2-5x slower than production. For accurate numbers, profile a production build with `npm run build` and profiling enabled (`--profile`).",
@@ -708,7 +708,7 @@ const lesson127: CurriculumItem = {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Open React DevTools Profiler on a searchable course list of 1,000 items. Record a baseline trace while typing in the search box and record the render duration. Apply `useMemo` on the filter function and `React.memo` on the card items. Record a second trace and document the exact percentage improvement."
     }
   ],

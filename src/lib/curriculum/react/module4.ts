@@ -14,11 +14,11 @@ const lesson114: CurriculumItem = {
   moduleId: "module-react-04-routing-architecture",
   moduleTitle: "Module 4: Routing and State Architecture",
   modulePosition: 4,
-  title: "114. Client-Side Routing",
+  title: "Client-Side Routing",
   duration: "35 mins",
   type: "cheatsheet",
   position: 1,
-  contentHeading: "Lesson 114: Client-Side Routing",
+  contentHeading: "Client-Side Routing",
   contentDescription: "Understand Single Page Application (SPA) navigation, HTML5 History API (pushState, popstate), React Router DOM (Routes, Route, Link, NavLink, useNavigate, useParams), and 404 Not Found handling.",
   codeSnippet: {
     language: "jsx",
@@ -75,7 +75,7 @@ export function AppRouter() {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Turning TV Channels vs Moving to a New House",
+      title: "Core Concept: Turning TV Channels vs Moving to a New House",
       explanation: "In traditional multi-page web applications (like websites from 2005), clicking a link was like packing all your furniture into moving trucks and driving to a brand new house: the browser screen flashes blank white, disconnects from the current page, downloads a whole new HTML document, re-parses all CSS, and re-executes all JavaScript from zero. But in a React Single Page Application (SPA) with Client-Side Routing, clicking a link is like changing the TV channel on your remote control! You never leave your living room: the frame stays in place, and only the show on the screen instantly switches. No blank screen, no full reloads!",
       bullets: [
         "SPA Navigation: The browser stays on the single `index.html` page; JavaScript updates the URL and swaps the active view component.",
@@ -84,7 +84,7 @@ export function AppRouter() {
       ]
     },
     {
-      title: "2. Key React Router DOM Primitives",
+      title: "Key React Router DOM Primitives",
       explanation: "The core components and hooks of React Router v6+:",
       table: {
         headers: ["Primitive", "Type", "Role & Usage"],
@@ -98,7 +98,7 @@ export function AppRouter() {
       }
     },
     {
-      title: "3. Concept in Depth: Server Fallback Configuration",
+      title: "Concept in Depth: Server Fallback Configuration",
       explanation: "A critical production requirement for SPAs: when a user directly navigates to `https://mysite.com/courses/react` or refreshes the page, the web server (Nginx, Netlify, Vercel) must be configured to serve `index.html` for all paths (`/*`). Without this redirect rule, the server returns an HTTP 404 because no physical file named `/courses/react` exists on the disk!",
       bullets: [
         "Server Rewrite Rule: Redirect all incoming requests to `/index.html` with a 200 OK status.",
@@ -106,7 +106,7 @@ export function AppRouter() {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these common routing pitfalls:",
       bullets: [
         "Using `<a href='/about'>`: Causes a full page refresh, wiping all in-memory React state. Always use `<Link to='/about'>`.",
@@ -115,7 +115,7 @@ export function AppRouter() {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Build a multi-view course browser with routes for `/` (Home), `/courses` (List), `/courses/:courseId` (Detail), and `*` (404 Page). Use `NavLink` to highlight the active menu item, and use `useNavigate` to provide a 'Return to Courses' button."
     }
   ],
@@ -252,11 +252,11 @@ const lesson115: CurriculumItem = {
   moduleId: "module-react-04-routing-architecture",
   moduleTitle: "Module 4: Routing and State Architecture",
   modulePosition: 4,
-  title: "115. Protected Routes and Authentication State",
+  title: "Protected Routes and Authentication State",
   duration: "35 mins",
   type: "cheatsheet",
   position: 2,
-  contentHeading: "Lesson 115: Protected Routes and Authentication State",
+  contentHeading: "Protected Routes and Authentication State",
   contentDescription: "Understand authentication vs authorization, client-side route guards, handling asynchronous auth resolution, redirecting with state return URLs, and why client-side route protection is NOT a substitute for server-side security.",
   codeSnippet: {
     language: "jsx",
@@ -325,7 +325,7 @@ export function ProtectedRoute({ allowedRoles }) {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The VIP Velvet Rope vs The Bank Vault",
+      title: "Core Concept: The VIP Velvet Rope vs The Bank Vault",
       explanation: "Imagine a high-end club. A 'Protected Route' in React is like the velvet rope at the front door. If you don't have a VIP badge, the bouncer politely points you toward the ticket counter (`/login`). It creates a smooth, pleasant experience for guests. But NEVER forget: client-side JavaScript runs on the user's computer! A clever hacker can open Chrome DevTools, change `user.role = 'admin'` in memory, and bypass the velvet rope in 2 seconds! That is why the REAL security happens at the Bank Vault door: the backend server API. Every sensitive request must verify the JWT token on the server before handing over any data!",
       bullets: [
         "Authentication (AuthN): Verifying WHO the user is (identity check).",
@@ -334,7 +334,7 @@ export function ProtectedRoute({ allowedRoles }) {
       ]
     },
     {
-      title: "2. The 4 States of Authentication Routing",
+      title: "The 4 States of Authentication Routing",
       explanation: "A robust protected route guard must handle 4 distinct lifecycle states:",
       table: {
         headers: ["Authentication State", "Condition", "Component Action"],
@@ -347,7 +347,7 @@ export function ProtectedRoute({ allowedRoles }) {
       }
     },
     {
-      title: "3. Concept in Depth: Preserving the Return URL",
+      title: "Concept in Depth: Preserving the Return URL",
       explanation: "When an unauthenticated user attempts to bookmark `https://mysite.com/courses/react/exam` and is redirected to `/login`, preserving `state={{ from: location }}` lets your login form redirect them right back to their intended exam after successful sign-in instead of stranding them on the home page.",
       bullets: [
         "In ProtectedRoute: `<Navigate to='/login' state={{ from: location }} replace />`",
@@ -355,7 +355,7 @@ export function ProtectedRoute({ allowedRoles }) {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these security and UX bugs:",
       bullets: [
         "Redirecting before session check resolves: If you redirect to `/login` while the auth token is still being read from storage, authenticated users get kicked to login on every page refresh!",
@@ -364,7 +364,7 @@ export function ProtectedRoute({ allowedRoles }) {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create an `AdminRoute` component that protects `/admin/courses`. Allow only users with `role: 'admin'` to enter. Test that regular students are shown an accessible 'Access Denied: Admin privileges required' banner, and verify that unauthenticated users are redirected to `/login`."
     }
   ],
@@ -501,11 +501,11 @@ const lesson116: CurriculumItem = {
   moduleId: "module-react-04-routing-architecture",
   moduleTitle: "Module 4: Routing and State Architecture",
   modulePosition: 4,
-  title: "116. Context API and Redux Toolkit",
+  title: "Context API and Redux Toolkit",
   duration: "35 mins",
   type: "cheatsheet",
   position: 3,
-  contentHeading: "Lesson 116: Context API and Redux Toolkit",
+  contentHeading: "Context API and Redux Toolkit",
   contentDescription: "Understand architectural tradeoffs between React Context and Redux Toolkit (RTK), configuring global stores, creating slices with createSlice, dispatching actions, and choosing the right tool for local UI, global client state, and server cache.",
   codeSnippet: {
     language: "jsx",
@@ -557,7 +557,7 @@ function CourseEnrollButton({ courseId }) {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Family Whiteboard vs Enterprise Central Dispatch",
+      title: "Core Concept: Family Whiteboard vs Enterprise Central Dispatch",
       explanation: "Imagine a cozy family living room. If mom wants to tell everyone what time dinner is, she writes it on the kitchen whiteboard (React Context). It's simple, built-in, costs zero dollars, and everyone sees it. But imagine a bustling airport with 500 airplanes, baggage handlers, fuel trucks, and pilots. If people try to coordinate an entire airport using a single kitchen whiteboard, everyone will constantly bump into each other! That is when you need Redux Toolkit: a professional air-traffic control tower with centralized flight logs, strict flight plan actions (`dispatch`), automated recording, and middleware logging!",
       bullets: [
         "React Context: Built-in, low ceremony; best for low-frequency updates like Theme, Locale, and Auth.",
@@ -566,7 +566,7 @@ function CourseEnrollButton({ courseId }) {
       ]
     },
     {
-      title: "2. The Decision Matrix: Local State vs Context vs Redux",
+      title: "The Decision Matrix: Local State vs Context vs Redux",
       explanation: "Where should your application state live?",
       table: {
         headers: ["State Type", "Best Tool", "Examples"],
@@ -579,7 +579,7 @@ function CourseEnrollButton({ courseId }) {
       }
     },
     {
-      title: "3. Concept in Depth: Redux Toolkit Features",
+      title: "Concept in Depth: Redux Toolkit Features",
       explanation: "Modern Redux is drastically simpler than old 'vanilla Redux' from 2016:",
       bullets: [
         "`createSlice`: Automatically generates action creators and action types from your reducer functions.",
@@ -588,7 +588,7 @@ function CourseEnrollButton({ courseId }) {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these state architecture mistakes:",
       bullets: [
         "Putting Every Input into Redux: Creating actions for every single character typed in a text box. Keep form input local to the component!",
@@ -597,7 +597,7 @@ function CourseEnrollButton({ courseId }) {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create an RTK slice for a student course cart with actions `addItem`, `removeItem`, and `clearCart`. Connect the store using `<Provider store={store}>`. Build a cart badge in the header that displays the item count using `useSelector`, and an enrollment button that dispatches `addItem`."
     }
   ],
@@ -734,11 +734,11 @@ const lesson117: CurriculumItem = {
   moduleId: "module-react-04-routing-architecture",
   moduleTitle: "Module 4: Routing and State Architecture",
   modulePosition: 4,
-  title: "117. Nested Routes and Shared Layouts",
+  title: "Nested Routes and Shared Layouts",
   duration: "35 mins",
   type: "cheatsheet",
   position: 4,
-  contentHeading: "Lesson 117: Nested Routes and Shared Layouts",
+  contentHeading: "Nested Routes and Shared Layouts",
   contentDescription: "Master nested route hierarchies in React Router, building persistent dashboard shells (sidebars, navbars, breadcrumbs) with Outlet, relative routing paths, and index routes.",
   codeSnippet: {
     language: "jsx",
@@ -797,7 +797,7 @@ export function AppRoutes() {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The Picture Frame and Photo Slides",
+      title: "Core Concept: The Picture Frame and Photo Slides",
       explanation: "Imagine a beautiful wooden picture frame mounted on your wall. Inside the frame is a sidebar with menu buttons, a top header with your profile picture, and in the middle, a glass window (`<Outlet />`). When you navigate between 'My Courses', 'Grades', and 'Settings', the wooden frame, the sidebar, and the header NEVER move, redraw, or flicker! Only the photograph behind the glass window changes. 'Nested Routes' let you build persistent application shells so your users never feel jarring UI jumps when switching tabs.",
       bullets: [
         "Persistent Layout: Header, navigation sidebar, and breadcrumbs stay mounted across route changes.",
@@ -806,7 +806,7 @@ export function AppRoutes() {
       ]
     },
     {
-      title: "2. Relative Paths in Nested Routes",
+      title: "Relative Paths in Nested Routes",
       explanation: "Notice the difference in path definitions between parent and child routes:",
       table: {
         headers: ["Route Type", "Path Definition", "Full Matched URL in Browser"],
@@ -819,7 +819,7 @@ export function AppRoutes() {
       }
     },
     {
-      title: "3. Concept in Depth: Preserving Scroll and State in Layouts",
+      title: "Concept in Depth: Preserving Scroll and State in Layouts",
       explanation: "Because `DashboardLayout` remains mounted while navigating between child routes, any state inside `DashboardLayout` (like a collapsed sidebar toggle or an active chat drawer) is completely preserved. Only the child component inside `<Outlet />` unmounts and remounts.",
       bullets: [
         "No Layout Flickering: Media players or video streams in the sidebar continue playing uninterrupted while navigating child content.",
@@ -827,7 +827,7 @@ export function AppRoutes() {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Watch out for these nested route errors:",
       bullets: [
         "Forgetting `<Outlet />`: Defining nested routes in JSX without putting `<Outlet />` inside the parent layout component renders a blank area for all child routes.",
@@ -836,7 +836,7 @@ export function AppRoutes() {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Build a `CourseAdminShell` layout with a persistent left sidebar containing links for 'Overview', 'Curriculum', and 'Analytics'. Use `<Outlet />` to render each sub-page, configure an `index` route for the overview, and verify that toggling a 'Dark Mode' switch in the sidebar preserves its state when switching between child tabs."
     }
   ],
@@ -973,11 +973,11 @@ const lesson118: CurriculumItem = {
   moduleId: "module-react-04-routing-architecture",
   moduleTitle: "Module 4: Routing and State Architecture",
   modulePosition: 4,
-  title: "118. URL Search Parameters and Shareable Filters",
+  title: "URL Search Parameters and Shareable Filters",
   duration: "35 mins",
   type: "cheatsheet",
   position: 5,
-  contentHeading: "Lesson 118: URL Search Parameters and Shareable Filters",
+  contentHeading: "URL Search Parameters and Shareable Filters",
   contentDescription: "Master synchronizing search, filter, and pagination state into URL query strings with useSearchParams, creating bookmarkable/shareable URLs, and validating untrusted parameter inputs.",
   codeSnippet: {
     language: "jsx",
@@ -1059,7 +1059,7 @@ function FilterableCourseCatalog({ allCourses }) {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Sending a Bookmark to a Friend",
+      title: "Core Concept: Sending a Bookmark to a Friend",
       explanation: "Imagine you are browsing an online library. You filter by 'React Books', sort by 'Most Popular', and navigate to Page 3. You find an amazing book list and want to text it to your friend. If your filters are stored only in local React state (`useState`), your URL is still just `library.com`. When your friend opens your link, they see Page 1 with zero filters applied! But if you store your filters in the URL query string (`library.com?topic=react&sort=popular&page=3`), your friend sees the EXACT same filtered view you were looking at! The URL IS an API!",
       bullets: [
         "Shareable & Bookmarkable: Anyone opening the URL arrives at the identical filtered view.",
@@ -1068,7 +1068,7 @@ function FilterableCourseCatalog({ allCourses }) {
       ]
     },
     {
-      title: "2. The URL State vs Local State Decision Rule",
+      title: "The URL State vs Local State Decision Rule",
       explanation: "Which pieces of state belong in the URL vs component memory?",
       table: {
         headers: ["State Type", "Where to Store", "Examples"],
@@ -1079,7 +1079,7 @@ function FilterableCourseCatalog({ allCourses }) {
       }
     },
     {
-      title: "3. Concept in Depth: Defensive Validation of URL Params",
+      title: "Concept in Depth: Defensive Validation of URL Params",
       explanation: "Treat all data from the URL as UNTRUSTED user input. A user can manually edit the address bar to `?page=banana` or `?level=maliciousScript`:",
       bullets: [
         "Parse Integers Safely: `const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);`",
@@ -1087,7 +1087,7 @@ function FilterableCourseCatalog({ allCourses }) {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these query parameter bugs:",
       bullets: [
         "Cluttering the URL with Default Values: Writing `?level=all&page=1&q=`. Remove default parameters using `params.delete('key')` to keep URLs clean.",
@@ -1096,7 +1096,7 @@ function FilterableCourseCatalog({ allCourses }) {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Build a shareable course filter. Bind a search input and a category dropdown to `useSearchParams`. Verify that copying the URL from the browser address bar and opening it in a new incognito window restores the exact search query and category filter automatically."
     }
   ],

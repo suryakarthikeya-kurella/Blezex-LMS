@@ -14,11 +14,11 @@ const lesson128: CurriculumItem = {
   moduleId: "module-git-01-foundations",
   moduleTitle: "Module 1: Version Control Foundations",
   modulePosition: 1,
-  title: "128. What Version Control Solves",
+  title: "What Version Control Solves",
   duration: "30 mins",
   type: "cheatsheet",
   position: 1,
-  contentHeading: "Lesson 128: What Version Control Solves",
+  contentHeading: "What Version Control Solves",
   contentDescription: "Understand the fundamental problems of code management without version control, distributed vs centralized architectures, snapshot-based history graphs, and the distinction between Git and GitHub.",
   codeSnippet: {
     language: "bash",
@@ -33,7 +33,7 @@ git --version`
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The Never-Ending Folder of Final Versions",
+      title: "Core Concept: The Never-Ending Folder of Final Versions",
       explanation: "Imagine you are writing a college thesis without version control. On Monday, you save your document as `thesis.docx`. On Tuesday, you make edits and save it as `thesis_final.docx`. On Wednesday, your professor gives feedback, so you save `thesis_final_v2_REALLY_FINAL.docx`. By Friday, you have 25 different files with names like `thesis_final_FINAL_USE_THIS_ONE_OCT18.docx`! If a paragraph gets accidentally deleted, you have no idea which file had it, what was changed, or who changed it. A Version Control System (VCS) like Git replaces this nightmare: you keep only ONE clean project folder, and Git acts as a magical time machine, recording exact photographic snapshots of your entire project at every milestone!",
       bullets: [
         "Time Travel: Instantly view or roll back to any historical snapshot of your project.",
@@ -42,7 +42,7 @@ git --version`
       ]
     },
     {
-      title: "2. Git vs GitHub: The Essential Distinction",
+      title: "Git vs GitHub: The Essential Distinction",
       explanation: "Beginners often confuse Git and GitHub. They are completely different tools:",
       table: {
         headers: ["Feature / Aspect", "Git", "GitHub"],
@@ -56,7 +56,7 @@ git --version`
       }
     },
     {
-      title: "3. Concept in Depth: Centralized vs Distributed VCS",
+      title: "Concept in Depth: Centralized vs Distributed VCS",
       explanation: "Older systems like Subversion (SVN) were Centralized: a single central server held the repository history. If the central server went down or you lost Wi-Fi, you couldn't commit, view logs, or branch. Git is Distributed (DVCS): every single developer who clones a repository gets a 100% complete, independent copy of the ENTIRE project history locally on their hard drive!",
       bullets: [
         "Offline Power: Commit, branch, diff, and inspect logs on an airplane with zero internet.",
@@ -64,7 +64,7 @@ git --version`
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these foundational misconceptions:",
       bullets: [
         "Thinking Git is Just Cloud Backup: Git is a directed graph of revisions, not Dropbox or Google Drive. Simply copying files doesn't track diffs or branches.",
@@ -73,7 +73,7 @@ git --version`
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Open your terminal and run `git --version`. Write a brief technical memo explaining the architectural difference between a Centralized Version Control System (like SVN) and a Distributed Version Control System (like Git), noting why Git survives network outages."
     }
   ],
@@ -210,11 +210,11 @@ const lesson129: CurriculumItem = {
   moduleId: "module-git-01-foundations",
   moduleTitle: "Module 1: Version Control Foundations",
   modulePosition: 1,
-  title: "129. Install and Configure Git",
+  title: "Install and Configure Git",
   duration: "30 mins",
   type: "cheatsheet",
   position: 2,
-  contentHeading: "Lesson 129: Install and Configure Git",
+  contentHeading: "Install and Configure Git",
   contentDescription: "Master installing Git, setting up global developer identity (user.name and user.email), configuring the default initial branch (init.defaultBranch main), configuring text editors, and inspecting config levels.",
   codeSnippet: {
     language: "bash",
@@ -236,7 +236,7 @@ git config --list --show-origin`
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Getting Your Official Passport Stamp",
+      title: "Core Concept: Getting Your Official Passport Stamp",
       explanation: "Imagine you are an explorer traveling the world. Before entering any foreign country, border control looks at your official passport: it has your Name and your Photo ID. Every time you cross a border, they stamp your passport with your name and the date. In Git, configuring `user.name` and `user.email` is getting your official committer passport! These are NOT your login passwords for GitHub; they are the metadata labels stamped permanently onto every single snapshot you create. If you don't configure your passport, Git won't let you stamp any commits!",
       bullets: [
         "Commit Metadata: `user.name` and `user.email` identify the author in `git log` and GitHub contribution graphs.",
@@ -245,7 +245,7 @@ git config --list --show-origin`
       ]
     },
     {
-      title: "2. The 3 Configuration Scopes in Git",
+      title: "The 3 Configuration Scopes in Git",
       explanation: "Where Git stores your settings and how they override each other:",
       table: {
         headers: ["Scope Flag", "File Location", "Applies To"],
@@ -257,7 +257,7 @@ git config --list --show-origin`
       }
     },
     {
-      title: "3. Concept in Depth: Line Endings (CRLF vs LF)",
+      title: "Concept in Depth: Line Endings (CRLF vs LF)",
       explanation: "Windows and Unix (macOS/Linux) format line breaks differently: Windows uses Carriage Return + Line Feed (`\\r\\n`), while macOS/Linux uses Line Feed (`\\n`). If teammates use different operating systems, Git can detect every line in a file as 'changed' just because of invisible line breaks!",
       bullets: [
         "Windows setting: `git config --global core.autocrlf true` (converts CRLF to LF on commit, and LF to CRLF on checkout).",
@@ -265,7 +265,7 @@ git config --list --show-origin`
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these initial setup mistakes:",
       bullets: [
         "Using a Fake Email: Using `test@test.com` means GitHub won't link your commits to your profile or award your green contribution squares.",
@@ -274,7 +274,7 @@ git config --list --show-origin`
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Open your terminal and run `git config --list --show-origin`. Inspect the file location of your global `.gitconfig`. Set your name, your primary GitHub email, and set the default initial branch to `main`. Confirm the new values by checking the output of `git config user.name`."
     }
   ],
@@ -411,11 +411,11 @@ const lesson130: CurriculumItem = {
   moduleId: "module-git-01-foundations",
   moduleTitle: "Module 1: Version Control Foundations",
   modulePosition: 1,
-  title: "130. Repositories and the Three Areas",
+  title: "Repositories and the Three Areas",
   duration: "30 mins",
   type: "cheatsheet",
   position: 3,
-  contentHeading: "Lesson 130: Repositories and the Three Areas",
+  contentHeading: "Repositories and the Three Areas",
   contentDescription: "Master the fundamental architecture of Git: Working Tree, Staging Area (Index), and Repository (Commit History), file lifecycle states (untracked, modified, staged, committed), and reading git status.",
   codeSnippet: {
     language: "bash",
@@ -435,7 +435,7 @@ git status`
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The Photo Shoot and the Frame",
+      title: "Core Concept: The Photo Shoot and the Frame",
       explanation: "Imagine you are a professional photographer. 1) The 'Working Directory' is your studio floor: there are costumes, props, lights, and models running around everywhere in various stages of messiness. 2) The 'Staging Area' (Index) is the camera frame: you don't take a photo of the whole messy floor! You invite only the model in the finished costume to step inside the white backdrop frame (`git add`). You can adjust their pose and inspect the frame (`git status`). 3) The 'Repository' is when you press the shutter button (`git commit`): SNAP! The photograph is permanently recorded in your photo album. Even if the model changes clothes on the studio floor, the photo in your album never changes!",
       bullets: [
         "Working Tree: Your live files currently visible in your code editor.",
@@ -444,7 +444,7 @@ git status`
       ]
     },
     {
-      title: "2. The 4 Lifecycle States of a File in Git",
+      title: "The 4 Lifecycle States of a File in Git",
       explanation: "Every file in your project directory belongs to one of 4 states:",
       table: {
         headers: ["File State", "Meaning", "Git Status Color / Symbol"],
@@ -457,7 +457,7 @@ git status`
       }
     },
     {
-      title: "3. Concept in Depth: Why Does the Staging Area Exist?",
+      title: "Concept in Depth: Why Does the Staging Area Exist?",
       explanation: "Why doesn't Git just commit all modified files automatically like saving a file in Word? The Staging Area allows for CRAFTSMANSHIP. Suppose you worked for 3 hours and touched 6 files: 2 files fix a critical login bug, and 4 files start a new dashboard feature. With the Staging Area, you can stage ONLY the 2 bugfix files (`git add auth.js login.js`), commit them with a focused message (`'Fix login null error'`), and then stage the remaining 4 files in a separate commit! Commits remain atomic, focused, and reviewable.",
       bullets: [
         "Atomic Commits: Small, coherent changes that do one job well.",
@@ -465,7 +465,7 @@ git status`
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these common workflow mistakes:",
       bullets: [
         "Deleting the hidden `.git/` folder: The `.git/` folder IS your repository! Deleting it wipes your entire commit history, all branches, and configuration.",
@@ -474,7 +474,7 @@ git status`
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create a new directory. Initialize Git with `git init`. Create two files: `fileA.txt` and `fileB.txt`. Run `git status`. Stage ONLY `fileA.txt` using `git add fileA.txt`. Run `git status` again to observe `fileA.txt` in green (staged) and `fileB.txt` in red (untracked). Commit the staged file."
     }
   ],

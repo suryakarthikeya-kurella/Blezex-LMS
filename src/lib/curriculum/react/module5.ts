@@ -14,11 +14,11 @@ const lesson119: CurriculumItem = {
   moduleId: "module-react-05-api-optimization",
   moduleTitle: "Module 5: API Integration and Optimization",
   modulePosition: 5,
-  title: "119. API Integration and HTTP States",
+  title: "API Integration and HTTP States",
   duration: "35 mins",
   type: "cheatsheet",
   position: 1,
-  contentHeading: "Lesson 119: API Integration and HTTP States",
+  contentHeading: "API Integration and HTTP States",
   contentDescription: "Master organizing reusable API service layers, handling loading/success/empty/error states explicitly, client environment variables (VITE_API_URL), and avoiding exposing private secrets.",
   codeSnippet: {
     language: "jsx",
@@ -80,7 +80,7 @@ function CourseExplorer() {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The Restaurant Waiter Service",
+      title: "Core Concept: The Restaurant Waiter Service",
       explanation: "Imagine you are dining at a restaurant. As a customer (React Component), you don't walk into the hot kitchen, turn on the stove, and rummage through the meat freezer (direct database queries). Instead, you call the professional waiter (API Client Service). You tell the waiter: 'I'd like the pasta with extra cheese' (HTTP Request). The waiter takes your order to the kitchen (Express Backend), and brings back the cooked dish (JSON response). If the kitchen is out of cheese, the waiter politely informs you (404/Error). Separating the API service from the component keeps your code clean, modular, and testable!",
       bullets: [
         "API Service Layer: Keep network URLs, header formatting, and JSON parsing in dedicated utility functions.",
@@ -89,7 +89,7 @@ function CourseExplorer() {
       ]
     },
     {
-      title: "2. The Danger of Exposing Secrets in Client Bundles",
+      title: "The Danger of Exposing Secrets in Client Bundles",
       explanation: "Understanding environment variable security in modern React apps:",
       table: {
         headers: ["Variable Location", "Visible in Browser?", "Safe Content Example", "DANGEROUS Content (NEVER PUT HERE!)"],
@@ -100,7 +100,7 @@ function CourseExplorer() {
       }
     },
     {
-      title: "3. Concept in Depth: Error Handling Beyond 200 OK",
+      title: "Concept in Depth: Error Handling Beyond 200 OK",
       explanation: "Network requests fail in two different ways: network transport failure and server application failure. Your API client must handle both cleanly:",
       bullets: [
         "Catch Network Drops: Wrapped in `try / catch` to catch offline status or DNS failures.",
@@ -109,7 +109,7 @@ function CourseExplorer() {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these common API integration mistakes:",
       bullets: [
         "Hardcoding localhost URLs: Writing `fetch('http://localhost:5000/api')`. When deployed to production on Vercel or AWS, this breaks! Always use `import.meta.env.VITE_API_URL`.",
@@ -118,7 +118,7 @@ function CourseExplorer() {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create a dedicated `courseService.js` file with `getAllCourses()`, `getCourseById(id)`, and `enrollInCourse(id)`. Build a UI that consumes these functions, displays loading skeletons during load, and offers a 'Retry' button when a network request fails."
     }
   ],
@@ -255,11 +255,11 @@ const lesson120: CurriculumItem = {
   moduleId: "module-react-05-api-optimization",
   moduleTitle: "Module 5: API Integration and Optimization",
   modulePosition: 5,
-  title: "120. useMemo, useCallback and React.memo",
+  title: "useMemo, useCallback and React.memo",
   duration: "35 mins",
   type: "cheatsheet",
   position: 2,
-  contentHeading: "Lesson 120: useMemo, useCallback and React.memo",
+  contentHeading: "useMemo, useCallback and React.memo",
   contentDescription: "Understand performance optimization tools, caching expensive calculations with useMemo, preserving function referential stability with useCallback, skipping child re-renders with React.memo, and measuring before optimizing.",
   codeSnippet: {
     language: "jsx",
@@ -321,7 +321,7 @@ function CourseCatalogOptimizer({ allCourses }) {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The Calculator Memory vs Re-doing 100 Math Problems",
+      title: "Core Concept: The Calculator Memory vs Re-doing 100 Math Problems",
       explanation: "Imagine you are doing your taxes. You spend 45 minutes calculating your annual tax deduction from 5,000 receipts. If your friend asks you: 'What is your deduction?', you don't spend another 45 minutes re-adding all 5,000 receipts! You look at the final number you already wrote down on the notepad. That is `useMemo`: caching the calculated result. And `useCallback` is like keeping your signature identical on every page so the bank doesn't reject your papers. But beware: writing things on notepads costs memory! If a math problem only takes 0.001 seconds (`2 + 2`), setting up a memoization cache takes MORE time than just doing the math! Measure before you optimize!",
       bullets: [
         "`useMemo(() => fn(), [deps])`: Caches the RETURN VALUE of an expensive calculation.",
@@ -330,7 +330,7 @@ function CourseCatalogOptimizer({ allCourses }) {
       ]
     },
     {
-      title: "2. The Optimization Trio Compared",
+      title: "The Optimization Trio Compared",
       explanation: "Understanding what each tool does and when to apply it:",
       table: {
         headers: ["Optimization Tool", "What It Caches", "Primary Purpose", "When to Use"],
@@ -342,7 +342,7 @@ function CourseCatalogOptimizer({ allCourses }) {
       }
     },
     {
-      title: "3. Concept in Depth: The 'Premature Optimization' Trap",
+      title: "Concept in Depth: The 'Premature Optimization' Trap",
       explanation: "Optimization is not free. Every `useMemo` and `useCallback` adds lines of code, memory overhead, and dependency array comparison costs:",
       bullets: [
         "Rule 1: React is naturally fast. Most re-renders take less than 1 millisecond and are completely harmless.",
@@ -351,7 +351,7 @@ function CourseCatalogOptimizer({ allCourses }) {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these memoization errors:",
       bullets: [
         "Passing Inline Functions to Memoized Children: `<MemoChild onAction={() => {}} />` creates a new function on every render, defeating `React.memo`. Wrap with `useCallback`.",
@@ -360,7 +360,7 @@ function CourseCatalogOptimizer({ allCourses }) {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create a list of 2,000 items with search and sort. Measure the render time before and after using `useMemo` on the filtering function. Wrap the list item in `React.memo` and pass an `onSelect` callback wrapped in `useCallback`. Verify with console logs that toggling an unrelated theme state does not re-render the list items."
     }
   ],
@@ -497,11 +497,11 @@ const lesson121: CurriculumItem = {
   moduleId: "module-react-05-api-optimization",
   moduleTitle: "Module 5: API Integration and Optimization",
   modulePosition: 5,
-  title: "121. Performance, Code Splitting and Accessibility",
+  title: "Performance, Code Splitting and Accessibility",
   duration: "35 mins",
   type: "cheatsheet",
   position: 3,
-  contentHeading: "Lesson 121: Performance, Code Splitting and Accessibility",
+  contentHeading: "Performance, Code Splitting and Accessibility",
   contentDescription: "Master route-level code splitting with React.lazy and dynamic imports, optimizing initial bundle payloads, keyboard navigation, focus management, semantic HTML landmarks, and automated a11y testing.",
   codeSnippet: {
     language: "jsx",
@@ -540,7 +540,7 @@ function AccessibleAppShell() {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Packing a Backpack vs Ordering Books On-Demand",
+      title: "Core Concept: Packing a Backpack vs Ordering Books On-Demand",
       explanation: "Imagine you are starting college. On day one, you don't pack all 50 heavy textbooks for the entire 4-year degree into your backpack! Your backpack would weigh 200 pounds, and you would collapse on the pavement before reaching the first classroom (slow initial bundle load). Instead, you only pack your notebook for today's class. When you have biology class on Thursday, you go to the library and check out the biology book then. 'Code Splitting' with `React.lazy()` breaks your giant 5MB JavaScript bundle into small, lightweight chunks. The user only downloads the code for the page they are currently looking at!",
       bullets: [
         "Code Splitting: Bundler (Vite/Rollup) generates separate `.js` chunk files for each lazy component.",
@@ -549,7 +549,7 @@ function AccessibleAppShell() {
       ]
     },
     {
-      title: "2. The Web Accessibility (WCAG) Checklist for React",
+      title: "The Web Accessibility (WCAG) Checklist for React",
       explanation: "Mandatory accessibility requirements for every professional application:",
       table: {
         headers: ["Requirement", "Implementation", "Why It Matters"],
@@ -563,7 +563,7 @@ function AccessibleAppShell() {
       }
     },
     {
-      title: "3. Concept in Depth: The 'Skip to Main Content' Link",
+      title: "Concept in Depth: The 'Skip to Main Content' Link",
       explanation: "Keyboard-only users who navigate with the Tab key shouldn't have to press Tab 30 times through the navigation menu on every single page:",
       bullets: [
         "A hidden link `<a href='#main-content' className='skip-link'>Skip to content</a>` is positioned off-screen.",
@@ -572,7 +572,7 @@ function AccessibleAppShell() {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these performance and accessibility violations:",
       bullets: [
         "Using `<div onClick={...}>` instead of `<button>`: A `<div>` is NOT keyboard-focusable, does not respond to Enter/Space, and is not announced by screen readers. ALWAYS use semantic `<button>` elements for clickable actions.",
@@ -581,7 +581,7 @@ function AccessibleAppShell() {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Take an existing React application and split at least two heavy routes using `React.lazy()`. Wrap them in `<Suspense>` with an accessible skeleton fallback. Navigate through the entire page using ONLY your keyboard (Tab, Shift+Tab, Enter, Space) and ensure all controls are reachable with a visible focus outline."
     }
   ],
@@ -718,11 +718,11 @@ const lesson122: CurriculumItem = {
   moduleId: "module-react-05-api-optimization",
   moduleTitle: "Module 5: API Integration and Optimization",
   modulePosition: 5,
-  title: "122. Testing React Components",
+  title: "Testing React Components",
   duration: "35 mins",
   type: "cheatsheet",
   position: 4,
-  contentHeading: "Lesson 122: Testing React Components",
+  contentHeading: "Testing React Components",
   contentDescription: "Master writing automated component tests with Vitest and React Testing Library (RTL), testing user-visible behavior (roles, labels, text) instead of implementation details, user-event interactions, and mocking network requests.",
   codeSnippet: {
     language: "jsx",
@@ -768,7 +768,7 @@ describe('CourseEnrollmentCard Component', () => {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Testing a Car from the Driver's Seat",
+      title: "Core Concept: Testing a Car from the Driver's Seat",
       explanation: "Imagine you are an automobile inspector testing a new car. You don't drill holes through the dashboard to test whether the yellow wire connects to pin 47 on the circuit board (testing implementation details). You sit in the driver's seat, turn the steering wheel, step on the brake pedal, and check if the car stops! If the car stops smoothly, it passes the test! React Testing Library (RTL) tests components from the user's perspective: it finds elements by their visible text, labels, and accessible roles (`getByRole('button')`), clicks them like a real human (`userEvent.click()`), and asserts that the expected message appears on screen.",
       bullets: [
         "Guiding Principle: The more your tests resemble the way your software is used, the more confidence they can give you.",
@@ -777,7 +777,7 @@ describe('CourseEnrollmentCard Component', () => {
       ]
     },
     {
-      title: "2. The Priority Order of Testing Library Queries",
+      title: "The Priority Order of Testing Library Queries",
       explanation: "Always prefer queries that reflect accessible user experience:",
       table: {
         headers: ["Priority", "Query Method", "Why It is Preferred"],
@@ -790,7 +790,7 @@ describe('CourseEnrollmentCard Component', () => {
       }
     },
     {
-      title: "3. Concept in Depth: `userEvent` vs `fireEvent`",
+      title: "Concept in Depth: `userEvent` vs `fireEvent`",
       explanation: "Always use `@testing-library/user-event` instead of `fireEvent`:",
       bullets: [
         "`fireEvent.click(btn)`: Dispatches a raw, synthetic DOM click event without hover states, focus changes, or keyboard keydowns.",
@@ -798,7 +798,7 @@ describe('CourseEnrollmentCard Component', () => {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these common testing errors:",
       bullets: [
         "Testing Internal State: Asserting `expect(component.state.isOpen).toBe(true)`. If you refactor to use a different state variable, your test breaks even though the UI works! Assert that the modal is visible instead.",
@@ -807,7 +807,7 @@ describe('CourseEnrollmentCard Component', () => {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Write automated tests for a `CourseSearch` component. Test that typing in the search input updates the visible list, verify that clicking 'Clear' empties the input, and assert that an empty state message is rendered when a query matches zero items."
     }
   ],
@@ -944,11 +944,11 @@ const lesson123: CurriculumItem = {
   moduleId: "module-react-05-api-optimization",
   moduleTitle: "Module 5: API Integration and Optimization",
   modulePosition: 5,
-  title: "123. Suspense, Lazy Loading and Error Boundaries",
+  title: "Suspense, Lazy Loading and Error Boundaries",
   duration: "35 mins",
   type: "cheatsheet",
   position: 5,
-  contentHeading: "Lesson 123: Suspense, Lazy Loading and Error Boundaries",
+  contentHeading: "Suspense, Lazy Loading and Error Boundaries",
   contentDescription: "Master graceful degradation in React: catching rendering exceptions with Class Error Boundaries (getDerivedStateFromError, componentDidCatch), coordinating async loading states with Suspense, and designing resilient failure recovery flows.",
   codeSnippet: {
     language: "jsx",
@@ -1012,7 +1012,7 @@ export function AnalyticsDashboard() {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Electrical Circuit Breakers",
+      title: "Core Concept: Electrical Circuit Breakers",
       explanation: "Imagine your house electrical wiring. If your kitchen microwave shorts out and sparks, you don't want the ENTIRE house to lose power, shutting off the living room lights, the refrigerator, and the bedroom fan! Your house has a 'Circuit Breaker' panel: the breaker for the kitchen trips, containing the problem to just the microwave while the rest of the house stays fully powered and safe. An 'Error Boundary' in React is your UI circuit breaker: if a complex chart or widget crashes with a JavaScript error, the Error Boundary catches it, shows a polite 'Failed to load chart' box, and PREVENTS the entire web page from crashing into a blank white screen!",
       bullets: [
         "Circuit Breaker Pattern: Catches JavaScript rendering errors anywhere in its child component tree.",
@@ -1021,7 +1021,7 @@ export function AnalyticsDashboard() {
       ]
     },
     {
-      title: "2. What Error Boundaries Catch vs What They DO NOT Catch",
+      title: "What Error Boundaries Catch vs What They DO NOT Catch",
       explanation: "Crucial boundaries of what Error Boundaries can intercept:",
       table: {
         headers: ["Scenario", "Caught by Error Boundary?", "How to Handle If NOT Caught"],
@@ -1036,7 +1036,7 @@ export function AnalyticsDashboard() {
       }
     },
     {
-      title: "3. Concept in Depth: Pairing Suspense with Error Boundaries",
+      title: "Concept in Depth: Pairing Suspense with Error Boundaries",
       explanation: "A robust modern React UI architecture wraps features in both an Error Boundary and a Suspense component:",
       bullets: [
         "`<Suspense fallback={<Spinner />}>`: Handles the HAPPY asynchronous loading state while the code chunk is downloading.",
@@ -1044,7 +1044,7 @@ export function AnalyticsDashboard() {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these error boundary bugs:",
       bullets: [
         "Relying on Error Boundaries for Form Validation: Error boundaries are for catastrophic runtime crashes, not for showing 'Password too short' validation messages.",
@@ -1053,7 +1053,7 @@ export function AnalyticsDashboard() {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Build a reusable `ErrorBoundary` class component with a custom fallback message and 'Retry' button. Create a buggy component that throws `new Error('Simulated Crash')` when a button is clicked during render. Verify that the Error Boundary catches the crash and displays the recovery UI without affecting sibling components."
     }
   ],

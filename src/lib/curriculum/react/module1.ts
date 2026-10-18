@@ -14,11 +14,11 @@ const lesson100: CurriculumItem = {
   moduleId: "module-react-01-foundations",
   moduleTitle: "Module 1: React Foundations",
   modulePosition: 1,
-  title: "100. What React Is and Project Setup",
+  title: "What React Is and Project Setup",
   duration: "35 mins",
   type: "cheatsheet",
   position: 1,
-  contentHeading: "Lesson 100: What React Is and Project Setup",
+  contentHeading: "What React Is and Project Setup",
   contentDescription: "Understand the core architecture of React, declarative vs imperative UI models, Virtual DOM reconciliation, and setting up a modern, high-speed development environment using Vite.",
   codeSnippet: {
     language: "bash",
@@ -36,7 +36,7 @@ npm run dev`
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The Restaurant Blueprint vs Manual Bricklaying",
+      title: "Core Concept: The Restaurant Blueprint vs Manual Bricklaying",
       explanation: "Imagine you want to update the seating arrangement of a busy dining hall. In traditional vanilla JavaScript (imperative), you run around the room moving each chair by hand, checking each table, and risking knocking glasses over. In React (declarative), you simply draw a blueprint of what the room should look like right now. React's intelligent reconciliation engine (the Virtual DOM) compares your blueprint to the actual room and moves only the two chairs that actually changed positions. React does not touch a single table that didn't need to move!",
       bullets: [
         "Declarative Paradigm: You describe WHAT the user interface should look like for a given state.",
@@ -46,7 +46,7 @@ npm run dev`
       diagram: "+-------------------------------------------------------------------+\n|                     THE REACT DECLARATIVE LOOP                    |\n+-------------------------------------------------------------------+\n| [Component State & Props]                                         |\n|          |                                                        |\n|          v                                                        |\n| [1. Render Blueprint]: Component returns JSX (Virtual DOM node)   |\n|          |                                                        |\n|          v                                                        |\n| [2. Reconciliation (Diffing)]: Compares New VDOM vs Old VDOM      |\n|          |                                                        |\n|          v                                                        |\n| [3. Commit]: Surgically updates ONLY the changed real DOM elements|\n+-------------------------------------------------------------------+"
     },
     {
-      title: "2. Technical Definition & Core Purpose",
+      title: "Technical Definition & Core Purpose",
       explanation: "React is an open-source JavaScript library developed by Meta (Facebook) in 2013 for building interactive user interfaces from modular components. Components accept arbitrary inputs called 'props' and maintain internal data called 'state'. React is not a full-stack framework, backend engine, or database—it is strictly the 'View' layer of modern web engineering.",
       table: {
         headers: ["Characteristic", "Traditional Imperative DOM (Vanilla JS)", "Declarative React (Vite Setup)"],
@@ -59,7 +59,7 @@ npm run dev`
       }
     },
     {
-      title: "3. Concept in Depth: Inputs, Rules & Edge Cases",
+      title: "Concept in Depth: Inputs, Rules & Edge Cases",
       explanation: "React components are pure functions with respect to their props. A component must always return a valid React node (JSX element, string, number, fragment, or null). When state or props change, React schedules a re-render. Key edge cases include handling missing props, empty arrays, null values, and massive data sets without triggering infinite render loops.",
       bullets: [
         "Rule 1: Never manipulate the real browser DOM directly behind React's back using document.querySelector or innerHTML.",
@@ -68,7 +68,7 @@ npm run dev`
       ]
     },
     {
-      title: "4. History, Context & Real-World Application",
+      title: "History, Context & Real-World Application",
       explanation: "Before React, single-page applications suffered from 'spaghetti code' where multiple event handlers mutated different parts of the same DOM nodes, causing desynchronization bugs. React introduced unidirectional data flow (data flows down, events flow up). In production platforms like Netflix, Airbnb, and BlezeX, React powers complex dashboards with loading, loaded, empty, and error states seamlessly.",
       bullets: [
         "2013: Open-sourced by Jordan Walke at Facebook.",
@@ -78,7 +78,7 @@ npm run dev`
       ]
     },
     {
-      title: "5. Line-by-Line Breakdown of Project Setup Commands",
+      title: "Line-by-Line Breakdown of Project Setup Commands",
       explanation: "Understanding each command in the modern React toolchain:",
       bullets: [
         "`npm create vite@latest my-react-app -- --template react`: Invokes the Vite scaffolding tool to generate a fresh React project with modern build configuration.",
@@ -88,7 +88,7 @@ npm run dev`
       ]
     },
     {
-      title: "6. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Crucial mistakes beginners make when starting with React:",
       bullets: [
         "Direct DOM Manipulation: Using `document.getElementById('title').innerText = 'New'` instead of updating React state.",
@@ -98,7 +98,7 @@ npm run dev`
       ]
     },
     {
-      title: "7. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Initialize a new React project using Vite on your local machine. Open `src/App.jsx` and inspect the entry point in `src/main.jsx`. Identify where `ReactDOM.createRoot` connects your root component to the `<div id='root'>` in `index.html`. Add an `<h1>` with your name and verify that Vite hot-reloads instantly."
     }
   ],
@@ -235,11 +235,11 @@ const lesson101: CurriculumItem = {
   moduleId: "module-react-01-foundations",
   moduleTitle: "Module 1: React Foundations",
   modulePosition: 1,
-  title: "101. JSX (JavaScript XML)",
+  title: "JSX (JavaScript XML)",
   duration: "35 mins",
   type: "cheatsheet",
   position: 2,
-  contentHeading: "Lesson 101: JSX (JavaScript XML)",
+  contentHeading: "JSX (JavaScript XML)",
   contentDescription: "Master JSX syntax rules: HTML-like tags in JavaScript, expression embedding with curly braces, className vs class, Fragments, and compile-time transformation into React.createElement.",
   codeSnippet: {
     language: "jsx",
@@ -268,7 +268,7 @@ function UserGreeting({ username, unreadCount }) {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: HTML and JavaScript Getting Married",
+      title: "Core Concept: HTML and JavaScript Getting Married",
       explanation: "In old-school web development, HTML lived in one room (`index.html`) and JavaScript lived in another (`script.js`). Every time JavaScript wanted to show a username, it had to yell across the hallway through clunky DOM selectors. JSX brings them into the same room! JSX lets you write HTML markup directly inside your JavaScript functions. But beware: JSX is NOT HTML; it is syntactic sugar for JavaScript objects!",
       bullets: [
         "JSX = JavaScript XML: An extension syntax for JavaScript.",
@@ -277,7 +277,7 @@ function UserGreeting({ username, unreadCount }) {
       ]
     },
     {
-      title: "2. The 4 Fundamental Rules of JSX",
+      title: "The 4 Fundamental Rules of JSX",
       explanation: "Every beginner must memorize these 4 unbreakable rules of JSX syntax:",
       table: {
         headers: ["JSX Rule", "Explanation", "Example / Remedy"],
@@ -290,7 +290,7 @@ function UserGreeting({ username, unreadCount }) {
       }
     },
     {
-      title: "3. Concept in Depth: Expressions vs Statements in JSX",
+      title: "Concept in Depth: Expressions vs Statements in JSX",
       explanation: "Inside JSX curly braces `{ ... }`, you can write any JavaScript *expression* (something that evaluates to a value). You *cannot* write JavaScript *statements* such as `if`, `for`, `while`, or `switch` inside JSX tags.",
       bullets: [
         "Allowed inside `{}`: `user.age >= 18 ? 'Adult' : 'Minor'`, `items.length`, `formatCurrency(price)`, `calcTotal()`",
@@ -299,7 +299,7 @@ function UserGreeting({ username, unreadCount }) {
       ]
     },
     {
-      title: "4. Real-World Application: Safe Dynamic Rendering",
+      title: "Real-World Application: Safe Dynamic Rendering",
       explanation: "In enterprise applications, data received from third-party APIs can contain untrusted user input. Because JSX escapes strings automatically, an attacker cannot inject `<script>stealCookies()</script>` into a card title. React safely renders it as harmless text on screen.",
       bullets: [
         "Default Escaping: Text rendered in `{userBio}` is sanitized automatically.",
@@ -307,7 +307,7 @@ function UserGreeting({ username, unreadCount }) {
       ]
     },
     {
-      title: "5. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Watch out for these common beginner mistakes:",
       bullets: [
         "Using `class` instead of `className`: Causes React console warnings because `class` is a reserved keyword in JavaScript.",
@@ -317,7 +317,7 @@ function UserGreeting({ username, unreadCount }) {
       ]
     },
     {
-      title: "6. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Convert a traditional HTML snippet containing an `<input>`, `<label for='email'>`, `<div class='card'>`, and an unclosed `<img>` tag into valid JSX. Wrap them in a React Fragment `<> ... </>` and embed dynamic variables for `label`, `placeholder`, and `userAvatarUrl`."
     }
   ],
@@ -454,11 +454,11 @@ const lesson102: CurriculumItem = {
   moduleId: "module-react-01-foundations",
   moduleTitle: "Module 1: React Foundations",
   modulePosition: 1,
-  title: "102. Components, Props and Composition",
+  title: "Components, Props and Composition",
   duration: "35 mins",
   type: "cheatsheet",
   position: 3,
-  contentHeading: "Lesson 102: Components, Props and Composition",
+  contentHeading: "Components, Props and Composition",
   contentDescription: "Understand function components, passing data via read-only props, object destructuring, children prop composition, and structuring clean component hierarchies.",
   codeSnippet: {
     language: "jsx",
@@ -493,7 +493,7 @@ function CourseList() {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: LEGO Bricks and Blueprint Specs",
+      title: "Core Concept: LEGO Bricks and Blueprint Specs",
       explanation: "Think of a React component as an individual LEGO brick. You don't build a toy castle out of one giant unmovable block of plastic; you build it by snapping together small, reusable bricks: wall bricks, window bricks, and door bricks. 'Props' (short for properties) are the specifications you pass into the brick—such as what color to paint it, what label to print on it, or what size to make it.",
       bullets: [
         "Reusability: Define a `CourseCard` once, render it 50 times with different data.",
@@ -502,7 +502,7 @@ function CourseList() {
       ]
     },
     {
-      title: "2. Function Components & Object Destructuring",
+      title: "Function Components & Object Destructuring",
       explanation: "A React component is simply a JavaScript function that starts with a CAPITAL letter and returns JSX markup. Props are passed into the function as a single object argument.",
       table: {
         headers: ["Pattern", "Code Syntax", "Why It Matters"],
@@ -515,7 +515,7 @@ function CourseList() {
       }
     },
     {
-      title: "3. Concept in Depth: Composition vs Inheritance",
+      title: "Concept in Depth: Composition vs Inheritance",
       explanation: "In React, we never use class inheritance (e.g., `class SpecialCard extends Card`). Instead, we use COMPOSITION: we assemble complex UIs by nesting components inside other components using the `children` prop.",
       bullets: [
         "Containment: Generic container components (like Card, Dialog, or Layout) use `{children}` to render arbitrary content passed by the parent.",
@@ -524,7 +524,7 @@ function CourseList() {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these common component errors:",
       bullets: [
         "Lowercase Component Names: Writing `function courseCard() { ... }` causes React to treat `<courseCard />` as an unknown native HTML tag. Component names MUST be Capitalized (PascalCase).",
@@ -534,7 +534,7 @@ function CourseList() {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create a reusable `Button` component that accepts `variant` ('primary' | 'secondary'), `size` ('sm' | 'lg'), and `children`. Then create a `CourseCard` component that embeds this `Button`. Verify that the button renders different CSS classes based on the props passed."
     }
   ],
@@ -671,11 +671,11 @@ const lesson103: CurriculumItem = {
   moduleId: "module-react-01-foundations",
   moduleTitle: "Module 1: React Foundations",
   modulePosition: 1,
-  title: "103. Lists, Keys and Conditional Rendering",
+  title: "Lists, Keys and Conditional Rendering",
   duration: "35 mins",
   type: "cheatsheet",
   position: 4,
-  contentHeading: "Lesson 103: Lists, Keys and Conditional Rendering",
+  contentHeading: "Lists, Keys and Conditional Rendering",
   contentDescription: "Master transforming data arrays into UI with Array.prototype.map, assigning stable unique keys for DOM reconciliation, and implementing clear loading, empty, and populated conditional states.",
   codeSnippet: {
     language: "jsx",
@@ -712,7 +712,7 @@ function CourseCatalog({ courses, isLoading, errorMessage }) {
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Student Roll Numbers in an Examination Hall",
+      title: "Core Concept: Student Roll Numbers in an Examination Hall",
       explanation: "Imagine 100 students sitting in an exam hall. If the invigilator identifies students only by their chair row numbers (index 0, 1, 2...), what happens when a student in row 2 leaves early? Everyone behind has to shift forward, their row numbers change, and their exam papers get mixed up! But if each student is identified by their permanent Student ID card (stable key), it doesn't matter who shifts or reorders—each student's paper stays with them. That is why React demands a unique, stable `key` for every list item!",
       bullets: [
         "`map()` transforms data: Takes an array of raw objects and returns an array of JSX elements.",
@@ -721,7 +721,7 @@ function CourseCatalog({ courses, isLoading, errorMessage }) {
       ]
     },
     {
-      title: "2. Why Array Index as Key is Dangerous",
+      title: "Why Array Index as Key is Dangerous",
       explanation: "Using the array index `courses.map((c, index) => <Item key={index} />)` is a notorious anti-pattern if the list can be filtered, sorted, or mutated:",
       table: {
         headers: ["Scenario", "Using Array Index as Key", "Using Stable Database ID (`key={item.id}`)"],
@@ -733,7 +733,7 @@ function CourseCatalog({ courses, isLoading, errorMessage }) {
       }
     },
     {
-      title: "3. The 3 Methods of Conditional Rendering",
+      title: "The 3 Methods of Conditional Rendering",
       explanation: "React provides three clean ways to render different UI depending on condition:",
       bullets: [
         "1. Early Return: If condition is met, return early before the main JSX (ideal for loading spinners and error banners).",
@@ -742,7 +742,7 @@ function CourseCatalog({ courses, isLoading, errorMessage }) {
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Crucial mistakes when working with lists and conditions:",
       bullets: [
         "Placing key on inner element: The `key` attribute MUST be placed on the outermost JSX tag inside the `.map()` callback.",
@@ -752,7 +752,7 @@ function CourseCatalog({ courses, isLoading, errorMessage }) {
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create a `TaskFilter` component that renders a list of tasks with stable IDs. Add filter buttons ('All', 'Pending', 'Completed'). Verify that sorting or filtering the list does not cause input focus to jump, and display an empty state message when no tasks match."
     }
   ],

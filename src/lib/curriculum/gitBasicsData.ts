@@ -23,7 +23,7 @@ const gitSubCourseExam: CurriculumItem = {
   type: "quiz",
   position: 7,
   isSubCourseAssessment: true,
-  contentHeading: "Sub-Course 06 Certification Exam: Version Control & Team Collaboration",
+  contentHeading: "Git & GitHub Mastery Certification Exam: Version Control & Team Collaboration",
   contentDescription: "Comprehensive examination covering all 4 modules: DVCS architecture, global configuration, the Three Areas, git status, git log, git diff, atomic commits, .gitignore rules, git restore vs git revert, branching, 3-way merges vs fast-forwards, merge conflict resolution protocols, remotes (origin), git fetch vs pull, push non-fast-forward rejections, git stash, rebase rules, pull requests, semantic versioning (SemVer), tags, GitHub permissions (403 diagnostics), and reflog disaster recovery.",
   questions: [
     ...gitModule01.items[0].questions!.slice(0, 2), // Lesson 128

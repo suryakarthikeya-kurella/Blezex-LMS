@@ -25,7 +25,7 @@ const reactSubCourseExam: CurriculumItem = {
   type: "quiz",
   position: 7,
   isSubCourseAssessment: true,
-  contentHeading: "Sub-Course 05 Certification Exam: React.js Master Architect",
+  contentHeading: "React.js Comprehensive Certification Exam: Master Architect",
   contentDescription: "Comprehensive examination covering all 6 modules: Virtual DOM reconciliation, JSX, component composition, synthetic events, useState snapshots, controlled forms, immutability, useEffect, race conditions, useRef, Context & useReducer, custom hooks, useId, client-side routing, protected routes, Redux Toolkit, nested routes, search params, API integration, performance memoization (useMemo/useCallback/React.memo), code splitting, accessibility, Vitest component testing, and Error Boundaries.",
   questions: [
     ...reactModule01.items[0].questions!.slice(0, 2), // Lesson 100

@@ -14,11 +14,11 @@ const lesson135: CurriculumItem = {
   moduleId: "module-git-03-branches-collaboration",
   moduleTitle: "Module 3: Branches and Collaboration",
   modulePosition: 3,
-  title: "135. Branches and Merging",
+  title: "Branches and Merging",
   duration: "30 mins",
   type: "cheatsheet",
   position: 1,
-  contentHeading: "Lesson 135: Branches and Merging",
+  contentHeading: "Branches and Merging",
   contentDescription: "Understand Git branches as lightweight movable pointers, branch creation and switching with git switch, fast-forward vs 3-way merges, and branch deletion hygiene.",
   codeSnippet: {
     language: "bash",
@@ -40,7 +40,7 @@ git branch -d feature/course-search`
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Alternate Parallel Universes",
+      title: "Core Concept: Alternate Parallel Universes",
       explanation: "Imagine you are building a house. The foundation and living room are complete. Now, you want to test whether an indoor swimming pool or a greenhouse would look better. In real life, digging a pool might destroy the living room foundation! But in Git, a 'Branch' is creating an alternate parallel universe! You step into Universe A (`git switch -c feature/swimming-pool`), dig the pool, test it, and see how it looks. The living room in the primary universe (`main`) remains 100% untouched and safe. If the pool looks fantastic, you perform a 'Merge' (`git merge`), seamlessly fusing Universe A into the primary universe!",
       bullets: [
         "Lightweight Pointers: A branch in Git is NOT a duplicate folder of files; it is merely a tiny 41-byte text pointer pointing to a commit hash.",
@@ -50,7 +50,7 @@ git branch -d feature/course-search`
       ]
     },
     {
-      title: "2. Fast-Forward Merge vs 3-Way Merge",
+      title: "Fast-Forward Merge vs 3-Way Merge",
       explanation: "How Git combines branches based on history divergence:",
       table: {
         headers: ["Merge Type", "When It Happens", "Result in Git History"],
@@ -61,7 +61,7 @@ git branch -d feature/course-search`
       }
     },
     {
-      title: "3. Concept in Depth: Modern `git switch` vs Legacy `git checkout`",
+      title: "Concept in Depth: Modern `git switch` vs Legacy `git checkout`",
       explanation: "Prior to Git 2.23, `git checkout` was used for everything: switching branches, creating branches, and discarding file changes. This caused accidents where developers intending to switch branches accidentally erased uncommitted file edits!",
       bullets: [
         "`git switch <branch>`: Swaps active working branch cleanly.",
@@ -70,7 +70,7 @@ git branch -d feature/course-search`
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these branching errors:",
       bullets: [
         "Committing to `main` Directly: In professional teams, `main` is protected. Always build in feature branches (`feature/feature-name`).",
@@ -79,7 +79,7 @@ git branch -d feature/course-search`
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create a new branch `feature/navbar`. Add a `<nav>` element to `index.html` and commit. Switch back to `main`, observe that `index.html` does not have the nav element yet, and then merge `feature/navbar` into `main`. Delete the feature branch with `git branch -d`."
     }
   ],
@@ -216,11 +216,11 @@ const lesson136: CurriculumItem = {
   moduleId: "module-git-03-branches-collaboration",
   moduleTitle: "Module 3: Branches and Collaboration",
   modulePosition: 3,
-  title: "136. Merge Conflicts",
+  title: "Merge Conflicts",
   duration: "30 mins",
   type: "cheatsheet",
   position: 2,
-  contentHeading: "Lesson 136: Merge Conflicts",
+  contentHeading: "Merge Conflicts",
   contentDescription: "Master identifying, understanding, and resolving merge conflicts: reading standard conflict markers (<<<<<<<, =======, >>>>>>>), editing files to intended integrated state, running tests, staging, and completing merges.",
   codeSnippet: {
     language: "bash",
@@ -247,7 +247,7 @@ git commit -m "Merge branch feature/brand-update resolving header conflicts"`
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Two Editors and the Same Sentence",
+      title: "Core Concept: Two Editors and the Same Sentence",
       explanation: "Imagine two editors working on the same book manuscript. Editor A changes Chapter 1, and Editor B changes Chapter 5. When they bring their edits together, Git combines them automatically with zero issues! But what if Editor A edits Sentence 1 of Chapter 3 to say: 'The cat was BLACK', while at the exact same time Editor B edits Sentence 1 of Chapter 3 to say: 'The cat was WHITE'? When Git tries to combine them, Git cannot read your mind! It doesn't know whether the cat is black, white, or black-and-white. Git stops, marks the sentence with special conflict markers, and calls you (the human developer) to make the final decision!",
       bullets: [
         "Conflict: Occurs when two branches make different changes to the exact same lines of a file.",
@@ -256,7 +256,7 @@ git commit -m "Merge branch feature/brand-update resolving header conflicts"`
       ]
     },
     {
-      title: "2. The Anatomy of Conflict Markers",
+      title: "The Anatomy of Conflict Markers",
       explanation: "How to read the markers Git places in your source code:",
       table: {
         headers: ["Marker", "Meaning", "Action Required"],
@@ -268,7 +268,7 @@ git commit -m "Merge branch feature/brand-update resolving header conflicts"`
       }
     },
     {
-      title: "3. Concept in Depth: The 5-Step Conflict Resolution Protocol",
+      title: "Concept in Depth: The 5-Step Conflict Resolution Protocol",
       explanation: "Follow this systematic protocol every time you encounter a conflict:",
       bullets: [
         "Step 1: Run `git status` to see exactly which files are marked 'both modified'.",
@@ -279,7 +279,7 @@ git commit -m "Merge branch feature/brand-update resolving header conflicts"`
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these conflict resolution traps:",
       bullets: [
         "Leaving Conflict Markers in Code: Committing files that still have `<<<<<<< HEAD` in them. This causes syntax errors in JavaScript and crashes production!",
@@ -288,7 +288,7 @@ git commit -m "Merge branch feature/brand-update resolving header conflicts"`
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create a deliberate merge conflict in a practice repository by editing the same line in `index.html` on both `main` and a `feature` branch. Run `git merge feature`, inspect the conflict markers, resolve the conflict manually, run `git add`, and finalize the merge commit."
     }
   ],
@@ -425,11 +425,11 @@ const lesson137: CurriculumItem = {
   moduleId: "module-git-03-branches-collaboration",
   moduleTitle: "Module 3: Branches and Collaboration",
   modulePosition: 3,
-  title: "137. Remotes, Fetch, Pull and Push",
+  title: "Remotes, Fetch, Pull and Push",
   duration: "30 mins",
   type: "cheatsheet",
   position: 3,
-  contentHeading: "Lesson 137: Remotes, Fetch, Pull and Push",
+  contentHeading: "Remotes, Fetch, Pull and Push",
   contentDescription: "Master synchronizing with remote repositories (origin), understanding the difference between git fetch (download objects) and git pull (fetch + merge), upstream branch tracking with -u, and diagnosing rejected pushes.",
   codeSnippet: {
     language: "bash",
@@ -450,7 +450,7 @@ git push -u origin feature/course-search`
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Checking the Mailbox vs Opening Letters Immediately",
+      title: "Core Concept: Checking the Mailbox vs Opening Letters Immediately",
       explanation: "Imagine you have a physical mailbox at the end of your driveway. `git fetch` is walking out to the mailbox, grabbing the envelopes, and bringing them inside to your kitchen counter. You haven't opened any letters or changed anything on your desk yet—you just downloaded the envelopes so you can safely inspect what arrived. `git pull` is opening the envelopes and immediately signing the papers without looking! `git pull` is actually TWO commands combined in one: `git fetch` (get envelopes) + `git merge` (combine into your desk). And `git push` is dropping your own outgoing letters into the postal box for the rest of the world to receive!",
       bullets: [
         "Remote: A named bookmark URL pointing to a shared repository (usually `origin`).",
@@ -460,7 +460,7 @@ git push -u origin feature/course-search`
       ]
     },
     {
-      title: "2. The Anatomy of Remote-Tracking Branches",
+      title: "The Anatomy of Remote-Tracking Branches",
       explanation: "Understanding local vs remote references in Git:",
       table: {
         headers: ["Reference Name", "Where It Lives", "What It Represents"],
@@ -472,7 +472,7 @@ git push -u origin feature/course-search`
       }
     },
     {
-      title: "3. Concept in Depth: Diagnosing a Rejected Push (`[rejected - non-fast-forward]`)",
+      title: "Concept in Depth: Diagnosing a Rejected Push (`[rejected - non-fast-forward]`)",
       explanation: "You run `git push origin main`, and Git screams: `[rejected - non-fast-forward] Updates were rejected because the remote contains work that you do not have locally.`",
       bullets: [
         "Why It Happened: A teammate pushed a commit to GitHub while you were working. GitHub protects their work from being overwritten by you!",
@@ -481,7 +481,7 @@ git push -u origin feature/course-search`
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these remote sync mistakes:",
       bullets: [
         "Assuming `git pull` is Always Safe: Blindly running `git pull` with uncommitted local changes can cause unexpected merge conflicts. Stash or commit first.",
@@ -490,7 +490,7 @@ git push -u origin feature/course-search`
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Create a new repository on GitHub. Connect your local repository using `git remote add origin <url>`. Push your `main` branch with `git push -u origin main`. Verify with `git remote -v` and `git branch -vv` that upstream tracking is established."
     }
   ],
@@ -627,11 +627,11 @@ const lesson138: CurriculumItem = {
   moduleId: "module-git-03-branches-collaboration",
   moduleTitle: "Module 3: Branches and Collaboration",
   modulePosition: 3,
-  title: "138. Rebase, Cherry-Pick and Stash",
+  title: "Rebase, Cherry-Pick and Stash",
   duration: "30 mins",
   type: "cheatsheet",
   position: 4,
-  contentHeading: "Lesson 138: Rebase, Cherry-Pick and Stash",
+  contentHeading: "Rebase, Cherry-Pick and Stash",
   contentDescription: "Master advanced Git manipulation: linearizing history with git rebase, the Golden Rule of Rebasing (never rebase public shared branches), applying specific commits with git cherry-pick, and temporarily shelving uncommitted edits with git stash.",
   codeSnippet: {
     language: "bash",
@@ -650,7 +650,7 @@ git cherry-pick a1b2c3d`
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: The Drawer, The Re-stacker, and The Plucker",
+      title: "Core Concept: The Drawer, The Re-stacker, and The Plucker",
       explanation: "Think of your daily work: 1) `git stash` is your desk drawer: you are in the middle of writing a 10-page essay and your desk is covered in papers. Suddenly your boss rushes in and says: 'Fix this typo on the website right now!' You can't commit unfinished half-sentences! So you sweep all papers into the desk drawer (`git stash`), fix the typo, commit, and then pull your papers back out onto the desk (`git stash pop`). 2) `git rebase` is like taking a stack of your personal handwritten notes and moving them from the bottom of a book to the very top page so your story reads in a straight, linear line. 3) `git cherry-pick` is plucking a single delicious strawberry off someone else's cake and placing it directly onto your own cake!",
       bullets: [
         "`git stash`: Temporarily shelves uncommitted modifications so you can switch tasks cleanly.",
@@ -659,7 +659,7 @@ git cherry-pick a1b2c3d`
       ]
     },
     {
-      title: "2. Merge vs Rebase: The Architectural Tradeoff",
+      title: "Merge vs Rebase: The Architectural Tradeoff",
       explanation: "Both combine branches, but they treat history completely differently:",
       table: {
         headers: ["Approach", "How It Combines History", "Pros & Cons"],
@@ -670,7 +670,7 @@ git cherry-pick a1b2c3d`
       }
     },
     {
-      title: "3. The Golden Rule of Rebasing",
+      title: "The Golden Rule of Rebasing",
       explanation: "NEVER rebase commits that exist outside your local machine and have been pushed to a shared public branch (like `main`)! Because rebasing creates brand-new commit hashes, other developers based on the old hashes will suffer catastrophic synchronization conflicts.",
       bullets: [
         "Safe to Rebase: Your private local feature branch before creating a pull request.",
@@ -678,7 +678,7 @@ git cherry-pick a1b2c3d`
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these advanced Git traps:",
       bullets: [
         "Rebasing Public History: Forces teammates to manually reconcile rewritten commits.",
@@ -687,7 +687,7 @@ git cherry-pick a1b2c3d`
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Make uncommitted changes in a working file. Stash them with `git stash`. Verify with `git status` that the working tree is clean. Run `git stash list`. Restore the changes with `git stash pop`. Practice cherry-picking a specific commit from a temporary branch onto `main`."
     }
   ],
@@ -824,11 +824,11 @@ const lesson139: CurriculumItem = {
   moduleId: "module-git-03-branches-collaboration",
   moduleTitle: "Module 3: Branches and Collaboration",
   modulePosition: 3,
-  title: "139. Pull Requests and Code Review",
+  title: "Pull Requests and Code Review",
   duration: "30 mins",
   type: "cheatsheet",
   position: 5,
-  contentHeading: "Lesson 139: Pull Requests and Code Review",
+  contentHeading: "Pull Requests and Code Review",
   contentDescription: "Master asynchronous code review workflows: opening Pull Requests (PRs), writing high-context descriptions, continuous integration (CI) checks, addressing review comments constructively, and merge strategies.",
   codeSnippet: {
     language: "markdown",
@@ -850,7 +850,7 @@ Students could not search for courses by level or duration on mobile devices.
   },
   sections: [
     {
-      title: "1. Professor's Simple Analogy: Submitting an Article to a Magazine Editor",
+      title: "Core Concept: Submitting an Article to a Magazine Editor",
       explanation: "Imagine you are a journalist writing for a national magazine. When you finish writing an article, you don't break into the printing factory at midnight, turn on the printing press, and stamp your article directly into tomorrow's magazine without anyone looking! You submit your draft to the Senior Editor (a 'Pull Request'). The Editor reads it, checks grammar and facts (Automated CI Tests), and leaves comments in the margins: 'Please clarify this sentence; make sure this source is verified' (Code Review). You make the small revisions, the Editor stamps 'APPROVED', and the article is officially merged into the magazine!",
       bullets: [
         "Pull Request (PR): A formal proposal to merge a feature branch into a target branch.",
@@ -859,7 +859,7 @@ Students could not search for courses by level or duration on mobile devices.
       ]
     },
     {
-      title: "2. The Anatomy of a High-Impact Pull Request",
+      title: "The Anatomy of a High-Impact Pull Request",
       explanation: "What senior developers look for in every PR:",
       table: {
         headers: ["Component", "Good Practice", "Why It Matters"],
@@ -872,7 +872,7 @@ Students could not search for courses by level or duration on mobile devices.
       }
     },
     {
-      title: "3. Concept in Depth: Addressing Review Comments Professionally",
+      title: "Concept in Depth: Addressing Review Comments Professionally",
       explanation: "Code review is about code, not ego. When a reviewer requests changes:",
       bullets: [
         "Commit additions to the SAME branch: Simply make edits, commit, and `git push origin feature/name`. The PR updates automatically in GitHub!",
@@ -881,7 +881,7 @@ Students could not search for courses by level or duration on mobile devices.
       ]
     },
     {
-      title: "4. Common Pitfalls & How to Avoid Them",
+      title: "Common Pitfalls & How to Avoid Them",
       explanation: "Avoid these PR anti-patterns:",
       bullets: [
         "Opening a PR with Zero Description: Dropping a title like `fix` with no body leaves reviewers completely blind.",
@@ -890,7 +890,7 @@ Students could not search for courses by level or duration on mobile devices.
       ]
     },
     {
-      title: "5. Hands-on Practice Lab Challenge",
+      title: "Hands-on Practice Lab Challenge",
       explanation: "Lab Prompt: Push a feature branch to GitHub. Open a Pull Request into `main`. Write a professional description with Context, Solution, and Testing Evidence. Practice leaving a line-by-line comment on the Files Changed tab, push a follow-up commit to the branch, and merge the PR."
     }
   ],
