@@ -1,13 +1,73 @@
 export * from "./curriculumTypes";
 import { CurriculumModule, CurriculumItem } from "./curriculumTypes";
 import { jsFundamentalsModule } from "./curriculum/javascriptFundamentalsData";
+import { gitBasicsModule } from "./curriculum/gitBasicsData";
+
+/**
+ * Parse human duration string (e.g., "25 mins", "1 hour, 30 mins", "90 mins") into minutes.
+ */
+export function parseDurationMinutes(durationStr?: string): number {
+  if (!durationStr) return 0;
+  let total = 0;
+  const hrMatch = durationStr.match(/(\d+)\s*(?:hours?|hrs?)/i);
+  const minMatch = durationStr.match(/(\d+)\s*(?:minutes?|mins?|m\b)/i);
+  if (hrMatch) total += parseInt(hrMatch[1], 10) * 60;
+  if (minMatch) total += parseInt(minMatch[1], 10);
+  return total;
+}
+
+/**
+ * Format minutes into a friendly string like "45 hours, 10 mins" or "25 mins".
+ */
+export function formatMinutesToHuman(totalMinutes: number): string {
+  if (totalMinutes <= 0) return "0 mins";
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+  if (hours > 0 && mins > 0) {
+    return `${hours} ${hours === 1 ? "hour" : "hours"}, ${mins} mins`;
+  }
+  if (hours > 0) {
+    return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+  }
+  return `${mins} mins`;
+}
+
+/**
+ * Format minutes into a compact string like "45h 10m".
+ */
+export function formatMinutesCompact(totalMinutes: number): string {
+  if (totalMinutes <= 0) return "0m";
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+  if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
+  if (hours > 0) return `${hours}h`;
+  return `${mins}m`;
+}
+
+/**
+ * Calculate the exact total minutes for any module from its items.
+ */
+export function getModuleTotalMinutes(mod: { items?: Array<{ duration?: string }> }): number {
+  if (!mod?.items || !Array.isArray(mod.items)) return 0;
+  return mod.items.reduce((sum, it) => sum + parseDurationMinutes(it.duration), 0);
+}
+
+/**
+ * Calculate the exact total minutes for a full course across all modules.
+ */
+export function getCourseTotalMinutes(mods: Array<{ items?: Array<{ duration?: string }> }>): number {
+  if (!mods || !Array.isArray(mods)) return 0;
+  return mods.reduce((sum, m) => sum + getModuleTotalMinutes(m), 0);
+}
+
+export const getSubCourseTotalMinutes = getModuleTotalMinutes;
 
 export const FULL_STACK_MODULES: CurriculumModule[] = [
   {
     "id": "mod-html-css-intro",
     "title": "Introduction to HTML & CSS",
     "position": 1,
-    "duration": "14 hours, 45 mins",
+    "duration": "10 hours, 5 mins",
     "description": "A complete beginner-to-professional masterclass. Learn how the web works from scratch: web architecture, modern HTML5 document structure, elements, semantics, forms, tables, media, and complete CSS fundamentals including selectors, the box model, cascade, flexbox, CSS grid, and responsive design.",
     "items": [
       {
@@ -7902,7 +7962,6 @@ export const FULL_STACK_MODULES: CurriculumModule[] = [
         "contentDescription": "Combine display behavior, positioning, Flexbox, Grid, and responsive rules in one coherent, production-ready interface based on Lessons 13–17.",
         "assignmentPrompt": {
           "instructions": "Use the concepts from Lessons 13–17 to build a small course landing page. The goal is to combine display behavior, positioning, Flexbox, Grid, and responsive rules in one coherent interface.\n\nRequirements:\n1. A semantic header with brand, navigation, and a call-to-action link.\n2. A hero section with a heading, description, and button.\n3. A course section with at least four cards.\n4. A \"New\" or \"Popular\" badge positioned in one card using a relative card wrapper and an absolute badge.\n5. Use Flexbox for the header or card-internal alignment.\n6. Use Grid for the course card collection.\n7. Use responsive styles so the layout works at narrow and wide widths.\n8. Include an image that scales without distortion, if images are used.\n9. Avoid horizontal page overflow at all tested sizes.\n10. Keep keyboard focus visible and maintain a meaningful HTML source order.\n\nSuggested build sequence:\n- Step 1: Write semantic HTML first and confirm the content order.\n- Step 2: Apply box-sizing: border-box and base typography.\n- Step 3: Build the header using Flexbox.\n- Step 4: Build the course collection using Grid.\n- Step 5: Add a positioned badge with a relative card wrapper and an absolute badge.\n- Step 6: Add mobile-first responsive rules and fluid typography with clamp().\n- Step 7: Test the page at narrow (phone), medium (tablet), and wide (desktop) viewport sizes.\n- Step 8: Inspect overflow, focus order, contrast, and reduced-motion behavior.\n- Step 9: Refactor repeated CSS values and remove unused rules.",
-          "starterCode": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Responsive Course Landing Page</title>\n  <style>\n    * { box-sizing: border-box; }\n\n    body {\n      margin: 0;\n      font-family: system-ui, -apple-system, sans-serif;\n      line-height: 1.6;\n      color: #17212b;\n    }\n\n    .container {\n      width: min(100% - 2rem, 72rem);\n      margin-inline: auto;\n    }\n\n    /* 1. Flexbox Header */\n    .site-header {\n      border-bottom: 1px solid #d5dce3;\n      background: white;\n    }\n    .header-inner {\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      flex-wrap: wrap;\n      gap: 1rem;\n      padding-block: 1rem;\n    }\n    .brand {\n      color: #163a5f;\n      font-weight: 800;\n      text-decoration: none;\n    }\n    .nav {\n      display: flex;\n      flex-wrap: wrap;\n      gap: 1rem;\n    }\n    .nav a {\n      color: inherit;\n      text-decoration: none;\n    }\n\n    /* 2. Fluid Hero Section */\n    .hero {\n      padding-block: clamp(2.5rem, 7vw, 6rem);\n      background: #f1f4f7;\n    }\n    .hero h1 {\n      max-width: 15ch;\n      margin-top: 0;\n      font-size: clamp(2rem, 5vw, 4rem);\n      line-height: 1.1;\n    }\n    .button {\n      display: inline-block;\n      padding: 0.75rem 1rem;\n      border-radius: 0.5rem;\n      background: #163a5f;\n      color: white;\n      text-decoration: none;\n    }\n\n    /* 3. Grid Course Cards */\n    .courses {\n      padding-block: 3rem;\n    }\n    .course-grid {\n      display: grid;\n      grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));\n      gap: 1.25rem;\n    }\n    .course-card {\n      position: relative;\n      display: flex;\n      flex-direction: column;\n      align-items: flex-start;\n      padding: 1.5rem;\n      border: 1px solid #d5dce3;\n      border-radius: 0.75rem;\n      background: white;\n    }\n    .course-card p { flex: 1; }\n\n    /* 4. Positioned Badge */\n    .badge {\n      position: absolute;\n      top: 12px;\n      right: 12px;\n      padding: 4px 8px;\n      background: #b33a16;\n      color: white;\n      font-size: 0.75rem;\n      font-weight: 700;\n      border-radius: 4px;\n    }\n\n    /* 5. Mobile-first Media Queries */\n    @media (max-width: 40rem) {\n      .header-inner {\n        flex-direction: column;\n        align-items: flex-start;\n      }\n      .nav { gap: 0.75rem; }\n    }\n  </style>\n</head>\n<body>\n  <header class=\"site-header\">\n    <div class=\"container header-inner\">\n      <a class=\"brand\" href=\"/\">LearnWeb</a>\n      <nav class=\"nav\" aria-label=\"Main navigation\">\n        <a href=\"#courses\">Courses</a>\n        <a href=\"#projects\">Projects</a>\n        <a href=\"#about\">About</a>\n      </nav>\n      <a class=\"button\" href=\"#start\">Get started</a>\n    </div>\n  </header>\n\n  <main>\n    <section class=\"hero\">\n      <div class=\"container\">\n        <h1>Build your web development foundation.</h1>\n        <p>Learn HTML and CSS through clear lessons and practical projects.</p>\n        <a class=\"button\" href=\"#courses\">Explore courses</a>\n      </div>\n    </section>\n\n    <section class=\"courses container\" id=\"courses\">\n      <h2>Popular courses</h2>\n      <div class=\"course-grid\">\n        <article class=\"course-card\">\n          <span class=\"badge\">POPULAR</span>\n          <h3>HTML Foundations</h3>\n          <p>Structure content with modern, semantic HTML.</p>\n          <a class=\"button\" href=\"#html\">View course</a>\n        </article>\n        <article class=\"course-card\">\n          <span class=\"badge\">NEW</span>\n          <h3>CSS Layout</h3>\n          <p>Build layouts with Flexbox and CSS Grid.</p>\n          <a class=\"button\" href=\"#css\">View course</a>\n        </article>\n        <article class=\"course-card\">\n          <h3>Responsive Design</h3>\n          <p>Adapt interfaces smoothly across mobile and desktop.</p>\n          <a class=\"button\" href=\"#responsive\">View course</a>\n        </article>\n        <article class=\"course-card\">\n          <h3>Web Accessibility</h3>\n          <p>Create inclusive websites with screen reader and keyboard support.</p>\n          <a class=\"button\" href=\"#a11y\">View course</a>\n        </article>\n      </div>\n    </section>\n  </main>\n\n  <footer style=\"padding-block: 2rem; background: #17212b; color: white; text-align: center;\">\n    <div class=\"container\">\n      <p>&copy; 2026 LearnWeb. Built with Semantic HTML5 & Responsive CSS.</p>\n    </div>\n  </footer>\n</body>\n</html>",
           "deliverables": [
             "A semantic header with brand, navigation, and a call-to-action link.",
             "A hero section with a heading, description, and button.",
@@ -7920,139 +7979,139 @@ export const FULL_STACK_MODULES: CurriculumModule[] = [
   },
   jsFundamentalsModule,
   {
-    "id": "mod-react-essentials",
-    "title": "Frontend Foundations & React",
+    "id": "mod-database-sql",
+    "title": "Database Fundamentals and SQL",
     "position": 3,
-    "duration": "9 hours, 15 mins",
-    "description": "Build robust single-page applications with React. Components, JSX, props, state hooks, effect lifecycles, and context.",
+    "duration": "2 hours, 35 mins",
+    "description": "Design relational schemas, write performant SQL queries, master joins, indexes, foreign keys, and Row Level Security (RLS).",
     "items": [
       {
-        "id": "item-react-components",
-        "moduleId": "mod-react-essentials",
-        "moduleTitle": "Frontend Foundations & React",
+        "id": "item-sql-schema",
+        "moduleId": "mod-database-sql",
+        "moduleTitle": "Database Fundamentals and SQL",
         "modulePosition": 3,
-        "title": "React Components & JSX Foundations | Cheat Sheet",
+        "title": "Relational Modeling & Schema Design | Cheat Sheet",
         "duration": "35 mins",
         "type": "cheatsheet",
         "position": 1,
-        "contentHeading": "1. Thinking in React Components",
-        "contentDescription": "React builds user interfaces out of reusable, declarative functions called components that return JSX.",
+        "contentHeading": "1. Relational Databases & Schema Constraints",
+        "contentDescription": "Relational databases store records in tables with strict data types, primary keys, and foreign key relationships.",
         "codeSnippet": {
-          "language": "JavaScript",
-          "code": "// Child component with typed props\nexport function LessonBadge({ title, duration, isComplete }) {\n  return (\n    <div className={`badge ${isComplete ? \"done\" : \"pending\"}`}>\n      <h3>{title}</h3>\n      <span>{duration}</span>\n    </div>\n  );\n}\n\n// Parent container\nexport function CourseList({ lessons }) {\n  return (\n    <section className=\"courses\">\n      {lessons.map(l => (\n        <LessonBadge \n          key={l.id} \n          title={l.title} \n          duration={l.duration} \n          isComplete={l.isComplete} \n        />\n      ))}\n    </section>\n  );\n}"
+          "language": "SQL",
+          "code": "CREATE TABLE courses (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  title TEXT NOT NULL,\n  slug TEXT UNIQUE NOT NULL,\n  min_progress_pct INT DEFAULT 80,\n  created_at TIMESTAMPTZ DEFAULT now()\n);\n\nCREATE TABLE enrollments (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  student_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,\n  course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,\n  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'completed', 'paused')),\n  created_at TIMESTAMPTZ DEFAULT now()\n);"
         },
         "questions": [
           {
-            "id": "q-r-1",
-            "prompt": "Why must you provide a unique 'key' prop when rendering lists in React?",
+            "id": "q-sql-1",
+            "prompt": "What does 'ON DELETE CASCADE' on a foreign key do?",
             "options": [
               {
-                "id": "rk1",
-                "label": "To help React's virtual DOM identify which items changed, were added, or were removed efficiently."
+                "id": "sqc",
+                "label": "When the referenced parent row is deleted, all dependent child rows are automatically deleted."
               },
               {
-                "id": "rk2",
-                "label": "Keys are required by the CSS engine to paint colors."
+                "id": "sqd",
+                "label": "It stops any record from ever being deleted."
               },
               {
-                "id": "rk3",
-                "label": "Keys automatically encrypt student data."
+                "id": "sqe",
+                "label": "It encrypts deleted records."
               }
             ],
             "correctIndex": 0,
-            "explanation": "The key prop gives elements a stable identity inside React's reconciler so it re-renders only modified list items rather than re-creating the entire list."
+            "explanation": "ON DELETE CASCADE guarantees referential integrity by automatically cleaning up child rows when the parent record is deleted."
           }
         ]
       },
       {
-        "id": "item-react-state",
-        "moduleId": "mod-react-essentials",
-        "moduleTitle": "Frontend Foundations & React",
+        "id": "item-sql-queries",
+        "moduleId": "mod-database-sql",
+        "moduleTitle": "Database Fundamentals and SQL",
         "modulePosition": 3,
-        "title": "React State & useState Hook | Cheat Sheet",
+        "title": "SQL Queries, Filtering & Joins | Cheat Sheet",
         "duration": "35 mins",
         "type": "cheatsheet",
         "position": 2,
-        "contentHeading": "2. Component Memory with useState",
-        "contentDescription": "State stores dynamic values that trigger re-rendering when updated.",
+        "contentHeading": "2. SELECT Queries & Relational Joins",
+        "contentDescription": "Retrieve, filter, and combine records across multiple related tables.",
         "codeSnippet": {
-          "language": "JavaScript",
-          "code": "import { useState } from 'react';\n\nexport function Counter() {\n  const [count, setCount] = useState(0);\n\n  // Functional update for predictable state transitions\n  const increment = () => setCount(prev => prev + 1);\n\n  return (\n    <button onClick={increment}>\n      Completed Lessons: {count}\n    </button>\n  );\n}"
+          "language": "SQL",
+          "code": "-- INNER JOIN: Students enrolled in courses\nSELECT \n  p.full_name AS student_name,\n  c.title AS course_title,\n  e.status\nFROM enrollments e\nJOIN profiles p ON p.id = e.student_id\nJOIN courses c ON c.id = e.course_id\nWHERE e.status = 'active'\nORDER BY p.full_name ASC;\n\n-- Aggregations with GROUP BY and HAVING\nSELECT \n  c.title,\n  COUNT(e.id) AS total_enrolled\nFROM courses c\nLEFT JOIN enrollments e ON e.course_id = c.id\nGROUP BY c.title\nHAVING COUNT(e.id) > 0;"
         },
         "questions": [
           {
-            "id": "q-rs-1",
-            "prompt": "Why should you NEVER mutate state variables directly (e.g. count = 5)?",
+            "id": "q-sql-2",
+            "prompt": "What records does an INNER JOIN return?",
             "options": [
               {
-                "id": "rs1",
-                "label": "React will not detect direct mutations and will not trigger a re-render of the component."
+                "id": "j1",
+                "label": "Only records that have matching values in both joined tables."
               },
               {
-                "id": "rs2",
-                "label": "It crashes the browser immediately."
+                "id": "j2",
+                "label": "All records from the left table even if no match exists."
               },
               {
-                "id": "rs3",
-                "label": "Direct mutation only works in TypeScript."
+                "id": "j3",
+                "label": "Every possible combination of rows (Cartesian product)."
               }
             ],
             "correctIndex": 0,
-            "explanation": "Calling the state setter function (e.g. setCount) signals React that state changed and schedules a UI re-render. Direct mutation skips this trigger."
+            "explanation": "An INNER JOIN matches records across tables based on the ON condition and excludes rows with no match in either table."
           }
         ]
       },
       {
-        "id": "item-react-quiz",
-        "moduleId": "mod-react-essentials",
-        "moduleTitle": "Frontend Foundations & React",
+        "id": "item-sql-quiz",
+        "moduleId": "mod-database-sql",
+        "moduleTitle": "Database Fundamentals and SQL",
         "modulePosition": 3,
-        "title": "Quiz: React State & Lifecycle Rules",
+        "title": "Quiz: SQL Joins, Constraints & Schemas",
         "duration": "25 mins",
         "type": "quiz",
         "position": 3,
-        "contentHeading": "Knowledge Check: React Mastery",
-        "contentDescription": "Test your understanding of component re-renders, hook rules, and props flow.",
+        "contentHeading": "Knowledge Check: SQL & Databases",
+        "contentDescription": "Verify your ability to design tables, write performant filters, and join relationships.",
         "questions": [
           {
-            "id": "qr-1",
-            "prompt": "What is the result of passing an empty dependency array [] to useEffect?",
+            "id": "q-sq-q1",
+            "prompt": "When should you use HAVING instead of WHERE in a SQL statement?",
             "options": [
               {
-                "id": "qra",
-                "label": "The effect runs once when the component mounts and cleans up when it unmounts."
+                "id": "ha",
+                "label": "To filter aggregated groups after GROUP BY has calculated (e.g. HAVING COUNT(*) > 5)."
               },
               {
-                "id": "qrb",
-                "label": "The effect runs on every single re-render."
+                "id": "hb",
+                "label": "To filter raw individual rows before grouping."
               },
               {
-                "id": "qrc",
-                "label": "The effect never executes."
+                "id": "hc",
+                "label": "HAVING and WHERE are completely identical."
               }
             ],
             "correctIndex": 0,
-            "explanation": "An empty dependency array [] tells React that the effect doesn't depend on any props or state, so it runs only once after the initial render."
+            "explanation": "WHERE filters individual table rows prior to aggregation, while HAVING filters the aggregated summary groups produced by GROUP BY."
           }
         ]
       },
       {
-        "id": "item-react-assignment",
-        "moduleId": "mod-react-essentials",
-        "moduleTitle": "Frontend Foundations & React",
+        "id": "item-sql-assignment",
+        "moduleId": "mod-database-sql",
+        "moduleTitle": "Database Fundamentals and SQL",
         "modulePosition": 3,
-        "title": "Course Assignment | Interactive Course Dashboard",
-        "duration": "75 mins",
+        "title": "Course Assignment | Production Database Schema",
+        "duration": "60 mins",
         "type": "assignment",
         "position": 4,
-        "contentHeading": "Project: Modern Learning Dashboard",
-        "contentDescription": "Build a modular React application featuring dynamic course cards, filters, and progress tracking.",
+        "contentHeading": "Project: Production Database Schema",
+        "contentDescription": "Design a relational schema with tables, constraints, foreign keys, and indexes for an e-commerce or LMS application.",
         "assignmentPrompt": {
-          "instructions": "Create a React component library featuring a Header, CourseList, and FilterBar. Manage active filters with useState and provide smooth interactive feedback.",
+          "instructions": "Write a SQL migration script creating tables for users, orders, and order_items. Include foreign key constraints with ON DELETE CASCADE, unique email indexes, and check constraints on price.",
           "deliverables": [
-            "Reusable child components receiving typed props",
-            "Stateful filtering by topic (HTML, CSS, JS)",
-            "Clean code splitting and error boundaries"
+            "CREATE TABLE statements with primary and foreign keys",
+            "CREATE INDEX statements on foreign key columns",
+            "Sample INSERT and SELECT queries verifying relationships"
           ]
         }
       }
@@ -8060,15 +8119,15 @@ export const FULL_STACK_MODULES: CurriculumModule[] = [
   },
   {
     "id": "mod-nodejs-apis",
-    "title": "Node.js & Express APIs",
+    "title": "Node.js and Express.js",
     "position": 4,
-    "duration": "8 hours, 50 mins",
+    "duration": "2 hours, 50 mins",
     "description": "Build robust backend web servers, design RESTful APIs, manage middleware, parse JSON payloads, and handle errors.",
     "items": [
       {
         "id": "item-node-runtime",
         "moduleId": "mod-nodejs-apis",
-        "moduleTitle": "Node.js & Express APIs",
+        "moduleTitle": "Node.js and Express.js",
         "modulePosition": 4,
         "title": "Node.js Runtime & Express Server Setup | Cheat Sheet",
         "duration": "30 mins",
@@ -8106,7 +8165,7 @@ export const FULL_STACK_MODULES: CurriculumModule[] = [
       {
         "id": "item-node-rest",
         "moduleId": "mod-nodejs-apis",
-        "moduleTitle": "Node.js & Express APIs",
+        "moduleTitle": "Node.js and Express.js",
         "modulePosition": 4,
         "title": "REST API Design & HTTP Verbs | Cheat Sheet",
         "duration": "35 mins",
@@ -8148,7 +8207,7 @@ export const FULL_STACK_MODULES: CurriculumModule[] = [
       {
         "id": "item-node-quiz",
         "moduleId": "mod-nodejs-apis",
-        "moduleTitle": "Node.js & Express APIs",
+        "moduleTitle": "Node.js and Express.js",
         "modulePosition": 4,
         "title": "Quiz: REST APIs, Status Codes & Express",
         "duration": "25 mins",
@@ -8182,7 +8241,7 @@ export const FULL_STACK_MODULES: CurriculumModule[] = [
       {
         "id": "item-node-assignment",
         "moduleId": "mod-nodejs-apis",
-        "moduleTitle": "Node.js & Express APIs",
+        "moduleTitle": "Node.js and Express.js",
         "modulePosition": 4,
         "title": "Course Assignment | Build a RESTful Notes API",
         "duration": "80 mins",
@@ -8202,145 +8261,148 @@ export const FULL_STACK_MODULES: CurriculumModule[] = [
     ]
   },
   {
-    "id": "mod-database-sql",
-    "title": "Database Fundamentals & SQL",
+    "id": "mod-react-essentials",
+    "title": "React.js",
     "position": 5,
-    "duration": "7 hours, 20 mins",
-    "description": "Design relational schemas, write performant SQL queries, master joins, indexes, foreign keys, and Row Level Security (RLS).",
+    "duration": "2 hours, 50 mins",
+    "description": "Build robust single-page applications with React. Components, JSX, props, state hooks, effect lifecycles, and context.",
     "items": [
       {
-        "id": "item-sql-schema",
-        "moduleId": "mod-database-sql",
-        "moduleTitle": "Database Fundamentals & SQL",
+        "id": "item-react-components",
+        "moduleId": "mod-react-essentials",
+        "moduleTitle": "React.js",
         "modulePosition": 5,
-        "title": "Relational Modeling & Schema Design | Cheat Sheet",
+        "title": "React Components & JSX Foundations | Cheat Sheet",
         "duration": "35 mins",
         "type": "cheatsheet",
         "position": 1,
-        "contentHeading": "1. Relational Databases & Schema Constraints",
-        "contentDescription": "Relational databases store records in tables with strict data types, primary keys, and foreign key relationships.",
+        "contentHeading": "1. Thinking in React Components",
+        "contentDescription": "React builds user interfaces out of reusable, declarative functions called components that return JSX.",
         "codeSnippet": {
-          "language": "SQL",
-          "code": "CREATE TABLE courses (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  title TEXT NOT NULL,\n  slug TEXT UNIQUE NOT NULL,\n  min_progress_pct INT DEFAULT 80,\n  created_at TIMESTAMPTZ DEFAULT now()\n);\n\nCREATE TABLE enrollments (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  student_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,\n  course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,\n  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'completed', 'paused')),\n  created_at TIMESTAMPTZ DEFAULT now()\n);"
+          "language": "JavaScript",
+          "code": "// Child component with typed props\nexport function LessonBadge({ title, duration, isComplete }) {\n  return (\n    <div className={`badge ${isComplete ? \"done\" : \"pending\"}`}>\n      <h3>{title}</h3>\n      <span>{duration}</span>\n    </div>\n  );\n}\n\n// Parent container\nexport function CourseList({ lessons }) {\n  return (\n    <section className=\"courses\">\n      {lessons.map(l => (\n        <LessonBadge \n          key={l.id} \n          title={l.title} \n          duration={l.duration} \n          isComplete={l.isComplete} \n        />\n      ))}\n    </section>\n  );\n}"
         },
         "questions": [
           {
-            "id": "q-sql-1",
-            "prompt": "What does 'ON DELETE CASCADE' on a foreign key do?",
+            "id": "q-r-1",
+            "prompt": "Why must you provide a unique 'key' prop when rendering lists in React?",
             "options": [
               {
-                "id": "sqc",
-                "label": "When the referenced parent row is deleted, all dependent child rows are automatically deleted."
+                "id": "rk1",
+                "label": "To help React's virtual DOM identify which items changed, were added, or were removed efficiently."
               },
               {
-                "id": "sqd",
-                "label": "It stops any record from ever being deleted."
+                "id": "rk2",
+                "label": "Keys are required by the CSS engine to paint colors."
               },
               {
-                "id": "sqe",
-                "label": "It encrypts deleted records."
+                "id": "rk3",
+                "label": "Keys automatically encrypt student data."
               }
             ],
             "correctIndex": 0,
-            "explanation": "ON DELETE CASCADE guarantees referential integrity by automatically cleaning up child rows when the parent record is deleted."
+            "explanation": "The key prop gives elements a stable identity inside React's reconciler so it re-renders only modified list items rather than re-creating the entire list."
           }
         ]
       },
       {
-        "id": "item-sql-queries",
-        "moduleId": "mod-database-sql",
-        "moduleTitle": "Database Fundamentals & SQL",
+        "id": "item-react-state",
+        "moduleId": "mod-react-essentials",
+        "moduleTitle": "React.js",
         "modulePosition": 5,
-        "title": "SQL Queries, Filtering & Joins | Cheat Sheet",
+        "title": "React State & useState Hook | Cheat Sheet",
         "duration": "35 mins",
         "type": "cheatsheet",
         "position": 2,
-        "contentHeading": "2. SELECT Queries & Relational Joins",
-        "contentDescription": "Retrieve, filter, and combine records across multiple related tables.",
+        "contentHeading": "2. Component Memory with useState",
+        "contentDescription": "State stores dynamic values that trigger re-rendering when updated.",
         "codeSnippet": {
-          "language": "SQL",
-          "code": "-- INNER JOIN: Students enrolled in courses\nSELECT \n  p.full_name AS student_name,\n  c.title AS course_title,\n  e.status\nFROM enrollments e\nJOIN profiles p ON p.id = e.student_id\nJOIN courses c ON c.id = e.course_id\nWHERE e.status = 'active'\nORDER BY p.full_name ASC;\n\n-- Aggregations with GROUP BY and HAVING\nSELECT \n  c.title,\n  COUNT(e.id) AS total_enrolled\nFROM courses c\nLEFT JOIN enrollments e ON e.course_id = c.id\nGROUP BY c.title\nHAVING COUNT(e.id) > 0;"
+          "language": "JavaScript",
+          "code": "import { useState } from 'react';\n\nexport function Counter() {\n  const [count, setCount] = useState(0);\n\n  // Functional update for predictable state transitions\n  const increment = () => setCount(prev => prev + 1);\n\n  return (\n    <button onClick={increment}>\n      Completed Lessons: {count}\n    </button>\n  );\n}"
         },
         "questions": [
           {
-            "id": "q-sql-2",
-            "prompt": "What records does an INNER JOIN return?",
+            "id": "q-rs-1",
+            "prompt": "Why should you NEVER mutate state variables directly (e.g. count = 5)?",
             "options": [
               {
-                "id": "j1",
-                "label": "Only records that have matching values in both joined tables."
+                "id": "rs1",
+                "label": "React will not detect direct mutations and will not trigger a re-render of the component."
               },
               {
-                "id": "j2",
-                "label": "All records from the left table even if no match exists."
+                "id": "rs2",
+                "label": "It crashes the browser immediately."
               },
               {
-                "id": "j3",
-                "label": "Every possible combination of rows (Cartesian product)."
+                "id": "rs3",
+                "label": "Direct mutation only works in TypeScript."
               }
             ],
             "correctIndex": 0,
-            "explanation": "An INNER JOIN matches records across tables based on the ON condition and excludes rows with no match in either table."
+            "explanation": "Calling the state setter function (e.g. setCount) signals React that state changed and schedules a UI re-render. Direct mutation skips this trigger."
           }
         ]
       },
       {
-        "id": "item-sql-quiz",
-        "moduleId": "mod-database-sql",
-        "moduleTitle": "Database Fundamentals & SQL",
+        "id": "item-react-quiz",
+        "moduleId": "mod-react-essentials",
+        "moduleTitle": "React.js",
         "modulePosition": 5,
-        "title": "Quiz: SQL Joins, Constraints & Schemas",
+        "title": "Quiz: React State & Lifecycle Rules",
         "duration": "25 mins",
         "type": "quiz",
         "position": 3,
-        "contentHeading": "Knowledge Check: SQL & Databases",
-        "contentDescription": "Verify your ability to design tables, write performant filters, and join relationships.",
+        "contentHeading": "Knowledge Check: React Mastery",
+        "contentDescription": "Test your understanding of component re-renders, hook rules, and props flow.",
         "questions": [
           {
-            "id": "q-sq-q1",
-            "prompt": "When should you use HAVING instead of WHERE in a SQL statement?",
+            "id": "qr-1",
+            "prompt": "What is the result of passing an empty dependency array [] to useEffect?",
             "options": [
               {
-                "id": "ha",
-                "label": "To filter aggregated groups after GROUP BY has calculated (e.g. HAVING COUNT(*) > 5)."
+                "id": "qra",
+                "label": "The effect runs once when the component mounts and cleans up when it unmounts."
               },
               {
-                "id": "hb",
-                "label": "To filter raw individual rows before grouping."
+                "id": "qrb",
+                "label": "The effect runs on every single re-render."
               },
               {
-                "id": "hc",
-                "label": "HAVING and WHERE are completely identical."
+                "id": "qrc",
+                "label": "The effect never executes."
               }
             ],
             "correctIndex": 0,
-            "explanation": "WHERE filters individual table rows prior to aggregation, while HAVING filters the aggregated summary groups produced by GROUP BY."
+            "explanation": "An empty dependency array [] tells React that the effect doesn't depend on any props or state, so it runs only once after the initial render."
           }
         ]
       },
       {
-        "id": "item-sql-assignment",
-        "moduleId": "mod-database-sql",
-        "moduleTitle": "Database Fundamentals & SQL",
+        "id": "item-react-assignment",
+        "moduleId": "mod-react-essentials",
+        "moduleTitle": "React.js",
         "modulePosition": 5,
-        "title": "Course Assignment | Production Database Schema",
-        "duration": "60 mins",
+        "title": "Course Assignment | Interactive Course Dashboard",
+        "duration": "75 mins",
         "type": "assignment",
         "position": 4,
-        "contentHeading": "Project: Production Database Schema",
-        "contentDescription": "Design a relational schema with tables, constraints, foreign keys, and indexes for an e-commerce or LMS application.",
+        "contentHeading": "Project: Modern Learning Dashboard",
+        "contentDescription": "Build a modular React application featuring dynamic course cards, filters, and progress tracking.",
         "assignmentPrompt": {
-          "instructions": "Write a SQL migration script creating tables for users, orders, and order_items. Include foreign key constraints with ON DELETE CASCADE, unique email indexes, and check constraints on price.",
+          "instructions": "Create a React component library featuring a Header, CourseList, and FilterBar. Manage active filters with useState and provide smooth interactive feedback.",
           "deliverables": [
-            "CREATE TABLE statements with primary and foreign keys",
-            "CREATE INDEX statements on foreign key columns",
-            "Sample INSERT and SELECT queries verifying relationships"
+            "Reusable child components receiving typed props",
+            "Stateful filtering by topic (HTML, CSS, JS)",
+            "Clean code splitting and error boundaries"
           ]
         }
       }
     ]
-  }
+  },
+  gitBasicsModule
 ];
+
+export const FULL_STACK_SUB_COURSES = FULL_STACK_MODULES;
 
 export function findCurriculumItem(itemId: string): { item: CurriculumItem; module: CurriculumModule; index: number } | null {
   for (const mod of FULL_STACK_MODULES) {
@@ -8351,3 +8413,4 @@ export function findCurriculumItem(itemId: string): { item: CurriculumItem; modu
   }
   return null;
 }
+

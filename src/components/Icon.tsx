@@ -1,6 +1,6 @@
 import { ReactNode, SVGProps } from "react";
 
-export type IconName = "dashboard" | "courses" | "journey" | "profile" | "progress" | "assignment" | "assessment" | "milestone" | "quiz" | "lock" | "unlock" | "certificate" | "check" | "clock" | "arrow" | "arrowLeft" | "chevronDown" | "chevronRight" | "bell" | "book" | "target" | "video" | "sheet" | "pencil" | "code" | "sidebarCollapse" | "play";
+export type IconName = "dashboard" | "courses" | "journey" | "profile" | "progress" | "assignment" | "assessment" | "milestone" | "quiz" | "lock" | "unlock" | "certificate" | "check" | "clock" | "arrow" | "arrowLeft" | "chevronDown" | "chevronRight" | "bell" | "book" | "target" | "video" | "sheet" | "pencil" | "code" | "sidebarCollapse" | "play" | "copy" | "close";
 
 const paths: Record<IconName, ReactNode> = {
   dashboard: <><rect x="3" y="3" width="8" height="8" rx="1.5" /><rect x="13" y="3" width="8" height="5" rx="1.5" /><rect x="13" y="10" width="8" height="11" rx="1.5" /><rect x="3" y="13" width="8" height="8" rx="1.5" /></>,
@@ -30,6 +30,8 @@ const paths: Record<IconName, ReactNode> = {
   code: <><path d="m16 18 6-6-6-6" /><path d="M8 6l-6 6 6 6" /></>,
   sidebarCollapse: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18" /><path d="m14 9-3 3 3 3" /></>,
   play: <polygon points="6 4 18 12 6 20 6 4" fill="currentColor" stroke="none" />,
+  copy: <><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>,
+  close: <path d="M18 6 6 18M6 6l12 12" />,
 };
 
 export default function Icon({ name, size = 20, ...props }: SVGProps<SVGSVGElement> & { name: IconName; size?: number }) {

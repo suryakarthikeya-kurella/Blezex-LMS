@@ -11,7 +11,7 @@ export const jsFundamentalsModule: CurriculumModule = {
   id: "mod-js-fundamentals",
   title: "Fundamentals of JavaScript",
   position: 2,
-  duration: "32 hours, 15 mins",
+  duration: "22 hours, 30 mins",
   description: "Comprehensive JavaScript curriculum: from variables, data types, and functions to advanced array methods, objects, DOM, events, browser storage, async programming (Promises, async/await, Fetch), the Event Loop, closures, 'this' & binding, ES6 classes, prototypes, performance, the comprehensive 30-question Module Assessment, and the Graded Project Assignment.",
   items: [
     ...jsLessons1To10,

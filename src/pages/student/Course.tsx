@@ -1,17 +1,34 @@
-import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useState, useMemo } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import Icon, { IconName } from "../../components/Icon";
 import { isCertificateUnlocked } from "../../lib/certificateUnlock";
 import { Card, Empty } from "../../components/ui";
 import { fetchCourseCurriculum, getCompletedItemIds, isCurriculumModuleUnlocked } from "../../lib/curriculumService";
-import { CurriculumModule, CurriculumItem } from "../../lib/curriculumData";
+import {
+  CurriculumModule,
+  CurriculumItem,
+  getCourseTotalMinutes,
+  getModuleTotalMinutes,
+  formatMinutesToHuman,
+} from "../../lib/curriculumData";
+
+const SUB_COURSE_TAGS: Record<string, string[]> = {
+  "html-css-foundations": ["HTML5", "CSS3", "BOOTSTRAP"],
+  "js-fundamentals": ["JAVASCRIPT", "ES6+", "DOM"],
+  "database-sql": ["SQL", "POSTGRESQL", "DATABASE"],
+  "node-express": ["NODE.JS", "EXPRESS", "REST API"],
+  "react-js": ["REACT", "HOOKS", "JSX"],
+  "git-basics": ["GIT", "GITHUB", "WORKFLOW"],
+};
 
 export default function StudentCourse() {
   const { eid } = useParams();
+  const navigate = useNavigate();
   const [course, setCourse] = useState<any>(null);
-  const [modules, setModules] = useState<CurriculumModule[]>([]);
+  const [subCourses, setSubCourses] = useState<CurriculumModule[]>([]);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
-  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+  const [selectedSubCourse, setSelectedSubCourse] = useState<CurriculumModule | null>(null);
+  const [lockAlertMessage, setLockAlertMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,13 +38,9 @@ export default function StudentCourse() {
         const result = await fetchCourseCurriculum(eid || "full-stack-web");
         if (cancelled) return;
         setCourse(result.course);
-        setModules(result.modules);
+        setSubCourses(result.modules);
         const completedIds = getCompletedItemIds(eid);
         setCompleted(completedIds);
-        // Expand the first module by default
-        if (result.modules.length > 0) {
-          setExpandedModules(new Set([result.modules[0].id]));
-        }
       } catch (e) {
         console.error("Error loading course:", e);
       } finally {
@@ -37,270 +50,376 @@ export default function StudentCourse() {
     return () => { cancelled = true; };
   }, [eid]);
 
-  const toggleModuleExpand = (modId: string) => {
-    setExpandedModules(prev => {
-      const next = new Set(prev);
-      if (next.has(modId)) next.delete(modId);
-      else next.add(modId);
-      return next;
-    });
-  };
+  // Close drawer on Escape key and prevent background scrolling
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedSubCourse(null);
+        setLockAlertMessage(null);
+      }
+    };
+    if (selectedSubCourse) {
+      document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedSubCourse]);
 
-  const allItems: CurriculumItem[] = modules.flatMap(m => m.items);
+  const allItems: CurriculumItem[] = useMemo(() => subCourses.flatMap(sc => sc.items), [subCourses]);
   const totalItemsCount = allItems.length;
   const completedCount = allItems.filter(item => completed.has(item.id)).length;
   const progressPct = totalItemsCount ? Math.round((completedCount * 100) / totalItemsCount) : 0;
   const requiredPct = course?.min_progress_pct ?? 80;
   const certificateUnlocked = isCertificateUnlocked(progressPct, requiredPct);
 
-  const getItemTypeBadge = (type: CurriculumItem["type"]) => {
-    switch (type) {
-      case "cheatsheet":
-        return { label: "Cheat Sheet", icon: "sheet" as IconName, color: "text-blue-700 bg-blue-50" };
-      case "practice":
-        return { label: "Practice", icon: "pencil" as IconName, color: "text-purple-600 bg-purple-50" };
-      case "quiz":
-        return { label: "Quiz", icon: "quiz" as IconName, color: "text-emerald-700 bg-emerald-50" };
-      case "assignment":
-        return { label: "Assignment", icon: "assignment" as IconName, color: "text-rose-600 bg-rose-50" };
-      default:
-        return { label: "Topic Guide", icon: "sheet" as IconName, color: "text-slate-700 bg-slate-50" };
-    }
-  };
-
-  if (loading) {
-    return <div className="grid min-h-[40vh] place-items-center text-sm font-medium text-slate-500">Loading course curriculum…</div>;
-  }
+  // Dynamic Course Duration calculated from curriculum items
+  const totalCourseMinutes = useMemo(() => getCourseTotalMinutes(subCourses), [subCourses]);
+  const formattedTotalCourseDuration = formatMinutesToHuman(totalCourseMinutes);
 
   const effectiveEid = eid || "full-stack-web";
 
+  // Sub-course custom SVG icons
+  const renderSubCourseIcon = (subCourseId: string) => {
+    switch (subCourseId) {
+      case "html-css-foundations":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 2a14.5 14.5 0 0 0 0 20M12 2a14.5 14.5 0 0 1 0 20M2 12h20" />
+          </svg>
+        );
+      case "js-fundamentals":
+        return <Icon name="code" size={22} />;
+      case "database-sql":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <ellipse cx="12" cy="5" rx="9" ry="3" />
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5M3 12c0 1.66 4 3 9 3s9-1.34 9-3" />
+          </svg>
+        );
+      case "node-express":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <rect x="2" y="2" width="20" height="8" rx="2" />
+            <rect x="2" y="14" width="20" height="8" rx="2" />
+            <line x1="6" y1="6" x2="6.01" y2="6" />
+            <line x1="6" y1="18" x2="6.01" y2="18" />
+          </svg>
+        );
+      case "react-js":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <ellipse cx="12" cy="12" rx="10" ry="4" />
+            <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)" />
+            <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)" />
+            <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+          </svg>
+        );
+      case "git-basics":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <line x1="6" y1="3" x2="6" y2="15" />
+            <circle cx="18" cy="6" r="3" />
+            <circle cx="6" cy="18" r="3" />
+            <path d="M18 9a9 9 0 0 1-9 9" />
+          </svg>
+        );
+      default:
+        return <Icon name="book" size={22} />;
+    }
+  };
+
+  const handleSubCourseClick = (subCourse: CurriculumModule, index: number) => {
+    const unlocked = isCurriculumModuleUnlocked(index, subCourses, completed);
+    if (!unlocked) {
+      const prevSub = subCourses[index - 1];
+      setLockAlertMessage(
+        `This sub-course is locked. Complete Sub-Course ${index} (${prevSub?.title || "previous"}) to unlock it.`
+      );
+      return;
+    }
+    setSelectedSubCourse(subCourse);
+  };
+
+  if (loading) {
+    return (
+      <div className="grid min-h-[50vh] place-items-center text-sm font-semibold text-slate-500">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+          <span>Loading course and sub-courses…</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      <Link to="/student/courses" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-brand">
-        <Icon name="arrowLeft" size={16} />
+    <div className="mx-auto max-w-7xl space-y-7 pb-12">
+      {/* Top Breadcrumb Nav */}
+      <Link
+        to="/student/courses"
+        className="group inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-500 transition hover:text-brand"
+      >
+        <span className="grid h-7 w-7 place-items-center rounded-lg border border-slate-200 bg-white transition group-hover:border-slate-300 group-hover:bg-slate-50 shadow-xs">
+          <Icon name="arrowLeft" size={14} />
+        </span>
         <span>Back to my courses</span>
       </Link>
 
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-        {/* Main Content: Course Modules */}
-        <main className="min-w-0 space-y-5">
-          <Card className="!rounded-2xl !border-slate-200 !p-6 !shadow-sm md:!p-8">
-            <div className="flex flex-wrap items-start justify-between gap-5">
+      {/* Lock alert notice if user clicks locked subcourse */}
+      {lockAlertMessage && (
+        <div className="flex items-center justify-between rounded-2xl border border-amber-300 bg-amber-50 px-5 py-3.5 text-xs font-semibold text-amber-900 shadow-sm animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-amber-200 text-amber-800">
+              <Icon name="lock" size={13} />
+            </span>
+            <span>{lockAlertMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setLockAlertMessage(null)}
+            className="rounded-lg p-1 text-amber-700 hover:bg-amber-100 transition"
+          >
+            <Icon name="close" size={14} />
+          </button>
+        </div>
+      )}
+
+      <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
+        {/* Main Content: Course & Sub-Courses Grid */}
+        <main className="min-w-0 space-y-7">
+          {/* Main Course Hero Card */}
+          <section className="relative overflow-hidden rounded-3xl border border-slate-200/90 bg-gradient-to-br from-white via-slate-50/40 to-blue-50/30 p-6 sm:p-8 md:p-9 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-6">
               <div className="min-w-0 flex-1">
-                <span className="inline-block rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-700">
-                  Interactive Learning Track
-                </span>
-                <h1 className="mt-2 font-display text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/80 bg-blue-50/80 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-700 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
+                    Main Career Track
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200/80 bg-indigo-50/60 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 shadow-xs">
+                    6 Sub-Courses
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-200/80 bg-white px-2.5 py-0.5 text-[11px] font-semibold text-slate-600 shadow-xs">
+                    Full Stack 2026
+                  </span>
+                </div>
+
+                <h1 className="mt-3.5 font-display text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl leading-tight">
                   {course?.title || "Full Stack Web Development"}
                 </h1>
-                <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                  {course?.description || "Build job-ready full-stack skills through structured language modules, in-depth cheat sheets, interactive knowledge checks, and project assignments."}
+
+                <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 font-normal sm:text-base">
+                  {course?.description ||
+                    "Master full-stack engineering across 6 progressive sub-courses. Complete each sub-course sequentially to build job-ready skills in modern frontend, backend APIs, relational databases, and version control."}
                 </p>
-                <div className="mt-5 flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-500">
-                  <span className="flex items-center gap-1.5"><Icon name="book" size={16} className="text-blue-600" /> {modules.length} Modules</span>
-                  <span className="text-slate-300">·</span>
-                  <span className="flex items-center gap-1.5"><Icon name="sheet" size={16} className="text-blue-600" /> {totalItemsCount} Cheat Sheets & Activities</span>
-                  <span className="text-slate-300">·</span>
-                  <span className="flex items-center gap-1.5"><Icon name="clock" size={16} className="text-amber-600" /> ~48 Hours Total</span>
+
+                {/* Stat pills cluster */}
+                <div className="mt-6 flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-600">
+                  <span className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-white px-3 py-1.5 shadow-xs">
+                    <Icon name="book" size={15} className="text-blue-600" />
+                    <span>{subCourses.length} Sub-Courses</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-white px-3 py-1.5 shadow-xs">
+                    <Icon name="sheet" size={15} className="text-indigo-600" />
+                    <span>{totalItemsCount} Lessons & Activities</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200/80 bg-amber-50/60 px-3 py-1.5 text-amber-900 shadow-xs">
+                    <Icon name="clock" size={15} className="text-amber-600" />
+                    <span className="font-bold">{formattedTotalCourseDuration} Total</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200/80 bg-emerald-50/60 px-3 py-1.5 text-emerald-800 shadow-xs">
+                    <Icon name="certificate" size={15} className="text-emerald-600" />
+                    <span>Master Track Certification</span>
+                  </span>
                 </div>
               </div>
 
-              {/* Progress Ring */}
-              <div className="flex items-center gap-3.5 rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+              {/* Progress Ring Card */}
+              <div className="flex shrink-0 items-center gap-4 rounded-2xl border border-blue-100 bg-white/90 p-4 shadow-sm backdrop-blur-xs">
                 <div
-                  className="relative grid h-16 w-16 place-items-center rounded-full"
-                  style={{ background: `conic-gradient(#2563eb ${progressPct * 3.6}deg, #dbeafe ${progressPct * 3.6}deg)` }}
+                  className="relative grid h-18 w-18 place-items-center rounded-full transition-all duration-500 shadow-xs"
+                  style={{
+                    background: `conic-gradient(#2563eb ${progressPct * 3.6}deg, #e2e8f0 ${progressPct * 3.6}deg)`,
+                  }}
                 >
-                  <span className="grid h-12 w-12 place-items-center rounded-full bg-white text-xs font-extrabold text-blue-900 shadow-sm">
+                  <span className="grid h-14 w-14 place-items-center rounded-full bg-white font-display text-sm font-extrabold text-blue-900 shadow-inner">
                     {progressPct}%
                   </span>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-900">Your Progress</p>
-                  <p className="mt-0.5 text-[11px] text-slate-500">{completedCount} of {totalItemsCount} completed</p>
-                  <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-blue-700">
-                    {progressPct >= 100 ? "Completed!" : progressPct > 0 ? "In Progress" : "Get Started"}
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Program Progress</p>
+                  <p className="mt-0.5 font-display text-base font-extrabold text-slate-900">
+                    {completedCount} <span className="text-xs font-medium text-slate-500">/ {totalItemsCount} completed</span>
                   </p>
+                  <span
+                    className={`mt-1.5 inline-block rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      progressPct >= 100
+                        ? "bg-emerald-100 text-emerald-800"
+                        : progressPct > 0
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    {progressPct >= 100 ? "Track Completed!" : progressPct > 0 ? "In Progress" : "Get Started"}
+                  </span>
                 </div>
               </div>
             </div>
+          </section>
 
-            <div className="mt-6 border-b border-slate-200 pb-3">
-              <span className="inline-flex items-center gap-2 border-b-2 border-blue-600 px-3 pb-3 text-sm font-bold text-blue-700">
-                <Icon name="book" size={17} /> Curriculum Modules ({modules.length})
-              </span>
+          {/* Sub-Courses Grid Section Header */}
+          <section className="space-y-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Icon name="courses" size={20} className="text-blue-600" />
+                <h2 className="font-display text-xl font-extrabold text-slate-900">
+                  Program Sub-Courses
+                </h2>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Click on any sub-course to view its lessons, practice questions, and graded assessments.
+              </p>
             </div>
-          </Card>
 
-          {/* Module List */}
-          <section aria-label="Course curriculum modules" className="space-y-4">
-            {modules.map((module, moduleIndex) => {
-              const unlocked = isCurriculumModuleUnlocked(moduleIndex, modules, completed);
-              const isExpanded = expandedModules.has(module.id);
-              const moduleItems = module.items;
-              const moduleDone = moduleItems.filter(it => completed.has(it.id)).length;
-              const isAllDone = moduleItems.length > 0 && moduleDone === moduleItems.length;
+            {/* Sub-Course Cards Grid */}
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {subCourses.map((subCourse, idx) => {
+                const unlocked = isCurriculumModuleUnlocked(idx, subCourses, completed);
+                const items = subCourse.items;
+                const doneCount = items.filter(it => completed.has(it.id)).length;
+                const isAllDone = items.length > 0 && doneCount === items.length;
+                const subCoursePct = items.length ? Math.round((doneCount * 100) / items.length) : 0;
+                const tags = SUB_COURSE_TAGS[subCourse.id] || ["WEB", "DEV"];
+                const duration = formatMinutesToHuman(getModuleTotalMinutes(subCourse));
 
-              return (
-                <section
-                  key={module.id}
-                  className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition-all ${
-                    isExpanded ? "border-blue-300 ring-1 ring-blue-100" : "border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  {/* Module Header Button */}
-                  <button
-                    type="button"
-                    onClick={() => toggleModuleExpand(module.id)}
-                    className={`flex w-full items-center gap-3.5 px-5 py-4 text-left transition ${
+                return (
+                  <div
+                    key={subCourse.id}
+                    onClick={() => handleSubCourseClick(subCourse, idx)}
+                    className={`group relative flex flex-col justify-between rounded-3xl border bg-white p-5 sm:p-6 shadow-xs transition-all duration-200 ${
                       !unlocked
-                        ? "bg-slate-50/80 opacity-75 hover:bg-slate-100/70"
-                        : isExpanded
-                        ? "bg-slate-50/50"
-                        : "hover:bg-slate-50"
+                        ? "border-slate-200 bg-slate-50/70 opacity-75 cursor-not-allowed"
+                        : "border-slate-200/90 hover:-translate-y-1 hover:border-blue-400 hover:shadow-lg cursor-pointer"
                     }`}
                   >
-                    {/* Status Circle */}
-                    <span
-                      className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold transition ${
-                        !unlocked
-                          ? "bg-slate-200 text-slate-500"
-                          : isAllDone
-                          ? "bg-emerald-500 text-white shadow-sm"
-                          : "bg-blue-100 text-blue-700"
-                      }`}
-                    >
-                      {!unlocked ? (
-                        <Icon name="lock" size={16} />
-                      ) : isAllDone ? (
-                        <Icon name="check" size={18} />
-                      ) : (
-                        <span>{String(moduleIndex + 1).padStart(2, "0")}</span>
-                      )}
-                    </span>
-
-                    {/* Title and details */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-[.12em] text-slate-400">
-                          Module {String(moduleIndex + 1).padStart(2, "0")}
+                    <div>
+                      {/* Top Row: Icon + Status Badge */}
+                      <div className="flex items-start justify-between gap-3">
+                        <span
+                          className={`grid h-12 w-12 place-items-center rounded-2xl transition-all shadow-xs ${
+                            !unlocked
+                              ? "bg-slate-200 text-slate-500"
+                              : isAllDone
+                              ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-emerald-500/25"
+                              : "bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-blue-500/20"
+                          }`}
+                        >
+                          {renderSubCourseIcon(subCourse.id)}
                         </span>
+
+                        {/* Top-right Status Indicator (like green checkmark in image) */}
+                        <div>
+                          {isAllDone ? (
+                            <span
+                              className="grid h-7 w-7 place-items-center rounded-full bg-emerald-500 text-white shadow-sm"
+                              title="Sub-course completed"
+                            >
+                              <Icon name="check" size={15} />
+                            </span>
+                          ) : !unlocked ? (
+                            <span
+                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-500"
+                              title="Locked"
+                            >
+                              <Icon name="lock" size={11} /> Locked
+                            </span>
+                          ) : doneCount > 0 ? (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700">
+                              {doneCount}/{items.length} ({subCoursePct}%)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-500">
+                              Ready
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Sub-course Number & Title */}
+                      <div className="mt-4">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                          Sub-Course {idx + 1}
+                        </span>
+                        <h3 className="mt-0.5 font-display text-base font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                          {idx + 1}. {subCourse.title}
+                        </h3>
+                        <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-slate-500">
+                          {subCourse.description}
+                        </p>
+                      </div>
+
+                      {/* Meta: Topics count and duration */}
+                      <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-slate-600">
+                        <span>{items.length} Topics</span>
                         <span className="text-slate-300">·</span>
-                        <span className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
-                          <Icon name="clock" size={12} /> {module.duration}
+                        <span className="flex items-center gap-1 text-slate-500">
+                          <Icon name="clock" size={12} className="text-amber-500" />
+                          <span>{duration}</span>
                         </span>
                       </div>
-                      <h2 className="mt-0.5 font-display text-base font-bold text-slate-900">
-                        {module.title}
-                      </h2>
-                      {!unlocked && (
-                        <p className="mt-1 flex items-center gap-1 text-xs text-amber-700">
-                          <Icon name="lock" size={12} /> Complete Module {moduleIndex} to unlock
-                        </p>
-                      )}
-                    </div>
 
-                    {/* Progress count */}
-                    <div className="text-right">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
-                        {moduleDone} / {moduleItems.length}
-                      </span>
-                    </div>
-
-                    <Icon
-                      name={isExpanded ? "chevronDown" : "chevronRight"}
-                      size={18}
-                      className="shrink-0 text-slate-400 transition"
-                    />
-                  </button>
-
-                  {/* Module Item List */}
-                  {isExpanded && (
-                    <div className="border-t border-slate-100 bg-white divide-y divide-slate-100">
-                      {moduleItems.map((item, itemIdx) => {
-                        const isDone = completed.has(item.id);
-                        const badge = getItemTypeBadge(item.type);
-
-                        if (!unlocked) {
-                          return (
-                            <div key={item.id} className="flex items-center gap-3.5 px-5 py-3.5 opacity-60">
-                              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-slate-200 bg-slate-100 text-[10px] font-bold text-slate-400">
-                                {itemIdx + 1}
-                              </span>
-                              <div className="min-w-0 flex-1">
-                                <span className="block text-sm font-semibold text-slate-600">{item.title}</span>
-                                <span className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
-                                  <span>{item.duration}</span>
-                                  <span>·</span>
-                                  <span className="flex items-center gap-1"><Icon name="lock" size={11} /> Locked</span>
-                                </span>
-                              </div>
-                              <span className="text-slate-400"><Icon name={badge.icon} size={17} /></span>
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <Link
-                            key={item.id}
-                            to={`/student/course/${effectiveEid}/lesson/${item.id}`}
-                            className="group flex items-center gap-3.5 px-5 py-3.5 transition hover:bg-blue-50/60"
+                      {/* Tags / Pills (like HTML, CSS, BOOTSTRAP in image) */}
+                      <div className="mt-3.5 flex flex-wrap gap-1.5">
+                        {tags.map(tag => (
+                          <span
+                            key={tag}
+                            className="rounded-md border border-slate-200/80 bg-slate-100/80 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-600"
                           >
-                            <span
-                              className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-bold transition ${
-                                isDone
-                                  ? "bg-emerald-500 text-white shadow-sm"
-                                  : "border border-slate-200 bg-white text-slate-500 group-hover:border-blue-400 group-hover:text-blue-600"
-                              }`}
-                            >
-                              {isDone ? <Icon name="check" size={14} /> : <span>{itemIdx + 1}</span>}
-                            </span>
-
-                            <div className="min-w-0 flex-1">
-                              <span className="block text-sm font-bold text-slate-800 group-hover:text-blue-700">
-                                {item.title}
-                              </span>
-                              <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                                <span className="flex items-center gap-1">
-                                  <Icon name="clock" size={12} /> {item.duration}
-                                </span>
-                                <span>·</span>
-                                <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${badge.color}`}>
-                                  {badge.label}
-                                </span>
-                                {isDone && (
-                                  <span className="text-[10px] font-bold text-emerald-600">✓ Completed</span>
-                                )}
-                              </div>
-                            </div>
-
-                            <span className="text-slate-400 transition group-hover:text-blue-600">
-                              <Icon name={badge.icon} size={18} />
-                            </span>
-                            <Icon
-                              name="chevronRight"
-                              size={16}
-                              className="text-slate-300 opacity-0 transition group-hover:opacity-100 group-hover:text-blue-600"
-                            />
-                          </Link>
-                        );
-                      })}
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  )}
-                </section>
-              );
-            })}
 
-            {!modules.length && (
+                    {/* Bottom Progress Bar */}
+                    <div className="mt-5 border-t border-slate-100 pt-3">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-400">
+                        <span>Progress</span>
+                        <span className={isAllDone ? "text-emerald-600" : unlocked && doneCount > 0 ? "text-blue-600" : ""}>
+                          {subCoursePct}%
+                        </span>
+                      </div>
+                      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          className={`h-full transition-all duration-300 ${
+                            isAllDone
+                              ? "bg-emerald-500"
+                              : "bg-gradient-to-r from-blue-600 to-indigo-600"
+                          }`}
+                          style={{ width: `${subCoursePct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {!subCourses.length && (
               <Card className="!rounded-2xl !border-slate-200">
-                <Empty t="Course curriculum modules are being loaded." />
+                <Empty t="Program sub-courses are being loaded." />
               </Card>
             )}
           </section>
         </main>
 
-        {/* Sidebar: Certificate & Outcomes */}
-        <aside className="space-y-5 xl:sticky xl:top-24">
+        {/* Sidebar: Certificate & Key Takeaways (Restored like before) */}
+        <aside className="space-y-6 xl:sticky xl:top-24">
           {/* Certificate Card */}
           <Card className="!rounded-2xl !border-slate-200 !p-5 !shadow-sm">
             {certificateUnlocked ? (
@@ -317,6 +436,12 @@ export default function StudentCourse() {
                   <p className="mt-1 text-xs text-emerald-800">
                     You have achieved {progressPct}% completion (required: {requiredPct}%).
                   </p>
+                  <Link
+                    to="/student/journey"
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800"
+                  >
+                    <Icon name="certificate" size={14} /> View Certificate
+                  </Link>
                 </div>
               </div>
             ) : (
@@ -334,7 +459,6 @@ export default function StudentCourse() {
                     </p>
                   </div>
                 </div>
-
                 <div className="mt-4 flex items-center justify-between text-xs font-semibold">
                   <span className="text-slate-600">Progress to unlock</span>
                   <span className="font-extrabold text-slate-900">{progressPct}% / {requiredPct}%</span>
@@ -349,7 +473,7 @@ export default function StudentCourse() {
             )}
           </Card>
 
-          {/* Course Outcomes */}
+          {/* Key Takeaways Card (Restored like before) */}
           <Card className="!rounded-2xl !border-slate-200 !p-5 !shadow-sm">
             <h2 className="font-display font-bold text-slate-900">Key Takeaways</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -374,6 +498,168 @@ export default function StudentCourse() {
           </Card>
         </aside>
       </div>
+
+      {/* ========================================================================= */}
+      {/* Sub-Course Details Drawer (Slide-out panel matching Reference Image 1) */}
+      {/* ========================================================================= */}
+      {selectedSubCourse && (
+        <div className="fixed inset-0 z-50 overflow-hidden" role="dialog" aria-modal="true">
+          {/* Backdrop Overlay */}
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-300 animate-in fade-in"
+            onClick={() => setSelectedSubCourse(null)}
+          />
+
+          {/* Slide-out Drawer Panel */}
+          <div className="fixed inset-y-0 right-0 flex max-w-full pl-6 sm:pl-10">
+            <div className="w-screen max-w-md sm:max-w-xl bg-white shadow-2xl flex flex-col transform transition-transform duration-300 animate-in slide-in-from-right rounded-l-3xl overflow-hidden">
+              {/* Drawer Top Header (matching Image 1) */}
+              <div className="border-b border-slate-100 bg-gradient-to-b from-slate-50/80 to-white p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20">
+                      {renderSubCourseIcon(selectedSubCourse.id)}
+                    </span>
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        COURSE / SUB-COURSE
+                      </span>
+                      <h2 className="font-display text-xl font-extrabold text-slate-900">
+                        {selectedSubCourse.title}
+                      </h2>
+                    </div>
+                  </div>
+
+                  {/* Close 'X' Button */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSubCourse(null)}
+                    className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 transition shadow-xs"
+                    aria-label="Close drawer"
+                  >
+                    <Icon name="close" size={16} />
+                  </button>
+                </div>
+
+                {/* Sub-course brief + progress summary in drawer */}
+                <p className="mt-3 text-xs leading-relaxed text-slate-500">
+                  {selectedSubCourse.description}
+                </p>
+
+                <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-600">
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-blue-700">
+                    <Icon name="sheet" size={13} /> {selectedSubCourse.items.length} Topics & Activities
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-amber-800">
+                    <Icon name="clock" size={13} className="text-amber-600" />
+                    {formatMinutesToHuman(getModuleTotalMinutes(selectedSubCourse))}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-emerald-800">
+                    <Icon name="check" size={13} className="text-emerald-600" />
+                    {selectedSubCourse.items.filter(it => completed.has(it.id)).length} / {selectedSubCourse.items.length} Completed
+                  </span>
+                </div>
+              </div>
+
+              {/* Drawer Topics List (matching Image 1 topic cards) */}
+              <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-3 bg-slate-50/40">
+                {selectedSubCourse.items.map((item, itemIdx) => {
+                  const isDone = completed.has(item.id);
+
+                  let itemLabel = "TOPIC";
+                  if (item.type === "quiz") itemLabel = "SUB-COURSE EXAM";
+                  else if (item.type === "assignment") itemLabel = "GRADED PROJECT";
+                  else if (item.type === "practice") itemLabel = "PRACTICE LAB";
+
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        setSelectedSubCourse(null);
+                        navigate(`/student/course/${effectiveEid}/lesson/${item.id}`);
+                      }}
+                      className="group flex items-center justify-between gap-3.5 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all hover:border-blue-400 hover:shadow-md cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                        {/* Checkmark circle or item index */}
+                        {isDone ? (
+                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-500 text-white shadow-xs">
+                            <Icon name="check" size={16} />
+                          </span>
+                        ) : (
+                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-slate-200 bg-slate-100 text-xs font-bold text-slate-600 group-hover:border-blue-500 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors shadow-xs">
+                            {itemIdx + 1}
+                          </span>
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                          <span className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                            {itemLabel}
+                          </span>
+                          <span className="mt-0.5 block font-display text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors truncate">
+                            {item.title}
+                          </span>
+                          <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
+                            <span className="flex items-center gap-1">
+                              <Icon name="clock" size={11} /> {item.duration}
+                            </span>
+                            {isDone && (
+                              <>
+                                <span>·</span>
+                                <span className="font-bold text-emerald-600">Completed</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Chevron Arrow */}
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all">
+                        <Icon name="chevronRight" size={18} />
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Drawer Footer */}
+              <div className="border-t border-slate-200/80 bg-white p-4 sm:p-5 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubCourse(null)}
+                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition"
+                >
+                  Close
+                </button>
+
+                {(() => {
+                  const firstIncomplete =
+                    selectedSubCourse.items.find(it => !completed.has(it.id)) || selectedSubCourse.items[0];
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedSubCourse(null);
+                        if (firstIncomplete) {
+                          navigate(`/student/course/${effectiveEid}/lesson/${firstIncomplete.id}`);
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:bg-blue-700 transition"
+                    >
+                      <span>
+                        {selectedSubCourse.items.some(it => completed.has(it.id))
+                          ? "Continue Sub-Course"
+                          : "Start Sub-Course"}
+                      </span>
+                      <Icon name="arrow" size={14} />
+                    </button>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

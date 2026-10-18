@@ -33,6 +33,9 @@ export interface CurriculumItem {
   moduleId: string;
   moduleTitle: string;
   modulePosition: number;
+  subCourseId?: string;
+  subCourseTitle?: string;
+  subCoursePosition?: number;
   title: string;
   duration: string;
   type: "cheatsheet" | "practice" | "quiz" | "assignment";
@@ -61,3 +64,10 @@ export interface CurriculumModule {
   description: string;
   items: CurriculumItem[];
 }
+
+/**
+ * Sub-Course interface representing progressive sequential courses
+ * inside the Main Course (Full Stack Web Development).
+ */
+export type CurriculumSubCourse = CurriculumModule;
+

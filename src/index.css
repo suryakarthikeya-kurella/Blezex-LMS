@@ -1,17 +1,87 @@
-@tailwind base;@tailwind components;@tailwind utilities;
-@layer base{
- body{@apply bg-paper text-[#333] font-body antialiased}
- h1,h2,h3,h4{@apply font-display tracking-tight text-ink}
- ::selection{background:#FF4D1C;color:#fff}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-paper text-slate-800 font-body antialiased selection:bg-brand selection:text-white;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight text-inherit;
+  }
+  code, pre, kbd {
+    @apply font-mono;
+  }
 }
-@layer components{
- .sketch-card{@apply bg-white border border-hairline rounded-[20px] p-5 transition-all duration-300;box-shadow:0 8px 24px -12px rgba(17,17,17,.08)}
- .sketch-card.hov:hover{@apply border-ink;transform:translateY(-4px);box-shadow:6px 6px 0 #111}
- .btn{@apply rounded-full bg-ink text-white px-5 py-2 text-sm font-bold font-display transition-colors hover:bg-brand disabled:opacity-50}
- .btn-ghost{@apply rounded-full border border-ink px-4 py-1.5 text-xs font-bold hover:bg-ink hover:text-white}
- .inp{@apply w-full rounded-xl border border-hairline bg-white px-3 py-2 text-sm outline-none focus:border-ink}
- .lesson h1,.lesson h2,.lesson h3{@apply mt-4 mb-2 font-bold}.lesson p{@apply my-2}.lesson ul{@apply list-disc pl-6}.lesson ol{@apply list-decimal pl-6}
- .lesson table{@apply border-collapse my-3}.lesson td,.lesson th{@apply border border-hairline px-2 py-1}
- .lesson pre{@apply bg-ink text-white p-3 rounded-xl overflow-x-auto text-sm}.lesson svg{max-width:100%;height:auto}
- .callout{@apply border-l-4 border-brand bg-paper p-3 my-3 rounded-r-xl}
+
+@layer components {
+  .sketch-card {
+    @apply bg-white border border-hairline rounded-[24px] p-6 transition-all duration-300;
+    box-shadow: 0 10px 30px -15px rgba(17, 24, 39, 0.07);
+  }
+  .sketch-card.hov:hover {
+    @apply border-ink;
+    transform: translateY(-4px);
+    box-shadow: 6px 6px 0 #111;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center rounded-full bg-ink text-white px-6 py-2.5 text-sm font-bold font-display transition-all duration-200 hover:bg-brand hover:shadow-md disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center rounded-full border border-ink px-4 py-1.5 text-xs font-bold hover:bg-ink hover:text-white transition-colors;
+  }
+  .inp {
+    @apply w-full rounded-xl border border-hairline bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-ink focus:ring-2 focus:ring-ink/10;
+  }
+  .lesson h1, .lesson h2, .lesson h3 {
+    @apply mt-6 mb-3 font-display font-bold tracking-tight text-slate-900;
+  }
+  .lesson p {
+    @apply my-3 text-slate-700 leading-relaxed;
+  }
+  .lesson ul {
+    @apply list-disc pl-6 space-y-1.5 my-3 text-slate-700;
+  }
+  .lesson ol {
+    @apply list-decimal pl-6 space-y-1.5 my-3 text-slate-700;
+  }
+  .lesson table {
+    @apply w-full border-collapse my-4 rounded-xl overflow-hidden;
+  }
+  .lesson td, .lesson th {
+    @apply border border-slate-200 px-3 py-2 text-sm;
+  }
+  .lesson pre {
+    @apply bg-[#0b1120] text-slate-100 p-4 rounded-2xl overflow-x-auto text-xs leading-6 font-mono border border-slate-800;
+  }
+  .lesson svg {
+    max-width: 100%;
+    height: auto;
+  }
+  .callout {
+    @apply border-l-4 border-brand bg-paper p-4 my-4 rounded-r-2xl;
+  }
+
+  /* Sleek modern custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.4);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.6);
+  }
 }
+

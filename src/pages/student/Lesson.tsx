@@ -6,6 +6,8 @@ import {
   CurriculumItem,
   CurriculumModule,
   PracticeQuestion,
+  getModuleTotalMinutes,
+  formatMinutesToHuman,
 } from "../../lib/curriculumData";
 import {
   fetchCourseCurriculum,
@@ -38,7 +40,15 @@ export default function StudentLesson() {
   const [assignmentText, setAssignmentText] = useState("");
   const [assignmentLink, setAssignmentLink] = useState("");
   const [assignmentSubmitted, setAssignmentSubmitted] = useState(false);
-  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedCodeSnippet, setCopiedCodeSnippet] = useState(false);
+
+  const handleCopyCodeSnippet = (codeText: string) => {
+    try {
+      navigator.clipboard.writeText(codeText);
+      setCopiedCodeSnippet(true);
+      setTimeout(() => setCopiedCodeSnippet(false), 2000);
+    } catch {}
+  };
 
   // Load course and curriculum
   useEffect(() => {
@@ -74,12 +84,12 @@ export default function StudentLesson() {
     return modules.find(m => m.id === activeItem?.moduleId) || modules[0];
   }, [modules, activeItem]);
 
-  // Ensure containing module is expanded
+  // When opening a lesson, ONLY that particular sub-course should open (collapse all others)
   useEffect(() => {
     if (containingModule?.id) {
-      setExpandedModules(prev => new Set([...prev, containingModule.id]));
+      setExpandedModules(new Set([containingModule.id]));
     }
-  }, [containingModule]);
+  }, [containingModule?.id, lid]);
 
   // Reset view mode and assignment state when switching lessons
   useEffect(() => {
@@ -87,15 +97,15 @@ export default function StudentLesson() {
     setAssignmentSubmitted(false);
     setAssignmentText("");
     setAssignmentLink("");
-    setCopiedCode(false);
   }, [lid]);
 
+  // Accordion toggle: opening one sub-course closes all others
   const toggleModuleAccordion = (modId: string) => {
     setExpandedModules(prev => {
-      const next = new Set(prev);
-      if (next.has(modId)) next.delete(modId);
-      else next.add(modId);
-      return next;
+      if (prev.has(modId)) {
+        return new Set();
+      }
+      return new Set([modId]);
     });
   };
 
@@ -193,12 +203,6 @@ export default function StudentLesson() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleCopyStarter = (codeText: string) => {
-    navigator.clipboard.writeText(codeText);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
-  };
-
   if (loading) {
     return (
       <div className="fixed inset-0 z-50 grid place-items-center bg-[#0a0f1d] text-white">
@@ -225,7 +229,7 @@ export default function StudentLesson() {
           <span className="grid h-7 w-7 place-items-center rounded-lg border border-white/10 bg-white/5 text-slate-400 transition group-hover:border-blue-500/50 group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-[0_0_12px_rgba(59,130,246,0.5)]">
             <Icon name="arrowLeft" size={13} className="transition group-hover:-translate-x-0.5" />
           </span>
-          <span>Course Contents</span>
+          <span>Program Sub-Courses</span>
         </Link>
         <button
           type="button"
@@ -263,15 +267,18 @@ export default function StudentLesson() {
                 }`}
               >
                 <div className="min-w-0 flex-1 pr-2">
-                  <div className="flex items-center gap-2">
-                    <span className="block font-display text-xs font-bold leading-snug">
-                      {mod.title}
+                  <div className="flex items-center gap-1.5">
+                    <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-blue-300">
+                      Sub-Course 0{modIdx + 1}
                     </span>
-                    {!unlocked && <Icon name="lock" size={12} className="shrink-0 text-amber-400" />}
+                    {!unlocked && <Icon name="lock" size={11} className="shrink-0 text-amber-400" />}
                   </div>
+                  <span className="mt-1 block font-display text-xs font-bold leading-snug truncate">
+                    {mod.title}
+                  </span>
                   <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
                     <span className="flex items-center gap-1">
-                      <Icon name="clock" size={11} className="text-slate-500" /> {mod.duration}
+                      <Icon name="clock" size={11} className="text-amber-500" /> {formatMinutesToHuman(getModuleTotalMinutes(mod))}
                     </span>
                     <span>·</span>
                     <span className="rounded-full bg-white/10 px-2 py-0.2 text-[10px] font-bold text-blue-300">
@@ -452,8 +459,10 @@ export default function StudentLesson() {
             </button>
 
             <nav aria-label="Breadcrumb" className="flex items-center gap-2 truncate text-xs md:text-sm">
-              <span className="rounded-lg bg-blue-50 px-2.5 py-1 font-bold text-blue-700 border border-blue-200/50">
-                {containingModule?.title}
+              <span className="hidden sm:inline font-semibold text-slate-400">Full Stack Web</span>
+              <span className="hidden sm:inline text-slate-300">&gt;</span>
+              <span className="rounded-lg bg-blue-50 px-2.5 py-1 font-bold text-blue-700 border border-blue-200/50 truncate max-w-[220px]">
+                Sub-Course {containingModule ? modules.findIndex(m => m.id === containingModule.id) + 1 : ""}: {containingModule?.title}
               </span>
               <span className="text-slate-300">&gt;</span>
               <span className="font-bold text-slate-900 truncate">{activeItem?.title}</span>
@@ -646,11 +655,21 @@ export default function StudentLesson() {
                       <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5 text-xs font-mono text-slate-400">
                         <span className="flex items-center gap-1.5">
                           <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                          <span>Code Summary & Reference</span>
+                          <span className="font-semibold text-slate-300">Code Summary & Reference</span>
                         </span>
-                        <span className="rounded-full bg-blue-600 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
-                          {activeItem.codeSnippet.language}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyCodeSnippet(activeItem.codeSnippet!.code)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 text-[11px] font-bold text-slate-200 transition hover:bg-white/20 hover:text-white"
+                          >
+                            <Icon name={copiedCodeSnippet ? "check" : "copy"} size={12} />
+                            <span>{copiedCodeSnippet ? "Copied!" : "Copy code"}</span>
+                          </button>
+                          <span className="rounded-md bg-blue-600 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-xs">
+                            {activeItem.codeSnippet.language}
+                          </span>
+                        </div>
                       </div>
 
                       <div className="overflow-x-auto p-4 font-mono text-xs leading-6 md:text-sm">
@@ -732,7 +751,7 @@ export default function StudentLesson() {
                       )}
 
                       <span className="rounded-full bg-purple-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-purple-700 border border-purple-200/50">
-                        {activeItem.type === "quiz" ? "Module Assessment" : activeItem.type === "practice" ? "Practice Lab" : "Knowledge Check"}
+                        {activeItem.type === "quiz" ? "Sub-Course Assessment Exam" : activeItem.type === "practice" ? "Practice Lab" : "Knowledge Check"}
                       </span>
                     </div>
 
@@ -993,7 +1012,7 @@ export default function StudentLesson() {
                 <article className="rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm md:p-9">
                   <div className="flex items-center justify-between">
                     <span className="rounded-full bg-rose-50 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-rose-700 border border-rose-200/50">
-                      Graded Project Assignment
+                      Sub-Course Graded Project Assignment
                     </span>
                     <span className="text-xs font-semibold text-slate-400">
                       Estimated: {activeItem.duration}
@@ -1032,28 +1051,6 @@ export default function StudentLesson() {
                           </li>
                         ))}
                       </ul>
-                    </div>
-                  )}
-
-                  {/* Starter Code Block */}
-                  {activeItem.assignmentPrompt?.starterCode && (
-                    <div className="mt-6 overflow-hidden rounded-2xl border border-slate-800 bg-[#0e1726] shadow-md">
-                      <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5 text-xs font-mono text-slate-400">
-                        <span className="flex items-center gap-1.5">
-                          <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                          <span>Starter Code Template (index.html)</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleCopyStarter(activeItem.assignmentPrompt!.starterCode!)}
-                          className="rounded-lg bg-white/10 px-3 py-1 text-xs text-white transition hover:bg-white/20"
-                        >
-                          {copiedCode ? "Copied! ✓" : "Copy Template"}
-                        </button>
-                      </div>
-                      <div className="max-h-96 overflow-y-auto p-4 font-mono text-xs text-slate-100">
-                        <pre className="whitespace-pre">{activeItem.assignmentPrompt.starterCode}</pre>
-                      </div>
                     </div>
                   )}
 
