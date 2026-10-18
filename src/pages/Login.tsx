@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../lib/auth";
 import { loginSchema } from "../lib/schemas";
 import { useAuth } from "../lib/auth";
 import { Icon, IconName } from "../components/icons";
@@ -17,13 +18,16 @@ const FEATURES: { icon: IconName; title: string; text: string }[] = [
 const HERO = "linear-gradient(90deg,#0d0d0d 30%,rgba(13,13,13,.6) 62%,rgba(13,13,13,.15) 100%),url(/login-hero.jpg),radial-gradient(circle at 78% 72%,rgba(255,77,28,.28),transparent 55%),linear-gradient(160deg,#171717,#0b0b0b)";
 const Wordmark = ({ className = "" }: { className?: string }) => <span className={`font-heading font-extrabold ${className}`}>Bleze<span className="text-brand">X</span></span>;
 export default function Login() {
-  const { profile, loading, notice, clearNotice } = useAuth(); const [err, setErr] = useState(""); const [info, setInfo] = useState(""); const [show, setShow] = useState(false); const [sending, setSending] = useState(false);
+  const nav = useNavigate(); const { refresh } = useAuth(); const [err, setErr] = useState(""); const [info, setInfo] = useState("");
   const { register, handleSubmit, getValues, formState: { errors, isSubmitting } } = useForm<F>({ resolver: zodResolver(loginSchema) });
   const submit = async (v: F) => {
-    setErr(""); setInfo(""); clearNotice();
-    const { error } = await supabase.auth.signInWithPassword(v);
+    setErr(""); setInfo("");
+    const email = v.email.trim();
+    const password = v.password.trim();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return setErr("Invalid credentials or account suspended.");
-    // No navigation here: the profile loads asynchronously after sign-in, so redirecting now bounced back to /login. The redirect below fires once it is ready.
+    await refresh();
+    nav("/");
   };
   const reset = async () => {
     const email = getValues("email"); if (!email) { setInfo(""); return setErr("Enter your email first."); }

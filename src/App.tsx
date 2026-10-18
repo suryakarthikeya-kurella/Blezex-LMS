@@ -5,18 +5,21 @@ import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Verify from "./pages/Verify";
 import SetPassword from "./pages/SetPassword";
-const Profile = lazy(() => import("./pages/Profile"));
-const AdminHome = lazy(() => import("./pages/admin/Home"));
-const People = lazy(() => import("./pages/admin/People"));
-const Courses = lazy(() => import("./pages/admin/Courses"));
-const CourseEditor = lazy(() => import("./pages/admin/CourseEditor"));
-const Enrollments = lazy(() => import("./pages/admin/Enrollments"));
-const Reports = lazy(() => import("./pages/admin/Reports"));
-const Audit = lazy(() => import("./pages/admin/Audit"));
-const MentorHome = lazy(() => import("./pages/mentor/Home"));
-const MentorEnrollment = lazy(() => import("./pages/mentor/EnrollmentDetail"));
-const StudentHome = lazy(() => import("./pages/student/Home"));
-const StudentCourse = lazy(() => import("./pages/student/Course"));
+import Profile from "./pages/Profile";
+import AdminHome from "./pages/admin/Home";
+import People from "./pages/admin/People";
+import Courses from "./pages/admin/Courses";
+import CourseEditor from "./pages/admin/CourseEditor";
+import Enrollments from "./pages/admin/Enrollments";
+import Reports from "./pages/admin/Reports";
+import Audit from "./pages/admin/Audit";
+import MentorHome from "./pages/mentor/Home";
+import MentorEnrollment from "./pages/mentor/EnrollmentDetail";
+import StudentHome from "./pages/student/Home";
+import StudentCourse from "./pages/student/Course";
+import StudentCourses from "./pages/student/Courses";
+import StudentJourney from "./pages/student/Journey";
+import StudentLesson from "./pages/student/Lesson";
 
 function Guard({ role, children }: { role: string; children: ReactNode }) {
   const { profile, loading } = useAuth();
@@ -52,7 +55,10 @@ export default function App() {
         <Route path="/mentor" element={<Guard role="mentor"><MentorHome /></Guard>} />
         <Route path="/mentor/enrollment/:eid" element={<Guard role="mentor"><MentorEnrollment /></Guard>} />
         <Route path="/student" element={<Guard role="student"><StudentHome /></Guard>} />
+        <Route path="/student/courses" element={<Guard role="student"><StudentCourses /></Guard>} />
+        <Route path="/student/journey" element={<Guard role="student"><StudentJourney /></Guard>} />
         <Route path="/student/course/:eid" element={<Guard role="student"><StudentCourse /></Guard>} />
+        <Route path="/student/course/:eid/lesson/:lid" element={<Guard role="student"><StudentLesson /></Guard>} />
       </Route>
       <Route path="*" element={<Root />} />
     </Routes>

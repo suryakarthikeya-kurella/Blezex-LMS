@@ -1,78 +1,665 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { sanitizeHtml } from "../../lib/sanitize";
-import { submissionSchema } from "../../lib/schemas";
-import { fmtDay } from "../../lib/format";
-import QuizPanel from "../../components/QuizPanel";
-import MilestonesPanel from "../../components/MilestonesPanel";
-import { supabase } from "../../lib/supabase";
-import { EmptyState, Field, LoadingState, PageHeader, Panel, StatusBadge, useToast } from "../../components/admin/kit";
+import { useEffect, useState, useMemo } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import Icon, { IconName } from "../../components/Icon";
+import { isCertificateUnlocked } from "../../lib/certificateUnlock";
+import { Card, Empty } from "../../components/ui";
+import { fetchCourseCurriculum, getCompletedItemIds, isCurriculumModuleUnlocked } from "../../lib/curriculumService";
+import {
+  CurriculumModule,
+  CurriculumItem,
+  getCourseTotalMinutes,
+  getModuleTotalMinutes,
+  formatMinutesToHuman,
+} from "../../lib/curriculumData";
+
+const SUB_COURSE_TAGS: Record<string, string[]> = {
+  "html-css-foundations": ["HTML5", "CSS3", "BOOTSTRAP"],
+  "js-fundamentals": ["JAVASCRIPT", "ES6+", "DOM"],
+  "database-sql": ["SQL", "POSTGRESQL", "DATABASE"],
+  "node-express": ["NODE.JS", "EXPRESS", "REST API"],
+  "react-js": ["REACT", "HOOKS", "JSX"],
+  "git-basics": ["GIT", "GITHUB", "WORKFLOW"],
+};
+
 export default function StudentCourse() {
-  const { eid } = useParams(); const toast = useToast();
-  const [e, setE] = useState<any>(null); const [loaded, setLoaded] = useState(false); const [mods, setMods] = useState<any[]>([]);
-  const [done, setDone] = useState<Set<string>>(new Set()); const [cur, setCur] = useState(""); const [html, setHtml] = useState<Record<string, string>>({});
-  const [asg, setAsg] = useState<any[]>([]); const [subs, setSubs] = useState<any[]>([]); const [evals, setEvals] = useState<any[]>([]);
-  const [form, setForm] = useState<Record<string, { t: string; l: string }>>({}); const [busy, setBusy] = useState(""); const lock = useRef(false);
-  const loadSubs = useCallback(async () => setSubs((await supabase.from("submissions").select("*").eq("enrollment_id", eid!)).data ?? []), [eid]);
-  const load = useCallback(async () => {
-    const { data: en } = await supabase.from("enrollments").select("id,status,course_id,course:courses(title)").eq("id", eid!).maybeSingle(); setE(en); setLoaded(true); if (!en) return;
-    // lesson bodies are NOT loaded here: only the open lesson's HTML is fetched (below), so opening a course stays light
-    const [m, p, a, s, v] = await Promise.all([
-      supabase.from("modules").select("id,title,position,lessons(id,title,position,status)").eq("course_id", en.course_id).order("position"),
-      supabase.from("lesson_progress").select("lesson_id").eq("enrollment_id", eid!), supabase.from("assignments").select("*").eq("course_id", en.course_id),
-      supabase.from("submissions").select("*").eq("enrollment_id", eid!), supabase.from("evaluations").select("*").eq("enrollment_id", eid!).order("created_at", { ascending: false })]);
-    setMods(m.data ?? []); const ds = new Set((p.data ?? []).map((x: any) => x.lesson_id)); setDone(ds); setAsg(a.data ?? []); setSubs(s.data ?? []); setEvals(v.data ?? []);
-    const all = (m.data ?? []).flatMap((x: any) => [...(x.lessons ?? [])].sort((a: any, b: any) => a.position - b.position));
-    setCur(c => c || (all.find((l: any) => !ds.has(l.id)) ?? all[0])?.id || "");
+  const { eid } = useParams();
+  const navigate = useNavigate();
+  const [course, setCourse] = useState<any>(null);
+  const [subCourses, setSubCourses] = useState<CurriculumModule[]>([]);
+  const [completed, setCompleted] = useState<Set<string>>(new Set());
+  const [selectedSubCourse, setSelectedSubCourse] = useState<CurriculumModule | null>(null);
+  const [lockAlertMessage, setLockAlertMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await fetchCourseCurriculum(eid || "full-stack-web");
+        if (cancelled) return;
+        setCourse(result.course);
+        setSubCourses(result.modules);
+        const completedIds = getCompletedItemIds(eid);
+        setCompleted(completedIds);
+      } catch (e) {
+        console.error("Error loading course:", e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [eid]);
-  useEffect(() => { load(); }, [load]);
-  useEffect(() => { if (!cur || html[cur] !== undefined) return; let live = true;
-    supabase.from("lessons").select("content_html").eq("id", cur).maybeSingle().then(({ data }) => { if (live) setHtml(h => ({ ...h, [cur]: data?.content_html ?? "" })); });
-    return () => { live = false; }; }, [cur, html]);
-  const flat = mods.flatMap(m => [...(m.lessons ?? [])].sort((a: any, b: any) => a.position - b.position)); const idx = flat.findIndex(l => l.id === cur); const lesson = flat[idx];
-  const toggle = async () => {
-    if (lock.current) return; lock.current = true; setBusy("lesson"); const was = done.has(cur);
-    const { error } = was ? await supabase.from("lesson_progress").delete().eq("enrollment_id", eid!).eq("lesson_id", cur) : await supabase.from("lesson_progress").insert({ enrollment_id: eid, lesson_id: cur });
-    lock.current = false; setBusy(""); if (error) return toast("err", error.message);
-    setDone(d => { const n = new Set(d); if (was) n.delete(cur); else n.add(cur); return n; }); // local update: no full reload
+
+  // Close drawer on Escape key and prevent background scrolling
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedSubCourse(null);
+        setLockAlertMessage(null);
+      }
+    };
+    if (selectedSubCourse) {
+      document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedSubCourse]);
+
+  const allItems: CurriculumItem[] = useMemo(() => subCourses.flatMap(sc => sc.items), [subCourses]);
+  const totalItemsCount = allItems.length;
+  const completedCount = allItems.filter(item => completed.has(item.id)).length;
+  const progressPct = totalItemsCount ? Math.round((completedCount * 100) / totalItemsCount) : 0;
+  const requiredPct = course?.min_progress_pct ?? 80;
+  const certificateUnlocked = isCertificateUnlocked(progressPct, requiredPct);
+
+  // Dynamic Course Duration calculated from curriculum items
+  const totalCourseMinutes = useMemo(() => getCourseTotalMinutes(subCourses), [subCourses]);
+  const formattedTotalCourseDuration = formatMinutesToHuman(totalCourseMinutes);
+
+  const effectiveEid = eid || "full-stack-web";
+
+  // Sub-course custom SVG icons
+  const renderSubCourseIcon = (subCourseId: string) => {
+    switch (subCourseId) {
+      case "html-css-foundations":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 2a14.5 14.5 0 0 0 0 20M12 2a14.5 14.5 0 0 1 0 20M2 12h20" />
+          </svg>
+        );
+      case "js-fundamentals":
+        return <Icon name="code" size={22} />;
+      case "database-sql":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <ellipse cx="12" cy="5" rx="9" ry="3" />
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5M3 12c0 1.66 4 3 9 3s9-1.34 9-3" />
+          </svg>
+        );
+      case "node-express":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <rect x="2" y="2" width="20" height="8" rx="2" />
+            <rect x="2" y="14" width="20" height="8" rx="2" />
+            <line x1="6" y1="6" x2="6.01" y2="6" />
+            <line x1="6" y1="18" x2="6.01" y2="18" />
+          </svg>
+        );
+      case "react-js":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <ellipse cx="12" cy="12" rx="10" ry="4" />
+            <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)" />
+            <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)" />
+            <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+          </svg>
+        );
+      case "git-basics":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+            <line x1="6" y1="3" x2="6" y2="15" />
+            <circle cx="18" cy="6" r="3" />
+            <circle cx="6" cy="18" r="3" />
+            <path d="M18 9a9 9 0 0 1-9 9" />
+          </svg>
+        );
+      default:
+        return <Icon name="book" size={22} />;
+    }
   };
-  const submit = async (a: any) => {
-    if (lock.current) return; const ex = subs.find(s => s.assignment_id === a.id);
-    const f = { t: form[a.id]?.t ?? ex?.text_response ?? "", l: form[a.id]?.l ?? ex?.link_url ?? "" };
-    const ok = submissionSchema.safeParse({ text: f.t, link: f.l }); if (!ok.success) return toast("err", ok.error.issues[0].message);
-    const row = { text_response: f.t || null, link_url: f.l || null }; lock.current = true; setBusy(a.id);
-    const { error } = ex ? await supabase.from("submissions").update(row).eq("id", ex.id) : await supabase.from("submissions").insert({ ...row, assignment_id: a.id, enrollment_id: eid });
-    lock.current = false; setBusy(""); if (error) return toast("err", error.code === "23505" ? "This assignment was already submitted. Refresh to see it." : error.message);
-    toast("ok", ex ? "Submission updated." : "Submitted."); loadSubs();
+
+  const handleSubCourseClick = (subCourse: CurriculumModule, index: number) => {
+    const unlocked = isCurriculumModuleUnlocked(index, subCourses, completed);
+    if (!unlocked) {
+      const prevSub = subCourses[index - 1];
+      setLockAlertMessage(
+        `This sub-course is locked. Complete Sub-Course ${index} (${prevSub?.title || "previous"}) to unlock it.`
+      );
+      return;
+    }
+    setSelectedSubCourse(subCourse);
   };
-  const back = <Link to="/student" className="text-sm font-semibold text-brand-dark hover:underline">← My learning</Link>;
-  if (!loaded) return <LoadingState />;
-  if (!e) return <><div className="mb-4">{back}</div><div className="bg-white border border-hairline rounded-[20px]"><EmptyState title="Course not available" hint="It doesn't exist or you don't have access to it." /></div></>;
-  const open = e.status === "active" || e.status === "completed";
-  return <>
-    <div className="mb-3">{back}</div>
-    <PageHeader title={e.course.title} actions={<StatusBadge value={e.status} />} description={e.status === "completed" ? "Completed: this course is now read-only." : e.status === "active" ? undefined : "Your access to this course is not active right now."} />
-    {!open ? <div className="bg-white border border-hairline rounded-[20px]"><EmptyState title={`Access ${e.status}`} hint="Contact your administrator to restore access." /></div> :
-    <div className="grid lg:grid-cols-[280px_minmax(0,1fr)] gap-6 items-start">
-      <Panel title="Lessons" className="lg:sticky lg:top-20"><nav aria-label="Lessons">{!flat.length ? <p className="text-sm text-muted">No published lessons yet.</p> : mods.map(m => <div key={m.id} className="mb-3 last:mb-0"><p className="font-semibold text-sm text-ink mb-1">{m.title}</p>
-        {[...(m.lessons ?? [])].sort((a: any, b: any) => a.position - b.position).map((l: any) => <button key={l.id} onClick={() => setCur(l.id)} aria-current={cur === l.id ? "true" : undefined} className={`block w-full text-left text-sm px-2.5 py-1.5 rounded-lg ${cur === l.id ? "bg-ink text-white" : "hover:bg-paper"}`}><span aria-hidden="true">{done.has(l.id) ? "✓ " : "○ "}</span><span className="sr-only">{done.has(l.id) ? "Completed: " : "Not completed: "}</span>{l.title}</button>)}</div>)}</nav></Panel>
-      <div className="space-y-6 min-w-0">
-        {lesson && <Panel title={lesson.title}>
-          {html[cur] === undefined ? <LoadingState label="Loading lesson…" /> : <div className="lesson" dangerouslySetInnerHTML={{ __html: sanitizeHtml(html[cur]) }} />}
-          <div className="flex gap-2 mt-5 flex-wrap"><button className="btn-ghost" disabled={idx <= 0} onClick={() => setCur(flat[idx - 1].id)}>← Previous</button>
-            {e.status === "active" && <button className="btn" disabled={!!busy} onClick={toggle}>{done.has(cur) ? "Mark incomplete" : "Mark complete"}</button>}
-            <button className="btn-ghost" disabled={idx >= flat.length - 1} onClick={() => setCur(flat[idx + 1].id)}>Next →</button></div></Panel>}
-        <Panel title="Assignments">{!asg.length ? <p className="text-sm text-muted">No assignments for this course.</p> : <div className="divide-y divide-hairline -my-4">{asg.map(a => { const s = subs.find(x => x.assignment_id === a.id); const locked = s?.status === "graded" || e.status !== "active"; return (
-          <div key={a.id} className="py-4 text-sm"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-ink">{a.title}</p>{a.due_date && <span className="text-xs text-muted tabular-nums">due {fmtDay(a.due_date)}</span>}{s && <StatusBadge value={s.status} />}</div>
-            {a.instructions && <p className="mt-1 whitespace-pre-wrap">{a.instructions}</p>}
-            {s?.status === "graded" && <p className="text-green-700 mt-2 tabular-nums">Score {s.score}{s.feedback && ` — ${s.feedback}`}</p>}
-            {!locked && <div className="space-y-3 mt-3">
-              <Field label="Your response" htmlFor={`t-${a.id}`}><textarea id={`t-${a.id}`} className="inp" rows={3} defaultValue={s?.text_response ?? ""} onChange={ev => setForm({ ...form, [a.id]: { t: ev.target.value, l: form[a.id]?.l ?? s?.link_url ?? "" } })} /></Field>
-              <Field label="Project link" htmlFor={`l-${a.id}`} hint="Must start with https://"><input id={`l-${a.id}`} className="inp" defaultValue={s?.link_url ?? ""} onChange={ev => setForm({ ...form, [a.id]: { t: form[a.id]?.t ?? s?.text_response ?? "", l: ev.target.value } })} /></Field>
-              <button className="btn" disabled={!!busy} onClick={() => submit(a)}>{busy === a.id ? "Saving…" : s ? "Resubmit" : "Submit"}</button></div>}</div>); })}</div>}</Panel>
-        <QuizPanel courseId={e.course_id} eid={eid!} active={e.status === "active"} />
-        <MilestonesPanel eid={eid!} who="student" />
-        <Panel title="Mentor evaluations">{!evals.length ? <p className="text-sm text-muted">No evaluations from your mentor yet.</p> : <ul className="divide-y divide-hairline -my-2">{evals.map(x => <li key={x.id} className="py-2.5 text-sm flex flex-wrap gap-x-3 gap-y-1 items-baseline"><span className="font-medium text-ink">{x.criterion}</span><b className="tabular-nums">{x.score}/{x.max_score}</b><span className="text-muted flex-1">{x.remarks}</span><span className="text-xs text-muted tabular-nums">{fmtDay(x.created_at)}</span></li>)}</ul>}</Panel>
-      </div></div>}
-  </>;
+
+  if (loading) {
+    return (
+      <div className="grid min-h-[50vh] place-items-center text-sm font-semibold text-slate-500">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+          <span>Loading course and sub-courses…</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-7xl space-y-7 pb-12">
+      {/* Top Breadcrumb Nav */}
+      <Link
+        to="/student/courses"
+        className="group inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-500 transition hover:text-brand"
+      >
+        <span className="grid h-7 w-7 place-items-center rounded-lg border border-slate-200 bg-white transition group-hover:border-slate-300 group-hover:bg-slate-50 shadow-xs">
+          <Icon name="arrowLeft" size={14} />
+        </span>
+        <span>Back to my courses</span>
+      </Link>
+
+      {/* Lock alert notice if user clicks locked subcourse */}
+      {lockAlertMessage && (
+        <div className="flex items-center justify-between rounded-2xl border border-amber-300 bg-amber-50 px-5 py-3.5 text-xs font-semibold text-amber-900 shadow-sm animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-amber-200 text-amber-800">
+              <Icon name="lock" size={13} />
+            </span>
+            <span>{lockAlertMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setLockAlertMessage(null)}
+            className="rounded-lg p-1 text-amber-700 hover:bg-amber-100 transition"
+          >
+            <Icon name="close" size={14} />
+          </button>
+        </div>
+      )}
+
+      <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
+        {/* Main Content: Course & Sub-Courses Grid */}
+        <main className="min-w-0 space-y-7">
+          {/* Main Course Hero Card */}
+          <section className="relative overflow-hidden rounded-3xl border border-slate-200/90 bg-gradient-to-br from-white via-slate-50/40 to-blue-50/30 p-6 sm:p-8 md:p-9 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-6">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/80 bg-blue-50/80 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-700 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
+                    Main Career Track
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200/80 bg-indigo-50/60 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 shadow-xs">
+                    6 Sub-Courses
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-200/80 bg-white px-2.5 py-0.5 text-[11px] font-semibold text-slate-600 shadow-xs">
+                    Full Stack 2026
+                  </span>
+                </div>
+
+                <h1 className="mt-3.5 font-display text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl leading-tight">
+                  {course?.title || "Full Stack Web Development"}
+                </h1>
+
+                <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 font-normal sm:text-base">
+                  {course?.description ||
+                    "Master full-stack engineering across 6 progressive sub-courses. Complete each sub-course sequentially to build job-ready skills in modern frontend, backend APIs, relational databases, and version control."}
+                </p>
+
+                {/* Stat pills cluster */}
+                <div className="mt-6 flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-600">
+                  <span className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-white px-3 py-1.5 shadow-xs">
+                    <Icon name="book" size={15} className="text-blue-600" />
+                    <span>{subCourses.length} Sub-Courses</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-white px-3 py-1.5 shadow-xs">
+                    <Icon name="sheet" size={15} className="text-indigo-600" />
+                    <span>{totalItemsCount} Lessons & Activities</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200/80 bg-amber-50/60 px-3 py-1.5 text-amber-900 shadow-xs">
+                    <Icon name="clock" size={15} className="text-amber-600" />
+                    <span className="font-bold">{formattedTotalCourseDuration} Total</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200/80 bg-emerald-50/60 px-3 py-1.5 text-emerald-800 shadow-xs">
+                    <Icon name="certificate" size={15} className="text-emerald-600" />
+                    <span>Master Track Certification</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Progress Ring Card */}
+              <div className="flex shrink-0 items-center gap-4 rounded-2xl border border-blue-100 bg-white/90 p-4 shadow-sm backdrop-blur-xs">
+                <div
+                  className="relative grid h-18 w-18 place-items-center rounded-full transition-all duration-500 shadow-xs"
+                  style={{
+                    background: `conic-gradient(#2563eb ${progressPct * 3.6}deg, #e2e8f0 ${progressPct * 3.6}deg)`,
+                  }}
+                >
+                  <span className="grid h-14 w-14 place-items-center rounded-full bg-white font-display text-sm font-extrabold text-blue-900 shadow-inner">
+                    {progressPct}%
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Program Progress</p>
+                  <p className="mt-0.5 font-display text-base font-extrabold text-slate-900">
+                    {completedCount} <span className="text-xs font-medium text-slate-500">/ {totalItemsCount} completed</span>
+                  </p>
+                  <span
+                    className={`mt-1.5 inline-block rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      progressPct >= 100
+                        ? "bg-emerald-100 text-emerald-800"
+                        : progressPct > 0
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    {progressPct >= 100 ? "Track Completed!" : progressPct > 0 ? "In Progress" : "Get Started"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Sub-Courses Grid Section Header */}
+          <section className="space-y-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Icon name="courses" size={20} className="text-blue-600" />
+                <h2 className="font-display text-xl font-extrabold text-slate-900">
+                  Program Sub-Courses
+                </h2>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Click on any sub-course to view its lessons, practice questions, and graded assessments.
+              </p>
+            </div>
+
+            {/* Sub-Course Cards Grid */}
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {subCourses.map((subCourse, idx) => {
+                const unlocked = isCurriculumModuleUnlocked(idx, subCourses, completed);
+                const items = subCourse.items;
+                const doneCount = items.filter(it => completed.has(it.id)).length;
+                const isAllDone = items.length > 0 && doneCount === items.length;
+                const subCoursePct = items.length ? Math.round((doneCount * 100) / items.length) : 0;
+                const tags = SUB_COURSE_TAGS[subCourse.id] || ["WEB", "DEV"];
+                const duration = formatMinutesToHuman(getModuleTotalMinutes(subCourse));
+
+                return (
+                  <div
+                    key={subCourse.id}
+                    onClick={() => handleSubCourseClick(subCourse, idx)}
+                    className={`group relative flex flex-col justify-between rounded-3xl border bg-white p-5 sm:p-6 shadow-xs transition-all duration-200 ${
+                      !unlocked
+                        ? "border-slate-200 bg-slate-50/70 opacity-75 cursor-not-allowed"
+                        : "border-slate-200/90 hover:-translate-y-1 hover:border-blue-400 hover:shadow-lg cursor-pointer"
+                    }`}
+                  >
+                    <div>
+                      {/* Top Row: Icon + Status Badge */}
+                      <div className="flex items-start justify-between gap-3">
+                        <span
+                          className={`grid h-12 w-12 place-items-center rounded-2xl transition-all shadow-xs ${
+                            !unlocked
+                              ? "bg-slate-200 text-slate-500"
+                              : isAllDone
+                              ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-emerald-500/25"
+                              : "bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-blue-500/20"
+                          }`}
+                        >
+                          {renderSubCourseIcon(subCourse.id)}
+                        </span>
+
+                        {/* Top-right Status Indicator (like green checkmark in image) */}
+                        <div>
+                          {isAllDone ? (
+                            <span
+                              className="grid h-7 w-7 place-items-center rounded-full bg-emerald-500 text-white shadow-sm"
+                              title="Sub-course completed"
+                            >
+                              <Icon name="check" size={15} />
+                            </span>
+                          ) : !unlocked ? (
+                            <span
+                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-500"
+                              title="Locked"
+                            >
+                              <Icon name="lock" size={11} /> Locked
+                            </span>
+                          ) : doneCount > 0 ? (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700">
+                              {doneCount}/{items.length} ({subCoursePct}%)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-500">
+                              Ready
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Sub-course Number & Title */}
+                      <div className="mt-4">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                          Sub-Course {idx + 1}
+                        </span>
+                        <h3 className="mt-0.5 font-display text-base font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                          {idx + 1}. {subCourse.title}
+                        </h3>
+                        <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-slate-500">
+                          {subCourse.description}
+                        </p>
+                      </div>
+
+                      {/* Meta: Topics count and duration */}
+                      <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-slate-600">
+                        <span>{items.length} Topics</span>
+                        <span className="text-slate-300">·</span>
+                        <span className="flex items-center gap-1 text-slate-500">
+                          <Icon name="clock" size={12} className="text-amber-500" />
+                          <span>{duration}</span>
+                        </span>
+                      </div>
+
+                      {/* Tags / Pills (like HTML, CSS, BOOTSTRAP in image) */}
+                      <div className="mt-3.5 flex flex-wrap gap-1.5">
+                        {tags.map(tag => (
+                          <span
+                            key={tag}
+                            className="rounded-md border border-slate-200/80 bg-slate-100/80 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-600"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Bottom Progress Bar */}
+                    <div className="mt-5 border-t border-slate-100 pt-3">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-400">
+                        <span>Progress</span>
+                        <span className={isAllDone ? "text-emerald-600" : unlocked && doneCount > 0 ? "text-blue-600" : ""}>
+                          {subCoursePct}%
+                        </span>
+                      </div>
+                      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          className={`h-full transition-all duration-300 ${
+                            isAllDone
+                              ? "bg-emerald-500"
+                              : "bg-gradient-to-r from-blue-600 to-indigo-600"
+                          }`}
+                          style={{ width: `${subCoursePct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {!subCourses.length && (
+              <Card className="!rounded-2xl !border-slate-200">
+                <Empty t="Program sub-courses are being loaded." />
+              </Card>
+            )}
+          </section>
+        </main>
+
+        {/* Sidebar: Certificate & Key Takeaways (Restored like before) */}
+        <aside className="space-y-6 xl:sticky xl:top-24">
+          {/* Certificate Card */}
+          <Card className="!rounded-2xl !border-slate-200 !p-5 !shadow-sm">
+            {certificateUnlocked ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-emerald-700">
+                  <Icon name="certificate" size={20} />
+                  <h2 className="font-display font-bold text-slate-900">Course Certificate</h2>
+                </div>
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center">
+                  <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-100 text-emerald-700 shadow-sm">
+                    <Icon name="unlock" size={26} />
+                  </span>
+                  <p className="mt-3 font-display text-base font-extrabold text-emerald-950">Certificate Unlocked!</p>
+                  <p className="mt-1 text-xs text-emerald-800">
+                    You have achieved {progressPct}% completion (required: {requiredPct}%).
+                  </p>
+                  <Link
+                    to="/student/journey"
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800"
+                  >
+                    <Icon name="certificate" size={14} /> View Certificate
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="relative flex min-h-52 items-center justify-center overflow-hidden rounded-2xl border-2 border-slate-700 bg-[#1e293b] p-5 text-center text-white shadow-inner">
+                  <div className="relative">
+                    <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-violet-500/20 text-violet-300">
+                      <Icon name="lock" size={24} />
+                    </span>
+                    <h2 className="mt-3 font-display text-base font-extrabold leading-tight">
+                      Complete modules to<br />unlock certificate
+                    </h2>
+                    <p className="mt-1.5 text-xs text-slate-300">
+                      {requiredPct}% progress required · {Math.max(0, requiredPct - progressPct)}% remaining
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center justify-between text-xs font-semibold">
+                  <span className="text-slate-600">Progress to unlock</span>
+                  <span className="font-extrabold text-slate-900">{progressPct}% / {requiredPct}%</span>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-300"
+                    style={{ width: `${Math.min(100, (progressPct / requiredPct) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </Card>
+
+          {/* Key Takeaways Card (Restored like before) */}
+          <Card className="!rounded-2xl !border-slate-200 !p-5 !shadow-sm">
+            <h2 className="font-display font-bold text-slate-900">Key Takeaways</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              By completing this track, you will have built real-world frontend and backend applications from scratch:
+            </p>
+            <div className="my-4 border-t border-slate-100" />
+            <ul className="space-y-3 text-xs leading-5 text-slate-600">
+              {[
+                "Semantic HTML5 & accessible landmark structures",
+                "Responsive CSS with modern Flexbox & CSS Grid",
+                "ES6+ JavaScript, DOM events, and asynchronous fetch",
+                "React state, props, custom hooks, and component trees",
+                "Node.js Express REST APIs and server-side routes",
+                "Relational SQL databases, queries, and joins",
+              ].map(item => (
+                <li key={item} className="flex items-start gap-2">
+                  <Icon name="check" size={15} className="mt-0.5 shrink-0 text-emerald-600" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </aside>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* Sub-Course Details Drawer (Slide-out panel matching Reference Image 1) */}
+      {/* ========================================================================= */}
+      {selectedSubCourse && (
+        <div className="fixed inset-0 z-50 overflow-hidden" role="dialog" aria-modal="true">
+          {/* Backdrop Overlay */}
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-300 animate-in fade-in"
+            onClick={() => setSelectedSubCourse(null)}
+          />
+
+          {/* Slide-out Drawer Panel */}
+          <div className="fixed inset-y-0 right-0 flex max-w-full pl-6 sm:pl-10">
+            <div className="w-screen max-w-md sm:max-w-xl bg-white shadow-2xl flex flex-col transform transition-transform duration-300 animate-in slide-in-from-right rounded-l-3xl overflow-hidden">
+              {/* Drawer Top Header (matching Image 1) */}
+              <div className="border-b border-slate-100 bg-gradient-to-b from-slate-50/80 to-white p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20">
+                      {renderSubCourseIcon(selectedSubCourse.id)}
+                    </span>
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        COURSE / SUB-COURSE
+                      </span>
+                      <h2 className="font-display text-xl font-extrabold text-slate-900">
+                        {selectedSubCourse.title}
+                      </h2>
+                    </div>
+                  </div>
+
+                  {/* Close 'X' Button */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSubCourse(null)}
+                    className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 transition shadow-xs"
+                    aria-label="Close drawer"
+                  >
+                    <Icon name="close" size={16} />
+                  </button>
+                </div>
+
+                {/* Sub-course brief + progress summary in drawer */}
+                <p className="mt-3 text-xs leading-relaxed text-slate-500">
+                  {selectedSubCourse.description}
+                </p>
+
+                <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-600">
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-blue-700">
+                    <Icon name="sheet" size={13} /> {selectedSubCourse.items.length} Topics & Activities
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-amber-800">
+                    <Icon name="clock" size={13} className="text-amber-600" />
+                    {formatMinutesToHuman(getModuleTotalMinutes(selectedSubCourse))}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-emerald-800">
+                    <Icon name="check" size={13} className="text-emerald-600" />
+                    {selectedSubCourse.items.filter(it => completed.has(it.id)).length} / {selectedSubCourse.items.length} Completed
+                  </span>
+                </div>
+              </div>
+
+              {/* Drawer Topics List (matching Image 1 topic cards) */}
+              <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-3 bg-slate-50/40">
+                {selectedSubCourse.items.map((item, itemIdx) => {
+                  const isDone = completed.has(item.id);
+
+                  let itemLabel = "TOPIC";
+                  if (item.type === "quiz") itemLabel = "SUB-COURSE EXAM";
+                  else if (item.type === "assignment") itemLabel = "GRADED PROJECT";
+                  else if (item.type === "practice") itemLabel = "PRACTICE LAB";
+
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        setSelectedSubCourse(null);
+                        navigate(`/student/course/${effectiveEid}/lesson/${item.id}`);
+                      }}
+                      className="group flex items-center justify-between gap-3.5 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all hover:border-blue-400 hover:shadow-md cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                        {/* Checkmark circle or item index */}
+                        {isDone ? (
+                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-500 text-white shadow-xs">
+                            <Icon name="check" size={16} />
+                          </span>
+                        ) : (
+                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-slate-200 bg-slate-100 text-xs font-bold text-slate-600 group-hover:border-blue-500 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors shadow-xs">
+                            {itemIdx + 1}
+                          </span>
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                          <span className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                            {itemLabel}
+                          </span>
+                          <span className="mt-0.5 block font-display text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors truncate">
+                            {item.title}
+                          </span>
+                          <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
+                            <span className="flex items-center gap-1">
+                              <Icon name="clock" size={11} /> {item.duration}
+                            </span>
+                            {isDone && (
+                              <>
+                                <span>·</span>
+                                <span className="font-bold text-emerald-600">Completed</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Chevron Arrow */}
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all">
+                        <Icon name="chevronRight" size={18} />
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Drawer Footer */}
+              <div className="border-t border-slate-200/80 bg-white p-4 sm:p-5 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubCourse(null)}
+                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition"
+                >
+                  Close
+                </button>
+
+                {(() => {
+                  const firstIncomplete =
+                    selectedSubCourse.items.find(it => !completed.has(it.id)) || selectedSubCourse.items[0];
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedSubCourse(null);
+                        if (firstIncomplete) {
+                          navigate(`/student/course/${effectiveEid}/lesson/${firstIncomplete.id}`);
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:bg-blue-700 transition"
+                    >
+                      <span>
+                        {selectedSubCourse.items.some(it => completed.has(it.id))
+                          ? "Continue Sub-Course"
+                          : "Start Sub-Course"}
+                      </span>
+                      <Icon name="arrow" size={14} />
+                    </button>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
