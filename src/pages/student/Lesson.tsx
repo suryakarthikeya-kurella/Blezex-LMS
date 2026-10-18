@@ -40,6 +40,14 @@ export default function StudentLesson() {
   const [assignmentLink, setAssignmentLink] = useState("");
   const [assignmentSubmitted, setAssignmentSubmitted] = useState(false);
   const [copiedCodeSnippet, setCopiedCodeSnippet] = useState(false);
+  const [openSidebarModules, setOpenSidebarModules] = useState<Record<string, boolean>>({});
+
+  const toggleSidebarModule = (modId: string) => {
+    setOpenSidebarModules(prev => ({
+      ...prev,
+      [modId]: prev[modId] === false ? true : false,
+    }));
+  };
 
   const handleCopyCodeSnippet = (codeText: string) => {
     try {
@@ -108,6 +116,16 @@ export default function StudentLesson() {
     setAssignmentText("");
     setAssignmentLink("");
   }, [lid]);
+
+  // Auto-expand the module containing the active item in sidebar
+  useEffect(() => {
+    if (activeItem?.moduleId) {
+      setOpenSidebarModules(prev => ({
+        ...prev,
+        [activeItem.moduleId!]: true
+      }));
+    }
+  }, [activeItem?.id, activeItem?.moduleId]);
 
   const isCurrentDone = completed.has(activeItem?.id);
 
@@ -178,7 +196,10 @@ export default function StudentLesson() {
     if (!questions.length) return { total: 0, correct: 0, scorePct: 0, passed: false };
     let correct = 0;
     questions.forEach(q => {
-      if (selectedAnswers[q.id] === q.correctIndex) {
+      const targetIdx = q.correctIndex !== undefined
+        ? q.correctIndex
+        : q.options.findIndex(opt => opt.id === q.correctAnswer);
+      if (selectedAnswers[q.id] === targetIdx) {
         correct++;
       }
     });
@@ -299,86 +320,102 @@ export default function StudentLesson() {
       <div className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
         {containingModule?.modules && containingModule.modules.length > 0 ? (
           <>
-            {containingModule.modules.map((mod, modIdx) => (
-              <div key={mod.id} className="space-y-1">
-                {/* Module Header / Badge */}
-                <div className="sticky top-0 z-20 my-1 px-2.5 py-1.5 rounded-lg bg-[#0b1120]/95 backdrop-blur-xs border border-white/10 flex items-center justify-between shadow-xs">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="grid h-4 w-4 shrink-0 place-items-center rounded bg-blue-500/25 text-[9px] font-black text-blue-300">
-                      {modIdx + 1}
-                    </span>
-                    <span className="text-[11px] font-bold text-slate-200 truncate">
-                      {mod.title}
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-slate-400 shrink-0 font-medium ml-2">
-                    {mod.items.filter(it => completed.has(it.id)).length}/{mod.items.length}
-                  </span>
-                </div>
+            {containingModule.modules.map((mod, modIdx) => {
+              const isOpen = openSidebarModules[mod.id] !== false;
+              return (
+                <div key={mod.id} className="space-y-1">
+                  {/* Module Header / Dropdown Trigger */}
+                  <button
+                    type="button"
+                    onClick={() => toggleSidebarModule(mod.id)}
+                    className="w-full text-left sticky top-0 z-20 my-1 px-2.5 py-1.5 rounded-lg bg-[#0f172a]/95 hover:bg-[#1e293b] backdrop-blur-xs border border-white/10 flex items-center justify-between shadow-xs transition-colors cursor-pointer group select-none"
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="grid h-4 w-4 shrink-0 place-items-center rounded bg-blue-500/25 text-[9px] font-black text-blue-300 group-hover:scale-105 transition-transform">
+                        {modIdx + 1}
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-200 truncate group-hover:text-blue-300 transition-colors">
+                        {mod.title}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {mod.items.filter(it => completed.has(it.id)).length}/{mod.items.length}
+                      </span>
+                      <Icon
+                        name="chevronDown"
+                        size={12}
+                        className={`text-slate-400 group-hover:text-white transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                      />
+                    </div>
+                  </button>
 
-                {/* Items in Module */}
-                <div className="relative space-y-0.5 py-1">
-                  {mod.items.map((item, itemIdx) => {
-                    const isActive = item.id === activeItem?.id;
-                    const isItemDone = completed.has(item.id);
-                    const iconName = getItemIcon(item.type);
-                    const badge = getItemBadge(item);
+                  {/* Items in Module (Collapsible) */}
+                  {isOpen && (
+                    <div className="relative space-y-0.5 py-1">
+                      {mod.items.map((item, itemIdx) => {
+                        const isActive = item.id === activeItem?.id;
+                        const isItemDone = completed.has(item.id);
+                        const iconName = getItemIcon(item.type);
+                        const badge = getItemBadge(item);
 
-                    return (
-                      <Link
-                        key={item.id}
-                        to={`/student/course/${effectiveEid}/lesson/${item.id}`}
-                        onClick={() => setMobileDrawerOpen(false)}
-                        className={`group relative flex items-center gap-3 rounded-lg mx-1 px-3 py-2 transition-all duration-150 ${
-                          isActive
-                            ? "bg-gradient-to-r from-blue-600/25 via-indigo-600/20 to-purple-600/10 text-white font-bold shadow-[0_0_15px_rgba(59,130,246,0.15)] ring-1 ring-blue-500/30"
-                            : "text-slate-300 hover:bg-white/[0.05] hover:text-white"
-                        }`}
-                      >
-                        {/* Timeline Node Circle */}
-                        <span
-                          className={`relative z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold transition ${
-                            isItemDone
-                              ? "bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400/40"
-                              : isActive
-                              ? "bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.6)] ring-4 ring-blue-500/30"
-                              : "bg-[#0b1120] text-slate-500 ring-2 ring-white/15 group-hover:ring-white/40"
-                          }`}
-                        >
-                          {isItemDone ? (
-                            <Icon name="check" size={11} />
-                          ) : isActive ? (
-                            <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                          ) : (
-                            <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
-                          )}
-                        </span>
-
-                        {/* Details */}
-                        <div className="min-w-0 flex-1">
-                          <span className={`block truncate text-xs leading-snug ${isActive ? "text-white" : "text-slate-300"}`}>
-                            {item.title}
-                          </span>
-                          <div className="mt-0.5 flex items-center gap-2 text-[10px] text-slate-400">
-                            <span className={`rounded px-1.5 py-0.2 border text-[9px] font-bold uppercase tracking-wider ${badge.color}`}>
-                              {badge.label}
+                        return (
+                          <Link
+                            key={item.id}
+                            to={`/student/course/${effectiveEid}/lesson/${item.id}`}
+                            onClick={() => setMobileDrawerOpen(false)}
+                            className={`group relative flex items-center gap-3 rounded-lg mx-1 px-3 py-2 transition-all duration-150 ${
+                              isActive
+                                ? "bg-gradient-to-r from-blue-600/25 via-indigo-600/20 to-purple-600/10 text-white font-bold shadow-[0_0_15px_rgba(59,130,246,0.15)] ring-1 ring-blue-500/30"
+                                : "text-slate-300 hover:bg-white/[0.05] hover:text-white"
+                            }`}
+                          >
+                            {/* Timeline Node Circle */}
+                            <span
+                              className={`relative z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold transition ${
+                                isItemDone
+                                  ? "bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400/40"
+                                  : isActive
+                                  ? "bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.6)] ring-4 ring-blue-500/30"
+                                  : "bg-[#0b1120] text-slate-500 ring-2 ring-white/15 group-hover:ring-white/40"
+                              }`}
+                            >
+                              {isItemDone ? (
+                                <Icon name="check" size={11} />
+                              ) : isActive ? (
+                                <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                              ) : (
+                                <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
+                              )}
                             </span>
-                            <span className="flex items-center gap-1">
-                              <Icon name="clock" size={9} /> {item.duration}
-                            </span>
-                          </div>
-                        </div>
 
-                        {/* Right Type Icon */}
-                        <span className={`shrink-0 transition ${isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300"}`}>
-                          <Icon name={iconName} size={15} />
-                        </span>
-                      </Link>
-                    );
-                  })}
+                            {/* Details */}
+                            <div className="min-w-0 flex-1">
+                              <span className={`block truncate text-xs leading-snug ${isActive ? "text-white" : "text-slate-300"}`}>
+                                {item.title}
+                              </span>
+                              <div className="mt-0.5 flex items-center gap-2 text-[10px] text-slate-400">
+                                <span className={`rounded px-1.5 py-0.2 border text-[9px] font-bold uppercase tracking-wider ${badge.color}`}>
+                                  {badge.label}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Icon name="clock" size={9} /> {item.duration}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Right Type Icon */}
+                            <span className={`shrink-0 transition ${isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300"}`}>
+                              <Icon name={iconName} size={15} />
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Sub-Course Final Assessment Section */}
             {(containingModule.courseAssessment || containingModule.courseProject) && (
@@ -937,7 +974,10 @@ export default function StudentLesson() {
                   <div className="mt-8 space-y-6 border-t border-slate-100 pt-6">
                     {questions.map((q, qIdx) => {
                       const selectedIdx = selectedAnswers[q.id];
-                      const isCorrect = selectedIdx === q.correctIndex;
+                      const targetIdx = q.correctIndex !== undefined
+                        ? q.correctIndex
+                        : q.options.findIndex(opt => opt.id === q.correctAnswer);
+                      const isCorrect = selectedIdx === targetIdx;
                       const hasSelected = selectedIdx !== undefined;
 
                       return (
@@ -984,7 +1024,7 @@ export default function StudentLesson() {
                           <div className="mt-4 space-y-2.5">
                             {q.options.map((opt, optIdx) => {
                               const isThisSelected = selectedIdx === optIdx;
-                              const isThisTheCorrectAnswer = optIdx === q.correctIndex;
+                              const isThisTheCorrectAnswer = optIdx === targetIdx;
 
                               let optStyle = "border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50/80";
 

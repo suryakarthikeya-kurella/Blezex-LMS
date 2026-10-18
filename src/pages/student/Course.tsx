@@ -30,6 +30,28 @@ export default function StudentCourse() {
   const [selectedSubCourse, setSelectedSubCourse] = useState<CurriculumModule | null>(null);
   const [lockAlertMessage, setLockAlertMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [openDrawerModules, setOpenDrawerModules] = useState<Record<string, boolean>>({});
+
+  const toggleDrawerModule = (moduleId: string) => {
+    setOpenDrawerModules(prev => ({
+      ...prev,
+      [moduleId]: prev[moduleId] === false ? true : false,
+    }));
+  };
+
+  const expandAllDrawerModules = () => {
+    if (!selectedSubCourse?.modules) return;
+    const next: Record<string, boolean> = {};
+    selectedSubCourse.modules.forEach(m => { next[m.id] = true; });
+    setOpenDrawerModules(next);
+  };
+
+  const collapseAllDrawerModules = () => {
+    if (!selectedSubCourse?.modules) return;
+    const next: Record<string, boolean> = {};
+    selectedSubCourse.modules.forEach(m => { next[m.id] = false; });
+    setOpenDrawerModules(next);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -139,9 +161,10 @@ export default function StudentCourse() {
     if (!unlocked) {
       const prevSub = subCourses[index - 1];
       setLockAlertMessage(
-        `This sub-course is locked. Complete Sub-Course ${index} (${prevSub?.title || "previous"}) to unlock it.`
+        `Note: Complete Sub-Course ${index} (${prevSub?.title || "previous"}) to earn official certification credits. You can explore all modules below.`
       );
-      return;
+    } else {
+      setLockAlertMessage(null);
     }
     setSelectedSubCourse(subCourse);
   };
@@ -301,10 +324,8 @@ export default function StudentCourse() {
                   <div
                     key={subCourse.id}
                     onClick={() => handleSubCourseClick(subCourse, idx)}
-                    className={`group relative flex flex-col justify-between rounded-3xl border bg-white p-5 sm:p-6 shadow-xs transition-all duration-200 ${
-                      !unlocked
-                        ? "border-slate-200 bg-slate-50/70 opacity-75 cursor-not-allowed"
-                        : "border-slate-200/90 hover:-translate-y-1 hover:border-blue-400 hover:shadow-lg cursor-pointer"
+                    className={`group relative flex flex-col justify-between rounded-3xl border bg-white p-5 sm:p-6 shadow-xs transition-all duration-200 cursor-pointer hover:-translate-y-1 hover:border-blue-400 hover:shadow-lg ${
+                      !unlocked ? "border-slate-200 bg-slate-50/70" : "border-slate-200/90"
                     }`}
                   >
                     <div>
@@ -565,37 +586,75 @@ export default function StudentCourse() {
               <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 bg-slate-50/40">
                 {selectedSubCourse.modules && selectedSubCourse.modules.length > 0 ? (
                   <>
-                    {/* Render Each Module in the Sub-Course */}
+                    {/* Header Controls: Expand / Collapse All */}
+                    <div className="flex items-center justify-between gap-2 px-1 pb-1">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        {selectedSubCourse.modules.length} Modules in this Sub-Course
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={expandAllDrawerModules}
+                          className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+                        >
+                          Expand All
+                        </button>
+                        <span className="text-slate-300">·</span>
+                        <button
+                          type="button"
+                          onClick={collapseAllDrawerModules}
+                          className="text-[11px] font-semibold text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"
+                        >
+                          Collapse All
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Render Each Module in the Sub-Course with Accordion Dropdown */}
                     {selectedSubCourse.modules.map((mod, modIdx) => {
                       const modCompletedCount = mod.items.filter(it => completed.has(it.id)).length;
                       const isModDone = mod.items.length > 0 && modCompletedCount === mod.items.length;
+                      const isOpen = openDrawerModules[mod.id] !== false;
 
                       return (
-                        <div key={mod.id} className="space-y-3">
-                          {/* Module Header Card */}
-                          <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl bg-slate-100/90 border border-slate-200/80">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-blue-600 text-[11px] font-black text-white shadow-xs">
+                        <div key={mod.id} className="space-y-2">
+                          {/* Module Header Card (Dropdown Trigger) */}
+                          <div
+                            onClick={() => toggleDrawerModule(mod.id)}
+                            className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200/90 transition-all cursor-pointer shadow-2xs select-none group"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-blue-600 text-[11px] font-black text-white shadow-xs group-hover:scale-105 transition-transform">
                                 {modIdx + 1}
                               </span>
-                              <div>
-                                <span className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
-                                  MODULE {modIdx + 1}
+                              <div className="min-w-0">
+                                <span className="block text-[9px] font-black uppercase tracking-wider text-slate-400">
+                                  MODULE {modIdx + 1} · {mod.items.length} TOPICS
                                 </span>
-                                <h3 className="font-display text-xs font-bold text-slate-800 truncate">
+                                <h3 className="font-display text-xs font-bold text-slate-800 truncate group-hover:text-blue-600 transition-colors">
                                   {mod.title}
                                 </h3>
                               </div>
                             </div>
-                            <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
-                              isModDone ? "bg-emerald-100 text-emerald-800" : "bg-white text-slate-600 border border-slate-200"
-                            }`}>
-                              {modCompletedCount}/{mod.items.length} Done
-                            </span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
+                                isModDone ? "bg-emerald-100 text-emerald-800" : "bg-white text-slate-600 border border-slate-200"
+                              }`}>
+                                {modCompletedCount}/{mod.items.length} Done
+                              </span>
+                              <span className="grid h-6 w-6 place-items-center text-slate-400 group-hover:text-slate-600 transition-transform">
+                                <Icon
+                                  name="chevronDown"
+                                  size={14}
+                                  className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                                />
+                              </span>
+                            </div>
                           </div>
 
-                          {/* Items inside this module */}
-                          <div className="space-y-2 pl-2 border-l-2 border-blue-500/20 ml-3">
+                          {/* Items inside this module (Collapsible) */}
+                          {isOpen && (
+                            <div className="space-y-2 pl-2 border-l-2 border-blue-500/20 ml-3 pt-1">
                             {mod.items.map((item, itemIdx) => {
                               const isDone = completed.has(item.id);
 
@@ -665,6 +724,7 @@ export default function StudentCourse() {
                               );
                             })}
                           </div>
+                        )}
                         </div>
                       );
                     })}

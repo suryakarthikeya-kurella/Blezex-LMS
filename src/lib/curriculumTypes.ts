@@ -3,7 +3,8 @@ export interface PracticeQuestion {
   prompt: string;
   codeSnippet?: { language: string; code: string };
   options: Array<{ id: string; label: string; code?: string }>;
-  correctIndex: number;
+  correctIndex?: number;
+  correctAnswer?: string;
   explanation: string;
 }
 
@@ -61,12 +62,12 @@ export interface CurriculumItem {
 
 export interface CurriculumSubModule {
   id: string;
-  subCourseId: string;
+  subCourseId?: string;
   title: string;
-  description: string;
+  description?: string;
   position: number;
   duration?: string;
-  lessons: CurriculumItem[];
+  lessons?: CurriculumItem[];
   moduleQuiz?: CurriculumItem;
   moduleAssessment?: CurriculumItem;
   items: CurriculumItem[];
