@@ -1,7 +1,7 @@
 import { supabase } from "./supabase";
-import { FULL_STACK_MODULES, CurriculumModule, CurriculumItem, getCurriculumForCourse } from "./curriculumData";
+import { FULL_STACK_MODULES, CurriculumModule, CurriculumItem, getCurriculumForCourse, getCourseMetadata } from "./curriculumData";
 import { isCertificateUnlocked } from "./certificateUnlock";
-import { recordDailyActivity } from "./streakService";
+import { recordDailyActivity, resolveActiveUserId } from "./streakService";
 
 const STORAGE_PREFIX = "blezex_curriculum_completed_";
 const QUIZ_STORAGE_KEY = "blezex_quiz_attempts";
@@ -17,6 +17,7 @@ export interface JourneyEvent {
   score_pct?: number;
   passed?: boolean;
   enrollment_id?: string;
+  user_id?: string;
 }
 
 export interface StoredQuizAttempt {
@@ -28,6 +29,7 @@ export interface StoredQuizAttempt {
   created_at: string;
   quiz?: { title: string; course_id?: string };
   course_title?: string;
+  user_id?: string;
 }
 
 export interface StoredAssignmentSubmission {
@@ -41,6 +43,7 @@ export interface StoredAssignmentSubmission {
   course_title?: string;
   text?: string;
   link?: string;
+  user_id?: string;
 }
 
 export interface CourseProgressInfo {
@@ -67,16 +70,27 @@ export function notifyProgressUpdated() {
  * Checks both enrollment-specific storage key and global full-stack keys
  * so progress is always consistent across pages and routes.
  */
-export function getCompletedItemIds(enrollmentId?: string): Set<string> {
+export function getCompletedItemIds(enrollmentId?: string, userId?: string | null): Set<string> {
+  const uid = resolveActiveUserId(userId);
   const combined = new Set<string>();
   const keysToRead: string[] = [];
 
-  if (enrollmentId) {
-    keysToRead.push(`${STORAGE_PREFIX}${enrollmentId}`);
-  }
-  if (!enrollmentId || enrollmentId === "full-stack-web" || enrollmentId === "7779e007-096a-4295-a772-be469591e24b") {
-    keysToRead.push(`${STORAGE_PREFIX}full-stack-web`);
-    keysToRead.push(`${STORAGE_PREFIX}default`);
+  if (uid && uid !== "guest") {
+    if (enrollmentId) {
+      keysToRead.push(`${STORAGE_PREFIX}${uid}_${enrollmentId}`);
+    }
+    if (!enrollmentId || enrollmentId === "full-stack-web" || enrollmentId === "7779e007-096a-4295-a772-be469591e24b") {
+      keysToRead.push(`${STORAGE_PREFIX}${uid}_full-stack-web`);
+      keysToRead.push(`${STORAGE_PREFIX}${uid}_default`);
+    }
+  } else {
+    if (enrollmentId) {
+      keysToRead.push(`${STORAGE_PREFIX}${enrollmentId}`);
+    }
+    if (!enrollmentId || enrollmentId === "full-stack-web" || enrollmentId === "7779e007-096a-4295-a772-be469591e24b") {
+      keysToRead.push(`${STORAGE_PREFIX}full-stack-web`);
+      keysToRead.push(`${STORAGE_PREFIX}default`);
+    }
   }
 
   for (const k of keysToRead) {
@@ -97,16 +111,18 @@ export function getCompletedItemIds(enrollmentId?: string): Set<string> {
 
 /**
  * Save a completed curriculum item.
- * Updates both the enrollment-specific key and canonical full-stack key,
- * records a timeline event, records streak activity, and notifies components.
+ * Updates user-scoped storage key, records a timeline event,
+ * records streak activity, and notifies components.
  */
 export function saveCompletedItemId(
   enrollmentId: string,
   itemId: string,
   completed: boolean,
-  metadata?: { title?: string; moduleTitle?: string; courseTitle?: string }
+  metadata?: { title?: string; moduleTitle?: string; courseTitle?: string },
+  userId?: string | null
 ): Set<string> {
-  const current = getCompletedItemIds(enrollmentId);
+  const uid = resolveActiveUserId(userId);
+  const current = getCompletedItemIds(enrollmentId, uid);
   if (completed) {
     current.add(itemId);
   } else {
@@ -115,10 +131,17 @@ export function saveCompletedItemId(
 
   const serialized = JSON.stringify(Array.from(current));
   try {
-    if (enrollmentId) {
-      localStorage.setItem(`${STORAGE_PREFIX}${enrollmentId}`, serialized);
+    if (uid && uid !== "guest") {
+      if (enrollmentId) {
+        localStorage.setItem(`${STORAGE_PREFIX}${uid}_${enrollmentId}`, serialized);
+      }
+      localStorage.setItem(`${STORAGE_PREFIX}${uid}_full-stack-web`, serialized);
+    } else {
+      if (enrollmentId) {
+        localStorage.setItem(`${STORAGE_PREFIX}${enrollmentId}`, serialized);
+      }
+      localStorage.setItem(`${STORAGE_PREFIX}full-stack-web`, serialized);
     }
-    localStorage.setItem(`${STORAGE_PREFIX}full-stack-web`, serialized);
   } catch {}
 
   if (completed) {
@@ -129,8 +152,9 @@ export function saveCompletedItemId(
       detail: metadata?.moduleTitle || metadata?.courseTitle || "Full Stack Web Development",
       created_at: new Date().toISOString(),
       enrollment_id: enrollmentId,
-    });
-    recordDailyActivity();
+      user_id: uid,
+    }, uid);
+    recordDailyActivity(new Date(), uid);
   }
 
   notifyProgressUpdated();
@@ -145,8 +169,10 @@ export function saveCompletedItemId(
 export function getCourseProgress(
   enrollment: any,
   dbLessons: any[] = [],
-  dbProgress: any[] = []
+  dbProgress: any[] = [],
+  userId?: string | null
 ): CourseProgressInfo {
+  const uid = resolveActiveUserId(userId || enrollment?.user_id);
   const enrollmentId = enrollment?.id || "full-stack-web";
   const courseSlug = enrollment?.course?.slug || enrollment?.course_id || "";
   const courseTitle = enrollment?.course?.title || "";
@@ -154,12 +180,18 @@ export function getCourseProgress(
 
   // Resolve curriculum for this specific course track
   const courseCurriculum = getCurriculumForCourse(courseSlug || courseTitle || enrollment?.id);
-  const allCurriculumItems = courseCurriculum.flatMap(m => m.items);
+  const allCurriculumItems = (courseCurriculum || []).flatMap(m => {
+    if (Array.isArray(m?.items) && m.items.length > 0) return m.items;
+    if (Array.isArray(m?.modules)) {
+      return m.modules.flatMap(mod => Array.isArray(mod?.items) ? mod.items : []);
+    }
+    return [];
+  }).filter((item): item is CurriculumItem => !!item && typeof item.id === "string");
   const totalLessons = allCurriculumItems.length || 1;
-  const completedSet = getCompletedItemIds(enrollmentId);
+  const completedSet = getCompletedItemIds(enrollmentId, uid);
 
   // Count how many valid curriculum items have been completed in this track
-  const completedLessons = allCurriculumItems.filter(item => completedSet.has(item.id)).length;
+  const completedLessons = allCurriculumItems.filter(item => item && completedSet.has(item.id)).length;
   const progressPct = totalLessons ? Math.round((completedLessons * 100) / totalLessons) : 0;
   const certificateUnlocked = isCertificateUnlocked(progressPct, targetPct);
 
@@ -185,7 +217,8 @@ export function saveQuizAttempt(attempt: {
   scorePct: number;
   passed: boolean;
   courseTitle?: string;
-}) {
+}, userId?: string | null) {
+  const uid = resolveActiveUserId(userId);
   const attempts = getQuizAttempts();
   const newAttempt: StoredQuizAttempt = {
     id: `quiz-attempt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -199,11 +232,13 @@ export function saveQuizAttempt(attempt: {
       course_id: attempt.enrollmentId,
     },
     course_title: attempt.courseTitle || "Full Stack Web Development",
+    user_id: uid,
   };
 
   attempts.unshift(newAttempt);
   try {
     localStorage.setItem(QUIZ_STORAGE_KEY, JSON.stringify(attempts.slice(0, 50)));
+    localStorage.setItem(`blezex_quiz_attempts_${uid}`, JSON.stringify(attempts.filter(a => !a.user_id || a.user_id === uid).slice(0, 50)));
   } catch {}
 
   addJourneyEvent({
@@ -215,17 +250,32 @@ export function saveQuizAttempt(attempt: {
     score_pct: attempt.scorePct,
     passed: attempt.passed,
     enrollment_id: attempt.enrollmentId,
-  });
+    user_id: uid,
+  }, uid);
 
-  recordDailyActivity();
+  recordDailyActivity(new Date(), uid);
   notifyProgressUpdated();
 }
 
-export function getQuizAttempts(enrollmentId?: string): StoredQuizAttempt[] {
+export function getQuizAttempts(enrollmentId?: string, userId?: string | null): StoredQuizAttempt[] {
+  const uid = resolveActiveUserId(userId);
   try {
-    const raw = localStorage.getItem(QUIZ_STORAGE_KEY);
-    if (!raw) return [];
-    const list = JSON.parse(raw);
+    let list: StoredQuizAttempt[] = [];
+    if (uid && uid !== "guest") {
+      const userRaw = localStorage.getItem(`blezex_quiz_attempts_${uid}`);
+      if (userRaw) {
+        list = JSON.parse(userRaw);
+      }
+    }
+    if (!list.length) {
+      const raw = localStorage.getItem(QUIZ_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          list = parsed.filter(a => a && a.user_id === uid);
+        }
+      }
+    }
     if (!Array.isArray(list)) return [];
     if (!enrollmentId) return list;
     return list.filter(
@@ -247,8 +297,9 @@ export function saveAssignmentSubmission(sub: {
   text?: string;
   link?: string;
   courseTitle?: string;
-}) {
-  const list = getAssignmentSubmissions();
+}, userId?: string | null) {
+  const uid = resolveActiveUserId(userId);
+  const list = getAssignmentSubmissions(undefined, uid);
   const newSub: StoredAssignmentSubmission = {
     id: `assignment-sub-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     enrollment_id: sub.enrollmentId,
@@ -259,11 +310,13 @@ export function saveAssignmentSubmission(sub: {
     course_title: sub.courseTitle || "Full Stack Web Development",
     text: sub.text,
     link: sub.link,
+    user_id: uid,
   };
 
   list.unshift(newSub);
   try {
     localStorage.setItem(ASSIGNMENT_STORAGE_KEY, JSON.stringify(list.slice(0, 50)));
+    localStorage.setItem(`blezex_assignment_submissions_${uid}`, JSON.stringify(list.filter(s => s.user_id === uid).slice(0, 50)));
   } catch {}
 
   addJourneyEvent({
@@ -273,17 +326,32 @@ export function saveAssignmentSubmission(sub: {
     detail: `${sub.title}${newSub.course_title ? ` · ${newSub.course_title}` : ""}`,
     created_at: newSub.created_at,
     enrollment_id: sub.enrollmentId,
-  });
+    user_id: uid,
+  }, uid);
 
-  recordDailyActivity();
+  recordDailyActivity(new Date(), uid);
   notifyProgressUpdated();
 }
 
-export function getAssignmentSubmissions(enrollmentId?: string): StoredAssignmentSubmission[] {
+export function getAssignmentSubmissions(enrollmentId?: string, userId?: string | null): StoredAssignmentSubmission[] {
+  const uid = resolveActiveUserId(userId);
   try {
-    const raw = localStorage.getItem(ASSIGNMENT_STORAGE_KEY);
-    if (!raw) return [];
-    const list = JSON.parse(raw);
+    let list: StoredAssignmentSubmission[] = [];
+    if (uid && uid !== "guest") {
+      const userRaw = localStorage.getItem(`blezex_assignment_submissions_${uid}`);
+      if (userRaw) {
+        list = JSON.parse(userRaw);
+      }
+    }
+    if (!list.length) {
+      const raw = localStorage.getItem(ASSIGNMENT_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          list = parsed.filter(s => s && s.user_id === uid);
+        }
+      }
+    }
     if (!Array.isArray(list)) return [];
     if (!enrollmentId) return list;
     return list.filter(
@@ -298,20 +366,37 @@ export function getAssignmentSubmissions(enrollmentId?: string): StoredAssignmen
   }
 }
 
-export function addJourneyEvent(event: JourneyEvent) {
-  const events = getStoredJourneyEvents();
-  const filtered = events.filter(e => e.key !== event.key);
-  filtered.unshift(event);
+export function addJourneyEvent(event: JourneyEvent, userId?: string | null) {
+  const uid = resolveActiveUserId(userId || event.user_id);
+  const events = getStoredJourneyEvents(undefined, uid);
+  const eventWithUser = { ...event, user_id: uid };
+  const filtered = events.filter(e => e.key !== eventWithUser.key);
+  filtered.unshift(eventWithUser);
   try {
     localStorage.setItem(JOURNEY_EVENTS_KEY, JSON.stringify(filtered.slice(0, 100)));
+    localStorage.setItem(`blezex_journey_events_${uid}`, JSON.stringify(filtered.filter(e => e.user_id === uid).slice(0, 100)));
   } catch {}
 }
 
-export function getStoredJourneyEvents(enrollmentId?: string): JourneyEvent[] {
+export function getStoredJourneyEvents(enrollmentId?: string, userId?: string | null): JourneyEvent[] {
+  const uid = resolveActiveUserId(userId);
   try {
-    const raw = localStorage.getItem(JOURNEY_EVENTS_KEY);
-    if (!raw) return [];
-    const list = JSON.parse(raw);
+    let list: JourneyEvent[] = [];
+    if (uid && uid !== "guest") {
+      const userRaw = localStorage.getItem(`blezex_journey_events_${uid}`);
+      if (userRaw) {
+        list = JSON.parse(userRaw);
+      }
+    }
+    if (!list.length) {
+      const raw = localStorage.getItem(JOURNEY_EVENTS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          list = parsed.filter(e => e && e.user_id === uid);
+        }
+      }
+    }
     if (!Array.isArray(list)) return [];
     if (!enrollmentId) return list;
     return list.filter(
@@ -332,10 +417,12 @@ export function getAllJourneyEvents(
   dbLessons: any[] = [],
   dbEnrollments: any[] = [],
   dbAttempts: any[] = [],
-  dbMilestones: any[] = []
+  dbMilestones: any[] = [],
+  userId?: string | null
 ): JourneyEvent[] {
-  const storedEvents = getStoredJourneyEvents(enrollmentId);
-  const completedIds = getCompletedItemIds(enrollmentId);
+  const uid = resolveActiveUserId(userId);
+  const storedEvents = getStoredJourneyEvents(enrollmentId, uid);
+  const completedIds = getCompletedItemIds(enrollmentId, uid);
   const allCurriculumItems = FULL_STACK_MODULES.flatMap(m => m.items);
 
   // Synthesize events for any completed items that may have been saved without an event
@@ -351,12 +438,13 @@ export function getAllJourneyEvents(
           detail: item.moduleTitle,
           created_at: new Date().toISOString(),
           enrollment_id: enrollmentId,
+          user_id: uid,
         });
       }
     }
   }
 
-  // DB progress events
+  // DB progress events: ONLY for this student's enrollments
   const dbEvents: JourneyEvent[] = dbProgress
     .map(row => {
       const lesson = dbLessons.find(item => item.id === row.lesson_id);
@@ -369,30 +457,34 @@ export function getAllJourneyEvents(
         detail: enrollment.course?.title || "Enrolled course",
         created_at: row.completed_at || new Date().toISOString(),
         enrollment_id: row.enrollment_id,
+        user_id: uid,
       };
     })
     .filter(Boolean) as JourneyEvent[];
 
-  // DB quiz attempts
-  const dbAttemptEvents: JourneyEvent[] = dbAttempts.map(att => {
-    const enrollment = dbEnrollments.find(item => item.id === att.enrollment_id);
-    return {
-      key: `db-quiz-${att.id}`,
-      kind: "quiz" as const,
-      title: att.quiz?.title ?? "Quiz attempt",
-      detail: `${att.score_pct}% · ${att.passed ? "Passed" : "Keep practicing"}${
-        enrollment?.course?.title ? ` · ${enrollment.course.title}` : ""
-      }`,
-      created_at: att.created_at || new Date().toISOString(),
-      enrollment_id: att.enrollment_id,
-      score_pct: att.score_pct,
-      passed: att.passed,
-    };
-  });
+  // DB quiz attempts: ONLY for this student's enrollments
+  const dbAttemptEvents: JourneyEvent[] = dbAttempts
+    .filter(att => dbEnrollments.some(item => item.id === att.enrollment_id))
+    .map(att => {
+      const enrollment = dbEnrollments.find(item => item.id === att.enrollment_id);
+      return {
+        key: `db-quiz-${att.id}`,
+        kind: "quiz" as const,
+        title: att.quiz?.title ?? "Quiz attempt",
+        detail: `${att.score_pct}% · ${att.passed ? "Passed" : "Keep practicing"}${
+          enrollment?.course?.title ? ` · ${enrollment.course.title}` : ""
+        }`,
+        created_at: att.created_at || new Date().toISOString(),
+        enrollment_id: att.enrollment_id,
+        score_pct: att.score_pct,
+        passed: att.passed,
+        user_id: uid,
+      };
+    });
 
-  // DB milestones
+  // DB milestones: ONLY for this student's enrollments
   const dbMilestoneEvents: JourneyEvent[] = dbMilestones
-    .filter(m => m.status !== "pending")
+    .filter(m => m.status !== "pending" && dbEnrollments.some(item => item.id === m.enrollment_id))
     .map(m => {
       const enrollment = dbEnrollments.find(item => item.id === m.enrollment_id);
       return {
@@ -402,6 +494,7 @@ export function getAllJourneyEvents(
         detail: `${m.title}${enrollment?.course?.title ? ` · ${enrollment.course.title}` : ""}`,
         created_at: m.created_at || new Date().toISOString(),
         enrollment_id: m.enrollment_id,
+        user_id: uid,
       };
     });
 
@@ -447,12 +540,12 @@ export async function fetchCourseCurriculum(
   enrollmentId: string;
   source: "supabase" | "static";
 }> {
+  const fallbackMeta = getCourseMetadata(courseIdOrEid);
   let enrollmentId = courseIdOrEid;
-  let courseTitle = "Full Stack Web Development";
-  let courseDesc =
-    "A practical path through HTML, CSS, responsive design, JavaScript, React, APIs, databases, testing, and deployment.";
-  let courseSlug = "full-stack-web";
-  let minProgress = 80;
+  let courseTitle = fallbackMeta.title;
+  let courseDesc = fallbackMeta.description;
+  let courseSlug = fallbackMeta.slug;
+  let minProgress = fallbackMeta.min_progress_pct;
 
   try {
     // 1. Try checking enrollment by id

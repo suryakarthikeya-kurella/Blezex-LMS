@@ -73,7 +73,7 @@ export default function StudentHome() {
                 .select("id, modules!inner(course_id)")
                 .eq("status", "published")
             ),
-            g(supabase.from("lesson_progress").select("enrollment_id,lesson_id")),
+            g(supabase.from("lesson_progress").select("enrollment_id,lesson_id,completed_at")),
             g(supabase.from("assignments").select("id,title,course_id,due_date")),
             g(
               supabase
@@ -84,9 +84,8 @@ export default function StudentHome() {
             g(
               supabase
                 .from("quiz_attempts")
-                .select("score_pct,passed,created_at,quiz:quizzes(title)")
+                .select("enrollment_id,score_pct,passed,created_at,quiz:quizzes(title)")
                 .order("created_at", { ascending: false })
-                .limit(5)
             ),
             g(
               supabase
@@ -117,8 +116,9 @@ export default function StudentHome() {
 
   // Fallback to active Full Stack Web Development track if student has no enrollments yet
   const displayEnrollments = useMemo(() => {
-    return enr.length > 0
-      ? enr
+    const valid = enr.filter(e => e.status === "active" && e.course && (e.course as any)?.title);
+    return valid.length > 0
+      ? valid
       : [
           {
             id: "full-stack-web",
@@ -141,9 +141,9 @@ export default function StudentHome() {
   const courseProgressList = useMemo(() => {
     return displayEnrollments.map(e => ({
       enrollment: e,
-      progress: getCourseProgress(e, lessons, prog),
+      progress: getCourseProgress(e, lessons, prog, profile?.id),
     }));
-  }, [displayEnrollments, lessons, prog, refreshTick]);
+  }, [displayEnrollments, lessons, prog, profile?.id, refreshTick]);
 
   const primaryEnrollment = displayEnrollments[0];
   const primaryProgress = courseProgressList[0]?.progress;
@@ -154,7 +154,7 @@ export default function StudentHome() {
     const primaryCurriculum = getCurriculumForCourse(
       primaryEnrollment?.course?.slug || primaryEnrollment?.course?.title || effectiveCourseId
     );
-    const completedSet = getCompletedItemIds(effectiveCourseId);
+    const completedSet = getCompletedItemIds(effectiveCourseId, profile?.id);
     for (let modIdx = 0; modIdx < primaryCurriculum.length; modIdx++) {
       const mod = primaryCurriculum[modIdx];
       for (const item of mod.items) {
@@ -200,17 +200,23 @@ export default function StudentHome() {
     )
     .sort((a, b) => a.due_date.localeCompare(b.due_date));
 
-  const feedback = subs.filter(s => s.status === "graded").slice(0, 5);
+  const studentEnrollmentIds = useMemo(() => new Set(enr.map((e: any) => e.id)), [enr]);
 
-  // Merge database quiz attempts with interactive curriculum quiz attempts
-  const localQuizAttempts = getQuizAttempts();
+  const feedback = subs
+    .filter(s => s.status === "graded" && studentEnrollmentIds.has(s.enrollment_id))
+    .slice(0, 5);
+
+  // Merge database quiz attempts with interactive curriculum quiz attempts for THIS student
+  const localQuizAttempts = getQuizAttempts(undefined, profile?.id);
   const allQuizAttempts = [
-    ...qa.map(q => ({
-      title: q.quiz?.title ?? "Quiz",
-      created_at: q.created_at,
-      score_pct: q.score_pct,
-      passed: q.passed,
-    })),
+    ...qa
+      .filter(q => studentEnrollmentIds.has(q.enrollment_id))
+      .map(q => ({
+        title: q.quiz?.title ?? "Quiz",
+        created_at: q.created_at,
+        score_pct: q.score_pct,
+        passed: q.passed,
+      })),
     ...localQuizAttempts.map(a => ({
       title: a.quiz?.title || a.course_title || "Knowledge Check",
       created_at: a.created_at,
@@ -219,15 +225,17 @@ export default function StudentHome() {
     })),
   ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-  // Merge database milestones with submitted curriculum assignments
-  const localAssignments = getAssignmentSubmissions();
+  // Merge database milestones with submitted curriculum assignments for THIS student
+  const localAssignments = getAssignmentSubmissions(undefined, profile?.id);
   const allMilestones = [
-    ...ms.map(m => ({
-      id: m.id,
-      title: m.title,
-      status: m.status,
-      due_date: m.due_date,
-    })),
+    ...ms
+      .filter(m => studentEnrollmentIds.has(m.enrollment_id))
+      .map(m => ({
+        id: m.id,
+        title: m.title,
+        status: m.status,
+        due_date: m.due_date,
+      })),
     ...localAssignments.map(s => ({
       id: s.id,
       title: s.title,
@@ -236,8 +244,39 @@ export default function StudentHome() {
     })),
   ];
 
-  // Dynamic study streak info (Option 1: consecutive days active, misses a day = 0, tracks max streak)
-  const streakInfo = useMemo(() => calculateStreakInfo(), [refreshTick]);
+  // Collect all completed learning activity timestamps from database strictly for THIS student
+  const dbActivityDates = useMemo(() => {
+    const dates: string[] = [];
+    if (studentEnrollmentIds.size === 0) return dates;
+
+    prog.forEach((p: any) => {
+      if (p.completed_at && studentEnrollmentIds.has(p.enrollment_id)) {
+        dates.push(p.completed_at);
+      }
+    });
+    subs.forEach((s: any) => {
+      if (s.created_at && studentEnrollmentIds.has(s.enrollment_id)) {
+        dates.push(s.created_at);
+      }
+    });
+    qa.forEach((q: any) => {
+      if (q.created_at && studentEnrollmentIds.has(q.enrollment_id)) {
+        dates.push(q.created_at);
+      }
+    });
+    ms.forEach((m: any) => {
+      if (m.created_at && studentEnrollmentIds.has(m.enrollment_id)) {
+        dates.push(m.created_at);
+      }
+    });
+    return dates;
+  }, [studentEnrollmentIds, prog, subs, qa, ms]);
+
+  // Dynamic study streak info scoped to this student
+  const streakInfo = useMemo(
+    () => calculateStreakInfo(profile?.id, dbActivityDates),
+    [profile?.id, dbActivityDates, refreshTick]
+  );
 
   if (loading) {
     return (

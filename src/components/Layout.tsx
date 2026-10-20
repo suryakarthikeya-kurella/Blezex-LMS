@@ -16,10 +16,11 @@ const nav = {
 export default function Layout() {
   const { profile, loading, signOut } = useAuth();
   const loc = useLocation();
-  const [streak, setStreak] = useState<StreakInfo>(() => calculateStreakInfo());
+  const [streak, setStreak] = useState<StreakInfo>(() => calculateStreakInfo(profile?.id));
 
   useEffect(() => {
-    const updateStreak = () => setStreak(calculateStreakInfo());
+    const updateStreak = () => setStreak(calculateStreakInfo(profile?.id));
+    updateStreak();
     window.addEventListener("blezex:streak-updated", updateStreak);
     window.addEventListener("blezex:progress-updated", updateStreak);
     window.addEventListener("storage", updateStreak);
@@ -28,7 +29,7 @@ export default function Layout() {
       window.removeEventListener("blezex:progress-updated", updateStreak);
       window.removeEventListener("storage", updateStreak);
     };
-  }, []);
+  }, [profile?.id]);
 
   if (loading) {
     return (
@@ -94,21 +95,19 @@ export default function Layout() {
                 key={to}
                 to={to}
                 aria-current={active ? "page" : undefined}
-                className={`group relative flex items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-bold transition-all duration-150 ${
-                  active
+                className={`group relative flex items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-bold transition-all duration-150 ${active
                     ? "bg-blue-50/90 text-blue-700 shadow-xs"
                     : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                }`}
+                  }`}
               >
                 {active && (
                   <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-blue-600" />
                 )}
                 <span
-                  className={`grid h-8 w-8 place-items-center rounded-xl transition-colors ${
-                    active
+                  className={`grid h-8 w-8 place-items-center rounded-xl transition-colors ${active
                       ? "bg-blue-600 text-white shadow-xs"
                       : "bg-slate-100 text-slate-500 group-hover:bg-slate-200/80 group-hover:text-slate-800"
-                  }`}
+                    }`}
                 >
                   <Icon name={icon} size={16} />
                 </span>
@@ -118,35 +117,6 @@ export default function Layout() {
           })}
         </nav>
 
-        {/* Learning Streak / Motivation Card in Sidebar */}
-        <div className="mt-6 rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/70 via-white to-orange-50/40 p-4 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-amber-800">
-              <Icon name="flame" size={15} className="text-amber-500" />
-              <span>{streak.currentStreak} Day{streak.currentStreak === 1 ? "" : "s"} Streak</span>
-            </span>
-            <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
-                streak.isActiveToday
-                  ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                  : "bg-amber-100 text-amber-800 border border-amber-200"
-              }`}
-            >
-              {streak.isActiveToday ? "Active ✓" : "Due Today"}
-            </span>
-          </div>
-
-          <div className="mt-2.5 flex items-center justify-between text-[11px] font-bold text-slate-500">
-            <span>Highest Record:</span>
-            <span className="text-amber-700 font-extrabold">{streak.maxStreak} Days</span>
-          </div>
-
-          <p className="mt-2 text-[11px] leading-relaxed text-slate-600">
-            {streak.isActiveToday
-              ? "Great work! You studied today and kept your streak alive."
-              : "Complete or submit any topic today so your streak doesn't reset to 0!"}
-          </p>
-        </div>
 
         {/* User Profile Footer Card */}
         <div className="mt-auto rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs">
@@ -245,9 +215,8 @@ export default function Layout() {
                   key={to}
                   to={to}
                   aria-current={active ? "page" : undefined}
-                  className={`flex flex-col items-center gap-1 rounded-xl px-3 py-1 text-[11px] font-bold transition ${
-                    active ? "text-blue-600 font-extrabold" : "text-slate-500 hover:text-slate-900"
-                  }`}
+                  className={`flex flex-col items-center gap-1 rounded-xl px-3 py-1 text-[11px] font-bold transition ${active ? "text-blue-600 font-extrabold" : "text-slate-500 hover:text-slate-900"
+                    }`}
                 >
                   <Icon name={icon} size={18} />
                   <span>{label}</span>

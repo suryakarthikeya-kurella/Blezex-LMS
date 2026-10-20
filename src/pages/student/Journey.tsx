@@ -9,8 +9,10 @@ import {
   getAllJourneyEvents,
 } from "../../lib/curriculumService";
 import { calculateStreakInfo } from "../../lib/streakService";
+import { useAuth } from "../../lib/auth";
 
 export default function StudentJourney() {
+  const { profile } = useAuth();
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
   const [progress, setProgress] = useState<any[]>([]);
@@ -114,15 +116,43 @@ export default function StudentJourney() {
 
   const displayEnrollments = enrollments.length > 0 ? enrollments : [defaultEnrollment];
 
+  const studentEnrollmentIds = useMemo(() => new Set(enrollments.map((e: any) => e.id)), [enrollments]);
+
   // Calculate accurate progress for each enrolled course using unified service
   const courseProgressList = useMemo(() => {
     return displayEnrollments.map(e => ({
       enrollment: e,
-      progress: getCourseProgress(e, lessons, progress),
+      progress: getCourseProgress(e, lessons, progress, profile?.id),
     }));
-  }, [displayEnrollments, lessons, progress, refreshTick]);
+  }, [displayEnrollments, lessons, progress, profile?.id, refreshTick]);
 
-  const streakInfo = useMemo(() => calculateStreakInfo(), [refreshTick]);
+  // Gather all activity dates from database strictly for THIS student
+  const dbActivityDates = useMemo(() => {
+    const dates: string[] = [];
+    if (studentEnrollmentIds.size === 0) return dates;
+
+    progress.forEach((p: any) => {
+      if (p.completed_at && studentEnrollmentIds.has(p.enrollment_id)) {
+        dates.push(p.completed_at);
+      }
+    });
+    attempts.forEach((a: any) => {
+      if (a.created_at && studentEnrollmentIds.has(a.enrollment_id)) {
+        dates.push(a.created_at);
+      }
+    });
+    milestones.forEach((m: any) => {
+      if (m.created_at && studentEnrollmentIds.has(m.enrollment_id)) {
+        dates.push(m.created_at);
+      }
+    });
+    return dates;
+  }, [studentEnrollmentIds, progress, attempts, milestones]);
+
+  const streakInfo = useMemo(
+    () => calculateStreakInfo(profile?.id, dbActivityDates),
+    [profile?.id, dbActivityDates, refreshTick]
+  );
 
   const totalLessons = courseProgressList.reduce(
     (sum, item) => sum + item.progress.totalLessons,
@@ -136,10 +166,10 @@ export default function StudentJourney() {
     ? Math.round((completedLessons * 100) / totalLessons)
     : 0;
 
-  // Passed quizzes: combine database attempts and curriculum quizzes
-  const localQuizAttempts = getQuizAttempts();
+  // Passed quizzes: combine database attempts and curriculum quizzes for THIS student
+  const localQuizAttempts = getQuizAttempts(undefined, profile?.id);
   const passedLocal = localQuizAttempts.filter(a => a.passed).length;
-  const passedDb = attempts.filter(attempt => attempt.passed).length;
+  const passedDb = attempts.filter(attempt => attempt.passed && studentEnrollmentIds.has(attempt.enrollment_id)).length;
   const passedQuizzes = passedLocal + passedDb;
 
   // Certificates earned
@@ -147,7 +177,7 @@ export default function StudentJourney() {
     (enrollment.certificates ?? []).filter((certificate: any) => certificate.status === "issued")
   );
 
-  // Full timeline combining curriculum activities and DB rows
+  // Full timeline combining curriculum activities and DB rows for THIS student
   const allEvents = useMemo(() => {
     return getAllJourneyEvents(
       displayEnrollments[0]?.id || "full-stack-web",
@@ -155,9 +185,10 @@ export default function StudentJourney() {
       lessons,
       displayEnrollments,
       attempts,
-      milestones
+      milestones,
+      profile?.id
     );
-  }, [displayEnrollments, progress, lessons, attempts, milestones, refreshTick]);
+  }, [displayEnrollments, progress, lessons, attempts, milestones, profile?.id, refreshTick]);
 
   const filteredEvents = useMemo(() => {
     if (eventFilter === "all") return allEvents;
