@@ -22,12 +22,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null); const [loading, setLoading] = useState(true); const [recovery, setRecovery] = useState(false); const [notice, setNotice] = useState("");
   const inflight = useRef<{ uid: string; p: Promise<void> } | null>(null);
   const run = async (uid?: string) => {
-    if (!uid) { setProfile(null); setLoading(false); return; }
+    if (!uid) {
+      setProfile(null);
+      setLoading(false);
+      try {
+        localStorage.removeItem("blezex_active_user_id");
+        localStorage.removeItem("blezex_active_user_email");
+        window.dispatchEvent(new CustomEvent("blezex:streak-updated"));
+      } catch {}
+      return;
+    }
     const { data, error } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
     if (error) setNotice("We couldn't load your profile. Check your connection and sign in again.");
-    else if (data && data.status !== "active") { setNotice("Your account is suspended. Please contact your administrator."); await supabase.auth.signOut(); }
+    else if (data && data.status !== "active") {
+      setNotice("Your account is suspended. Please contact your administrator.");
+      await supabase.auth.signOut();
+    }
     else if (data) setNotice("");
-    setProfile(data && data.status === "active" ? (data as Profile) : null);
+
+    if (data && data.status === "active") {
+      const p = data as Profile;
+      setProfile(p);
+      try {
+        localStorage.setItem("blezex_active_user_id", uid);
+        localStorage.setItem("blezex_active_user_email", p.email || "");
+        window.dispatchEvent(new CustomEvent("blezex:streak-updated", { detail: { userId: uid } }));
+      } catch {}
+    } else {
+      setProfile(null);
+      try {
+        localStorage.removeItem("blezex_active_user_id");
+        localStorage.removeItem("blezex_active_user_email");
+        window.dispatchEvent(new CustomEvent("blezex:streak-updated"));
+      } catch {}
+    }
     setLoading(false);
   };
   // Startup fires getSession() and the INITIAL_SESSION event for the same user; share one request.
@@ -43,5 +71,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((ev, s) => { if (ev === "PASSWORD_RECOVERY") setRecovery(true); setTimeout(() => load(s?.user.id), 0); });
     return () => sub.subscription.unsubscribe();
   }, []);
-  return <Ctx.Provider value={{ profile, loading, recovery, notice, clearNotice: () => setNotice(""), refresh, endRecovery: () => setRecovery(false), signOut: async () => { await supabase.auth.signOut(); } }}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider
+      value={{
+        profile,
+        loading,
+        recovery,
+        notice,
+        clearNotice: () => setNotice(""),
+        refresh,
+        endRecovery: () => setRecovery(false),
+        signOut: async () => {
+          try {
+            localStorage.removeItem("blezex_active_user_id");
+            localStorage.removeItem("blezex_active_user_email");
+            window.dispatchEvent(new CustomEvent("blezex:streak-updated"));
+          } catch {}
+          await supabase.auth.signOut();
+        },
+      }}
+    >
+      {children}
+    </Ctx.Provider>
+  );
 }

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Icon, { IconName } from "../../components/Icon";
 import {
   FULL_STACK_MODULES,
@@ -8,6 +8,11 @@ import {
   PracticeQuestion,
   getModuleTotalMinutes,
   formatMinutesToHuman,
+  getCurriculumForCourse,
+  findCurriculumItem,
+  cleanSubCourseTitle,
+  cleanModuleTitle,
+  cleanLessonHeading,
 } from "../../lib/curriculumData";
 import {
   fetchCourseCurriculum,
@@ -18,15 +23,65 @@ import {
   saveQuizAttempt,
   saveAssignmentSubmission,
 } from "../../lib/curriculumService";
+import { useAuth } from "../../lib/auth";
 
 export default function StudentLesson() {
+  const { profile } = useAuth();
   const { eid, lid } = useParams();
+  const navigate = useNavigate();
 
-  const [modules, setModules] = useState<CurriculumModule[]>(FULL_STACK_MODULES);
+  const [modules, setModules] = useState<CurriculumModule[]>(() => getCurriculumForCourse(eid));
+  const [course, setCourse] = useState<any>(null);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const mainScrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollToTop = (smooth = false) => {
+    // 1. Ref on main scrollable workspace
+    if (mainScrollRef.current) {
+      if (smooth) {
+        mainScrollRef.current.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      } else {
+        mainScrollRef.current.scrollTop = 0;
+        try {
+          mainScrollRef.current.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+        } catch {}
+      }
+    }
+    // 2. Query selector fallback for any element with lesson-scroll-container
+    const container = document.getElementById("lesson-scroll-container") || document.querySelector(".lesson-scroll-container");
+    if (container && container !== mainScrollRef.current) {
+      if (smooth) {
+        container.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      } else {
+        (container as HTMLElement).scrollTop = 0;
+      }
+    }
+    // 3. Anchor element scrollIntoView
+    const anchor = document.getElementById("lesson-top-anchor");
+    if (anchor) {
+      try {
+        anchor.scrollIntoView({ behavior: smooth ? "smooth" : ("instant" as ScrollBehavior), block: "start" });
+      } catch {
+        anchor.scrollIntoView(true);
+      }
+    }
+    // 4. Window and html/body
+    if (smooth) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      window.scrollTo(0, 0);
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+    }
+  };
+
+  const handleSetLessonMode = (mode: "learn" | "quiz") => {
+    setLessonMode(mode);
+    scrollToTop(true);
+  };
 
   // View mode for lessons with questions: "learn" (reading notes) vs "quiz" (testing understanding)
   const [lessonMode, setLessonMode] = useState<"learn" | "quiz">("learn");
@@ -40,6 +95,14 @@ export default function StudentLesson() {
   const [assignmentLink, setAssignmentLink] = useState("");
   const [assignmentSubmitted, setAssignmentSubmitted] = useState(false);
   const [copiedCodeSnippet, setCopiedCodeSnippet] = useState(false);
+  const [openSidebarModules, setOpenSidebarModules] = useState<Record<string, boolean>>({});
+
+  const toggleSidebarModule = (modId: string) => {
+    setOpenSidebarModules(prev => ({
+      ...prev,
+      [modId]: prev[modId] === false ? true : false,
+    }));
+  };
 
   const handleCopyCodeSnippet = (codeText: string) => {
     try {
@@ -56,8 +119,9 @@ export default function StudentLesson() {
       try {
         const result = await fetchCourseCurriculum(eid || "full-stack-web");
         if (cancelled) return;
+        setCourse(result.course);
         setModules(result.modules);
-        const savedCompleted = getCompletedItemIds(eid);
+        const savedCompleted = getCompletedItemIds(eid, profile?.id);
         setCompleted(savedCompleted);
       } catch (err) {
         console.error("Error loading curriculum:", err);
@@ -66,13 +130,16 @@ export default function StudentLesson() {
       }
     })();
     return () => { cancelled = true; };
-  }, [eid]);
+  }, [eid, profile?.id]);
 
   // Find which sub-course contains the current lesson lid
   const containingModule = useMemo(() => {
     if (!lid) return modules[0];
     const foundMod = modules.find(m => m.items.some(it => it.id === lid));
-    return foundMod || modules[0];
+    if (foundMod) return foundMod;
+    const globalLookup = findCurriculumItem(lid);
+    if (globalLookup) return globalLookup.module;
+    return modules[0];
   }, [modules, lid]);
 
   const containingModuleIndex = useMemo(() => {
@@ -101,13 +168,58 @@ export default function StudentLesson() {
     ? Math.round((completedInSubCourse * 100) / subCourseLessons.length)
     : 0;
 
-  // Reset view mode and assignment state when switching lessons
+  const isCurrentSubCourseUnlocked = useMemo(() => {
+    if (modules.length === 0 || containingModuleIndex <= 0) return true;
+    return isCurriculumModuleUnlocked(containingModuleIndex, modules, completed);
+  }, [containingModuleIndex, modules, completed]);
+
+  const nextSubCourse = useMemo(() => {
+    if (containingModuleIndex >= 0 && containingModuleIndex < modules.length - 1) {
+      return modules[containingModuleIndex + 1];
+    }
+    return null;
+  }, [containingModuleIndex, modules]);
+
+  const isCurrentSubCourseAllDone = useMemo(() => {
+    return subCourseLessons.length > 0 && subCourseLessons.every(it => completed.has(it.id));
+  }, [subCourseLessons, completed]);
+
+  // Reset view mode and assignment state, and scroll to top when opening any lesson
   useEffect(() => {
+    if (loading) return;
+
     setLessonMode("learn");
     setAssignmentSubmitted(false);
     setAssignmentText("");
     setAssignmentLink("");
-  }, [lid]);
+
+    scrollToTop(false);
+    const rafId = requestAnimationFrame(() => {
+      scrollToTop(false);
+    });
+    const timerId1 = setTimeout(() => {
+      scrollToTop(false);
+    }, 40);
+    const timerId2 = setTimeout(() => {
+      scrollToTop(false);
+    }, 120);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timerId1);
+      clearTimeout(timerId2);
+    };
+  }, [lid, loading]);
+
+  // Auto-expand the module containing the active item in sidebar
+  useEffect(() => {
+    if (activeItem?.moduleId) {
+      setOpenSidebarModules(prev => ({
+        ...prev,
+        [activeItem.moduleId!]: true
+      }));
+    }
+  }, [activeItem?.id, activeItem?.moduleId]);
 
   const isCurrentDone = completed.has(activeItem?.id);
 
@@ -119,8 +231,8 @@ export default function StudentLesson() {
     const updated = saveCompletedItemId(effectiveEid, activeItem.id, true, {
       title: activeItem.title,
       moduleTitle: containingModule?.title || activeItem.moduleTitle,
-      courseTitle: "Full Stack Web Development",
-    });
+      courseTitle: course?.title || containingModule?.title || "Course Track",
+    }, profile?.id);
     setCompleted(new Set(updated));
     syncCompletedToSupabase(effectiveEid, activeItem.id, true);
   };
@@ -141,10 +253,20 @@ export default function StudentLesson() {
     }
   };
 
-  const getItemBadge = (type: CurriculumItem["type"]) => {
-    switch (type) {
+  const getItemBadge = (item: CurriculumItem) => {
+    if (item.isSubCourseAssessment) {
+      if (item.type === "quiz") return { label: "Course Exam", color: "bg-amber-500/20 text-amber-300 border-amber-500/40" };
+      return { label: "Capstone", color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" };
+    }
+    if (item.isModuleQuiz) {
+      return { label: "Module MCQs", color: "bg-purple-500/20 text-purple-300 border-purple-500/30" };
+    }
+    if (item.isModuleAssessment) {
+      return { label: "Module Lab", color: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30" };
+    }
+    switch (item.type) {
       case "cheatsheet":
-        return { label: "Cheat Sheet", color: "bg-blue-500/10 text-blue-400 border-blue-500/20" };
+        return { label: "Lesson", color: "bg-blue-500/10 text-blue-400 border-blue-500/20" };
       case "practice":
         return { label: "Practice", color: "bg-amber-500/10 text-amber-400 border-amber-500/20" };
       case "quiz":
@@ -168,7 +290,10 @@ export default function StudentLesson() {
     if (!questions.length) return { total: 0, correct: 0, scorePct: 0, passed: false };
     let correct = 0;
     questions.forEach(q => {
-      if (selectedAnswers[q.id] === q.correctIndex) {
+      const targetIdx = q.correctIndex !== undefined
+        ? q.correctIndex
+        : q.options.findIndex(opt => opt.id === q.correctAnswer);
+      if (selectedAnswers[q.id] === targetIdx) {
         correct++;
       }
     });
@@ -189,10 +314,10 @@ export default function StudentLesson() {
       quizTitle: activeItem.title,
       scorePct: quizResults.scorePct,
       passed: quizResults.passed,
-      courseTitle: containingModule?.title || "Full Stack Web Development",
-    });
+      courseTitle: course?.title || containingModule?.title || "Course Track",
+    }, profile?.id);
     markAsCompleted();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollToTop(true);
   };
 
   const handleRetakeQuiz = () => {
@@ -200,7 +325,7 @@ export default function StudentLesson() {
     const newAnswers = { ...selectedAnswers };
     questions.forEach(q => delete newAnswers[q.id]);
     setSelectedAnswers(newAnswers);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollToTop(true);
   };
 
   if (loading) {
@@ -212,6 +337,60 @@ export default function StudentLesson() {
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
           </div>
           <p className="mt-5 text-sm font-bold tracking-wide text-slate-300">Loading BlezeX Learning Environment…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // --- LOCKED SUB-COURSE SHIELD ---
+  if (!isCurrentSubCourseUnlocked) {
+    const prevSub = containingModuleIndex > 0 ? modules[containingModuleIndex - 1] : null;
+    const prevItems = prevSub?.items || [];
+    const prevDone = prevItems.filter(it => completed.has(it.id)).length;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0f1d] p-6 text-white">
+        <div className="max-w-md w-full rounded-3xl border border-amber-500/30 bg-slate-900/95 p-8 text-center shadow-2xl backdrop-blur-md">
+          <span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-inner">
+            <Icon name="lock" size={32} />
+          </span>
+          <span className="mt-4 inline-block text-[10px] font-black uppercase tracking-widest text-amber-400">
+            COURSE LOCKED
+          </span>
+          <h2 className="mt-1 font-display text-2xl font-extrabold text-white">
+            {containingModule?.title || "Sub-Course Locked"}
+          </h2>
+          <p className="mt-3 text-xs leading-relaxed text-slate-300">
+            This lesson is part of a locked sub-course. You must finish all lessons and assessments in{" "}
+            <strong className="text-amber-300">{prevSub?.title || "the previous course"}</strong> first ({prevDone}/{prevItems.length} completed).
+          </p>
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              to={`/student/course/${effectiveEid}`}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-5 py-2.5 text-xs font-bold text-slate-200 hover:bg-slate-700 transition"
+            >
+              <Icon name="arrowLeft" size={14} /> Back to Course Track
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                // Find first incomplete lesson in earliest unlocked subcourse
+                for (let i = 0; i < modules.length; i++) {
+                  if (isCurriculumModuleUnlocked(i, modules, completed)) {
+                    const incomplete = modules[i].items.find(it => !completed.has(it.id));
+                    if (incomplete) {
+                      navigate(`/student/course/${effectiveEid}/lesson/${incomplete.id}`);
+                      return;
+                    }
+                  }
+                }
+                navigate(`/student/course/${effectiveEid}`);
+              }}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:from-blue-500 hover:to-indigo-500 transition"
+            >
+              <span>Go to Active Lesson</span>
+              <Icon name="arrow" size={14} />
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -258,7 +437,7 @@ export default function StudentLesson() {
           </div>
 
           <h2 className="mt-2 font-display text-xs font-bold leading-snug text-white">
-            {containingModule.title}
+            {cleanSubCourseTitle(containingModule.title)}
           </h2>
 
           <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-400">
@@ -285,82 +464,271 @@ export default function StudentLesson() {
         </div>
       )}
 
-      {/* Vertical Timeline Lessons List (Only for this sub-course) */}
-      <div className="flex-1 overflow-y-auto px-2 py-3">
-        <div className="relative space-y-0.5 py-1">
-          {subCourseLessons.map((item, itemIdx) => {
-            const isActive = item.id === activeItem?.id;
-            const isItemDone = completed.has(item.id);
-            const iconName = getItemIcon(item.type);
-            const badge = getItemBadge(item.type);
+      {/* Vertical Timeline Lessons List: Grouped by Module */}
+      <div className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
+        {containingModule?.modules && containingModule.modules.length > 0 ? (
+          <>
+            {containingModule.modules.map((mod, modIdx) => {
+              const isOpen = openSidebarModules[mod.id] !== false;
+              return (
+                <div key={mod.id} className="space-y-1">
+                  {/* Module Header / Dropdown Trigger */}
+                  <button
+                    type="button"
+                    onClick={() => toggleSidebarModule(mod.id)}
+                    className="w-full text-left sticky top-0 z-20 my-1 px-2.5 py-1.5 rounded-lg bg-[#0f172a]/95 hover:bg-[#1e293b] backdrop-blur-xs border border-white/10 flex items-center justify-between shadow-xs transition-colors cursor-pointer group select-none"
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="grid h-4 w-4 shrink-0 place-items-center rounded bg-blue-500/25 text-[9px] font-black text-blue-300 group-hover:scale-105 transition-transform">
+                        {modIdx + 1}
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-200 truncate group-hover:text-blue-300 transition-colors">
+                        {cleanModuleTitle(mod.title)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {mod.items.filter(it => completed.has(it.id)).length}/{mod.items.length}
+                      </span>
+                      <Icon
+                        name="chevronDown"
+                        size={12}
+                        className={`text-slate-400 group-hover:text-white transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                      />
+                    </div>
+                  </button>
 
-            return (
-              <Link
-                key={item.id}
-                to={`/student/course/${effectiveEid}/lesson/${item.id}`}
-                onClick={() => setMobileDrawerOpen(false)}
-                className={`group relative flex items-center gap-3 rounded-lg mx-1 px-3 py-2 transition-all duration-150 ${
-                  isActive
-                    ? "bg-gradient-to-r from-blue-600/25 via-indigo-600/20 to-purple-600/10 text-white font-bold shadow-[0_0_15px_rgba(59,130,246,0.15)] ring-1 ring-blue-500/30"
-                    : "text-slate-300 hover:bg-white/[0.05] hover:text-white"
-                }`}
-              >
-                {/* Vertical connector line segments (perfectly centered behind circle) */}
-                {itemIdx > 0 && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute left-[22px] top-0 h-1/2 w-0.5 -translate-x-1/2 bg-blue-500/35 pointer-events-none"
-                  />
-                )}
-                {itemIdx < subCourseLessons.length - 1 && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute left-[22px] top-1/2 -bottom-1 w-0.5 -translate-x-1/2 bg-blue-500/35 pointer-events-none"
-                  />
-                )}
+                  {/* Items in Module (Collapsible) */}
+                  {isOpen && (
+                    <div className="relative space-y-0.5 py-1">
+                      {mod.items.map((item, itemIdx) => {
+                        const isActive = item.id === activeItem?.id;
+                        const isItemDone = completed.has(item.id);
+                        const iconName = getItemIcon(item.type);
+                        const badge = getItemBadge(item);
 
-                {/* Timeline Node Circle */}
-                <span
-                  className={`relative z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold transition ${
-                    isItemDone
-                      ? "bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400/40"
-                      : isActive
-                      ? "bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.6)] ring-4 ring-blue-500/30"
-                      : "bg-[#0b1120] text-slate-500 ring-2 ring-white/15 group-hover:ring-white/40"
-                  }`}
-                >
-                  {isItemDone ? (
-                    <Icon name="check" size={11} />
-                  ) : isActive ? (
-                    <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                  ) : (
-                    <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
+                        return (
+                          <Link
+                            key={item.id}
+                            to={`/student/course/${effectiveEid}/lesson/${item.id}`}
+                            onClick={() => {
+                              setMobileDrawerOpen(false);
+                              scrollToTop(false);
+                            }}
+                            className={`group relative flex items-center gap-3 rounded-lg mx-1 px-3 py-2 transition-all duration-150 ${
+                              isActive
+                                ? "bg-gradient-to-r from-blue-600/25 via-indigo-600/20 to-purple-600/10 text-white font-bold shadow-[0_0_15px_rgba(59,130,246,0.15)] ring-1 ring-blue-500/30"
+                                : !isCurrentSubCourseUnlocked
+                                ? "text-slate-400 hover:bg-white/[0.03]"
+                                : "text-slate-300 hover:bg-white/[0.05] hover:text-white"
+                            }`}
+                          >
+                            {/* Timeline Node Circle */}
+                            <span
+                              className={`relative z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold transition ${
+                                !isCurrentSubCourseUnlocked
+                                  ? "bg-[#0b1120] text-amber-500/80 ring-2 ring-amber-500/30"
+                                  : isItemDone
+                                  ? "bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400/40"
+                                  : isActive
+                                  ? "bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.6)] ring-4 ring-blue-500/30"
+                                  : "bg-[#0b1120] text-slate-500 ring-2 ring-white/15 group-hover:ring-white/40"
+                              }`}
+                            >
+                              {!isCurrentSubCourseUnlocked ? (
+                                <Icon name="lock" size={10} className="text-amber-400" />
+                              ) : isItemDone ? (
+                                <Icon name="check" size={11} />
+                              ) : isActive ? (
+                                <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                              ) : (
+                                <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
+                              )}
+                            </span>
+
+                            {/* Details */}
+                            <div className="min-w-0 flex-1">
+                              <span className={`block truncate text-xs leading-snug ${
+                                isActive ? "text-white" : !isCurrentSubCourseUnlocked ? "text-slate-400" : "text-slate-300"
+                              }`}>
+                                {cleanLessonHeading(item.title)}
+                              </span>
+                              <div className="mt-0.5 flex items-center gap-2 text-[10px] text-slate-400">
+                                <span className={`rounded px-1.5 py-0.2 border text-[9px] font-bold uppercase tracking-wider ${
+                                  !isCurrentSubCourseUnlocked ? "border-amber-500/20 bg-amber-500/10 text-amber-300" : badge.color
+                                }`}>
+                                  {!isCurrentSubCourseUnlocked ? "Locked" : badge.label}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Icon name="clock" size={9} /> {item.duration}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Right Type Icon */}
+                            <span className={`shrink-0 transition ${
+                              isActive ? "text-blue-400" : !isCurrentSubCourseUnlocked ? "text-slate-600" : "text-slate-500 group-hover:text-slate-300"
+                            }`}>
+                              {!isCurrentSubCourseUnlocked ? <Icon name="lock" size={12} className="text-amber-500/60" /> : <Icon name={iconName} size={15} />}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
                   )}
-                </span>
+                </div>
+              );
+            })}
 
-                {/* Details */}
-                <div className="min-w-0 flex-1">
-                  <span className={`block truncate text-xs leading-snug ${isActive ? "text-white" : "text-slate-300"}`}>
-                    {item.title}
-                  </span>
-                  <div className="mt-0.5 flex items-center gap-2 text-[10px] text-slate-400">
-                    <span className={`rounded px-1.5 py-0.2 border text-[9px] font-bold uppercase tracking-wider ${badge.color}`}>
-                      {badge.label}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Icon name="clock" size={9} /> {item.duration}
+            {/* Sub-Course Final Assessment Section */}
+            {(containingModule.courseAssessment || containingModule.courseProject) && (
+              <div className="pt-2 border-t border-white/10 space-y-1">
+                <div className="sticky top-0 z-20 my-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-950/60 to-purple-950/60 backdrop-blur-xs border border-amber-500/30 flex items-center justify-between shadow-xs">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Icon name="sparkle" size={13} className="text-amber-400 shrink-0" />
+                    <span className="text-[11px] font-black uppercase tracking-wider text-amber-300 truncate">
+                      Sub-Course Assessment
                     </span>
                   </div>
                 </div>
 
-                {/* Right Type Icon */}
-                <span className={`shrink-0 transition ${isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300"}`}>
-                  <Icon name={iconName} size={15} />
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+                <div className="relative space-y-0.5 py-1">
+                  {[containingModule.courseAssessment, containingModule.courseProject].filter(Boolean).map(item => {
+                    if (!item) return null;
+                    const isActive = item.id === activeItem?.id;
+                    const isItemDone = completed.has(item.id);
+                    const iconName = getItemIcon(item.type);
+                    const badge = getItemBadge(item);
+
+                    return (
+                      <Link
+                        key={item.id}
+                        to={`/student/course/${effectiveEid}/lesson/${item.id}`}
+                        onClick={() => {
+                          setMobileDrawerOpen(false);
+                          scrollToTop(false);
+                        }}
+                        className={`group relative flex items-center gap-3 rounded-lg mx-1 px-3 py-2 transition-all duration-150 ${
+                          isActive
+                            ? "bg-gradient-to-r from-amber-600/25 via-purple-600/20 to-blue-600/10 text-white font-bold shadow-[0_0_15px_rgba(245,158,11,0.2)] ring-1 ring-amber-500/40"
+                            : !isCurrentSubCourseUnlocked
+                            ? "text-slate-400 hover:bg-white/[0.03]"
+                            : "text-slate-300 hover:bg-white/[0.05] hover:text-white"
+                        }`}
+                      >
+                        <span
+                          className={`relative z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold transition ${
+                            !isCurrentSubCourseUnlocked
+                              ? "bg-[#0b1120] text-amber-500/80 ring-2 ring-amber-500/30"
+                              : isItemDone
+                              ? "bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400/40"
+                              : isActive
+                              ? "bg-amber-500 text-white shadow-[0_0_10px_rgba(245,158,11,0.6)] ring-4 ring-amber-500/30"
+                              : "bg-[#0b1120] text-amber-500/70 ring-2 ring-amber-500/30 group-hover:ring-amber-500/50"
+                          }`}
+                        >
+                          {!isCurrentSubCourseUnlocked ? (
+                            <Icon name="lock" size={10} className="text-amber-400" />
+                          ) : isItemDone ? (
+                            <Icon name="check" size={11} />
+                          ) : (
+                            "★"
+                          )}
+                        </span>
+
+                        <div className="min-w-0 flex-1">
+                          <span className={`block truncate text-xs leading-snug ${
+                            isActive ? "text-amber-200" : !isCurrentSubCourseUnlocked ? "text-slate-400" : "text-slate-300"
+                          }`}>
+                            {cleanLessonHeading(item.title)}
+                          </span>
+                          <div className="mt-0.5 flex items-center gap-2 text-[10px] text-slate-400">
+                            <span className={`rounded px-1.5 py-0.2 border text-[9px] font-bold uppercase tracking-wider ${
+                              !isCurrentSubCourseUnlocked ? "border-amber-500/20 bg-amber-500/10 text-amber-300" : badge.color
+                            }`}>
+                              {!isCurrentSubCourseUnlocked ? "Locked" : badge.label}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Icon name="clock" size={9} /> {item.duration}
+                            </span>
+                          </div>
+                        </div>
+
+                        <span className={`shrink-0 transition ${
+                          isActive ? "text-amber-400" : !isCurrentSubCourseUnlocked ? "text-slate-600" : "text-slate-500 group-hover:text-slate-300"
+                        }`}>
+                          {!isCurrentSubCourseUnlocked ? <Icon name="lock" size={12} className="text-amber-500/60" /> : <Icon name={iconName} size={15} />}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          /* Flat fallback */
+          <div className="relative space-y-0.5 py-1">
+            {subCourseLessons.map((item, itemIdx) => {
+              const isActive = item.id === activeItem?.id;
+              const isItemDone = completed.has(item.id);
+              const iconName = getItemIcon(item.type);
+              const badge = getItemBadge(item);
+
+              return (
+                <Link
+                  key={item.id}
+                  to={`/student/course/${effectiveEid}/lesson/${item.id}`}
+                  onClick={() => {
+                    setMobileDrawerOpen(false);
+                    scrollToTop(false);
+                  }}
+                  className={`group relative flex items-center gap-3 rounded-lg mx-1 px-3 py-2 transition-all duration-150 ${
+                    isActive
+                      ? "bg-gradient-to-r from-blue-600/25 via-indigo-600/20 to-purple-600/10 text-white font-bold shadow-[0_0_15px_rgba(59,130,246,0.15)] ring-1 ring-blue-500/30"
+                      : "text-slate-300 hover:bg-white/[0.05] hover:text-white"
+                  }`}
+                >
+                  <span
+                    className={`relative z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold transition ${
+                      isItemDone
+                        ? "bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400/40"
+                        : isActive
+                        ? "bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.6)] ring-4 ring-blue-500/30"
+                        : "bg-[#0b1120] text-slate-500 ring-2 ring-white/15 group-hover:ring-white/40"
+                    }`}
+                  >
+                    {isItemDone ? (
+                      <Icon name="check" size={11} />
+                    ) : isActive ? (
+                      <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                    ) : (
+                      <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
+                    )}
+                  </span>
+
+                  <div className="min-w-0 flex-1">
+                    <span className={`block truncate text-xs leading-snug ${isActive ? "text-white" : "text-slate-300"}`}>
+                      {item.title}
+                    </span>
+                    <div className="mt-0.5 flex items-center gap-2 text-[10px] text-slate-400">
+                      <span className={`rounded px-1.5 py-0.2 border text-[9px] font-bold uppercase tracking-wider ${badge.color}`}>
+                        {badge.label}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Icon name="clock" size={9} /> {item.duration}
+                      </span>
+                    </div>
+                  </div>
+
+                  <span className={`shrink-0 transition ${isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300"}`}>
+                    <Icon name={iconName} size={15} />
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -408,18 +776,26 @@ export default function StudentLesson() {
             </button>
 
             <nav aria-label="Breadcrumb" className="flex items-center gap-2 truncate text-xs md:text-sm">
-              <Link to="/student/courses" className="hidden sm:inline font-semibold text-slate-400 hover:text-slate-600">
-                Full Stack Web
+              <Link to="/student/courses" className="hidden sm:inline font-semibold text-slate-400 hover:text-slate-600 truncate max-w-[150px]">
+                {course?.title || "Courses"}
               </Link>
               <span className="hidden sm:inline text-slate-300">&gt;</span>
               <Link
                 to={`/student/course/${effectiveEid}`}
-                className="rounded-lg bg-blue-50 px-2.5 py-1 font-bold text-blue-700 border border-blue-200/50 truncate max-w-[220px] hover:bg-blue-100 transition"
+                className="rounded-lg bg-blue-50 px-2.5 py-1 font-bold text-blue-700 border border-blue-200/50 truncate max-w-[200px] hover:bg-blue-100 transition"
               >
-                Sub-Course {containingModuleIndex >= 0 ? containingModuleIndex + 1 : ""}: {containingModule?.title}
+                Sub-Course {containingModuleIndex >= 0 ? containingModuleIndex + 1 : ""}: {cleanSubCourseTitle(containingModule?.title)}
               </Link>
+              {activeItem?.moduleTitle && (
+                <>
+                  <span className="hidden md:inline text-slate-300">&gt;</span>
+                  <span className="hidden md:inline text-slate-500 font-semibold truncate max-w-[160px]">
+                    {cleanModuleTitle(activeItem.moduleTitle)}
+                  </span>
+                </>
+              )}
               <span className="text-slate-300">&gt;</span>
-              <span className="font-bold text-slate-900 truncate">{activeItem?.title}</span>
+              <span className="font-bold text-slate-900 truncate">{cleanLessonHeading(activeItem?.title)}</span>
             </nav>
           </div>
 
@@ -429,7 +805,7 @@ export default function StudentLesson() {
               <div className="hidden sm:flex items-center rounded-xl border border-slate-200 bg-slate-100 p-1">
                 <button
                   type="button"
-                  onClick={() => setLessonMode("learn")}
+                  onClick={() => handleSetLessonMode("learn")}
                   className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
                     lessonMode === "learn"
                       ? "bg-white text-slate-900 shadow-sm"
@@ -441,7 +817,7 @@ export default function StudentLesson() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setLessonMode("quiz")}
+                  onClick={() => handleSetLessonMode("quiz")}
                   className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
                     lessonMode === "quiz"
                       ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm"
@@ -465,9 +841,41 @@ export default function StudentLesson() {
         </header>
 
         {/* Scrollable Main Workspace */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8">
+        <div
+          ref={mainScrollRef}
+          key={lid}
+          id="lesson-scroll-container"
+          className="lesson-scroll-container flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8"
+        >
+          <div id="lesson-top-anchor" className="h-0 w-0 pointer-events-none" />
           <div className="mx-auto max-w-4xl space-y-6">
 
+            {!isCurrentSubCourseUnlocked ? (
+              <div className="rounded-3xl border border-amber-200/90 bg-gradient-to-b from-amber-50/50 via-white to-slate-50/50 p-8 md:p-12 text-center shadow-sm">
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-amber-100 text-amber-600 shadow-xs">
+                  <Icon name="lock" size={28} />
+                </div>
+                <span className="mt-4 inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-black uppercase tracking-wider text-amber-800">
+                  Sub-Course Locked
+                </span>
+                <h2 className="mt-3 font-display text-2xl font-black text-slate-900 md:text-3xl">
+                  {cleanSubCourseTitle(containingModule?.title)}
+                </h2>
+                <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-slate-600">
+                  This sub-course is currently locked. Complete all previous sub-course lessons and assessments to unlock this track.
+                </p>
+                <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+                  <Link
+                    to={`/student/course/${effectiveEid}`}
+                    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:bg-blue-700 transition"
+                  >
+                    <Icon name="arrowLeft" size={14} />
+                    <span>Back to Course Track Overview</span>
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <>
             {/* ============================================================== */}
             {/* --- TOPIC CHEAT SHEET: LEARN MODE (CONTENT & EXPLANATION) --- */}
             {/* ============================================================== */}
@@ -500,7 +908,7 @@ export default function StudentLesson() {
 
                   {/* Heading & Summary */}
                   <h1 className="mt-4 font-display text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
-                    {activeItem.contentHeading || activeItem.title}
+                    {cleanLessonHeading(activeItem.contentHeading || activeItem.title)}
                   </h1>
 
                   {activeItem.contentDescription && (
@@ -664,10 +1072,7 @@ export default function StudentLesson() {
 
                         <button
                           type="button"
-                          onClick={() => {
-                            setLessonMode("quiz");
-                            window.scrollTo({ top: 0, behavior: "smooth" });
-                          }}
+                          onClick={() => handleSetLessonMode("quiz")}
                           className="inline-flex shrink-0 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:scale-[1.02] hover:shadow-indigo-500/35 active:scale-[0.98]"
                         >
                           <Icon name="pencil" size={17} />
@@ -693,10 +1098,7 @@ export default function StudentLesson() {
                       {activeItem?.type === "cheatsheet" && (
                         <button
                           type="button"
-                          onClick={() => {
-                            setLessonMode("learn");
-                            window.scrollTo({ top: 0, behavior: "smooth" });
-                          }}
+                          onClick={() => handleSetLessonMode("learn")}
                           className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
                         >
                           <Icon name="arrowLeft" size={13} />
@@ -720,8 +1122,8 @@ export default function StudentLesson() {
                   <div className="mt-5">
                     <h1 className="font-display text-2xl font-black text-slate-900 md:text-3xl">
                       {activeItem.type === "cheatsheet"
-                        ? `Knowledge Check: ${activeItem.title}`
-                        : (activeItem.contentHeading || activeItem.title)}
+                        ? `Knowledge Check: ${cleanLessonHeading(activeItem.title)}`
+                        : cleanLessonHeading(activeItem.contentHeading || activeItem.title)}
                     </h1>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
                       {isThisQuizSubmitted
@@ -758,10 +1160,7 @@ export default function StudentLesson() {
                           {activeItem?.type === "cheatsheet" && (
                             <button
                               type="button"
-                              onClick={() => {
-                                setLessonMode("learn");
-                                window.scrollTo({ top: 0, behavior: "smooth" });
-                              }}
+                              onClick={() => handleSetLessonMode("learn")}
                               className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
                             >
                               Review Cheat Sheet
@@ -783,7 +1182,10 @@ export default function StudentLesson() {
                   <div className="mt-8 space-y-6 border-t border-slate-100 pt-6">
                     {questions.map((q, qIdx) => {
                       const selectedIdx = selectedAnswers[q.id];
-                      const isCorrect = selectedIdx === q.correctIndex;
+                      const targetIdx = q.correctIndex !== undefined
+                        ? q.correctIndex
+                        : q.options.findIndex(opt => opt.id === q.correctAnswer);
+                      const isCorrect = selectedIdx === targetIdx;
                       const hasSelected = selectedIdx !== undefined;
 
                       return (
@@ -830,7 +1232,7 @@ export default function StudentLesson() {
                           <div className="mt-4 space-y-2.5">
                             {q.options.map((opt, optIdx) => {
                               const isThisSelected = selectedIdx === optIdx;
-                              const isThisTheCorrectAnswer = optIdx === q.correctIndex;
+                              const isThisTheCorrectAnswer = optIdx === targetIdx;
 
                               let optStyle = "border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50/80";
 
@@ -924,10 +1326,7 @@ export default function StudentLesson() {
                           {activeItem?.type === "cheatsheet" && (
                             <button
                               type="button"
-                              onClick={() => {
-                                setLessonMode("learn");
-                                window.scrollTo({ top: 0, behavior: "smooth" });
-                              }}
+                              onClick={() => handleSetLessonMode("learn")}
                               className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
                             >
                               ← Back to Cheat Sheet
@@ -945,9 +1344,19 @@ export default function StudentLesson() {
                         {nextItem ? (
                           <Link
                             to={`/student/course/${effectiveEid}/lesson/${nextItem.id}`}
+                            onClick={() => scrollToTop(false)}
                             className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-blue-700"
                           >
                             <span>Proceed to Next Item</span>
+                            <Icon name="arrow" size={14} />
+                          </Link>
+                        ) : nextSubCourse && (isCurrentSubCourseAllDone || isCurrentDone) ? (
+                          <Link
+                            to={`/student/course/${effectiveEid}/lesson/${nextSubCourse.items[0]?.id}`}
+                            onClick={() => scrollToTop(false)}
+                            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:from-emerald-500 hover:to-teal-500"
+                          >
+                            <span>Next Course: {nextSubCourse.title}</span>
                             <Icon name="arrow" size={14} />
                           </Link>
                         ) : (
@@ -955,7 +1364,7 @@ export default function StudentLesson() {
                             to={`/student/course/${effectiveEid}`}
                             className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-blue-700"
                           >
-                            <span>Back to Sub-Courses</span>
+                            <span>Back to Course Track</span>
                             <Icon name="arrow" size={14} />
                           </Link>
                         )}
@@ -982,7 +1391,7 @@ export default function StudentLesson() {
                   </div>
 
                   <h1 className="mt-3 font-display text-2xl font-black text-slate-900 md:text-3xl">
-                    {activeItem.contentHeading || activeItem.title}
+                    {cleanLessonHeading(activeItem.contentHeading || activeItem.title)}
                   </h1>
 
                   <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -1027,8 +1436,8 @@ export default function StudentLesson() {
                         title: activeItem.title,
                         text: assignmentText,
                         link: assignmentLink,
-                        courseTitle: containingModule?.title || "Full Stack Web Development",
-                      });
+                        courseTitle: course?.title || containingModule?.title || "Course Track",
+                      }, profile?.id);
                       markAsCompleted();
                     }}
                     className="mt-8 space-y-5 border-t border-slate-100 pt-6"
@@ -1085,6 +1494,7 @@ export default function StudentLesson() {
               {prevItem ? (
                 <Link
                   to={`/student/course/${effectiveEid}/lesson/${prevItem.id}`}
+                  onClick={() => scrollToTop(false)}
                   className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
                 >
                   <Icon name="arrowLeft" size={15} />
@@ -1115,9 +1525,19 @@ export default function StudentLesson() {
               {nextItem ? (
                 <Link
                   to={`/student/course/${effectiveEid}/lesson/${nextItem.id}`}
+                  onClick={() => scrollToTop(false)}
                   className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700"
                 >
                   <span>Next</span>
+                  <Icon name="arrow" size={15} />
+                </Link>
+              ) : nextSubCourse && (isCurrentSubCourseAllDone || isCurrentDone) ? (
+                <Link
+                  to={`/student/course/${effectiveEid}/lesson/${nextSubCourse.items[0]?.id}`}
+                  onClick={() => scrollToTop(false)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:from-emerald-500 hover:to-teal-500"
+                >
+                  <span>Next Sub-Course: {cleanSubCourseTitle(nextSubCourse.title)}</span>
                   <Icon name="arrow" size={15} />
                 </Link>
               ) : (
@@ -1125,11 +1545,14 @@ export default function StudentLesson() {
                   to={`/student/course/${effectiveEid}`}
                   className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
                 >
-                  <span>Back to Sub-Courses</span>
+                  <span>Back to Course Track</span>
                   <Icon name="arrow" size={15} />
                 </Link>
               )}
             </div>
+
+              </>
+            )}
 
           </div>
         </div>

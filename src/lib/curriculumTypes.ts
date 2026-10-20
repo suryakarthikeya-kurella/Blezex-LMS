@@ -3,7 +3,8 @@ export interface PracticeQuestion {
   prompt: string;
   codeSnippet?: { language: string; code: string };
   options: Array<{ id: string; label: string; code?: string }>;
-  correctIndex: number;
+  correctIndex?: number;
+  correctAnswer?: string;
   explanation: string;
 }
 
@@ -54,20 +55,39 @@ export interface CurriculumItem {
     starterCode?: string;
     deliverables: string[];
   };
+  isModuleQuiz?: boolean;
+  isModuleAssessment?: boolean;
+  isSubCourseAssessment?: boolean;
 }
 
-export interface CurriculumModule {
+export interface CurriculumSubModule {
+  id: string;
+  subCourseId?: string;
+  title: string;
+  description?: string;
+  position: number;
+  duration?: string;
+  lessons?: CurriculumItem[];
+  moduleQuiz?: CurriculumItem;
+  moduleAssessment?: CurriculumItem;
+  items: CurriculumItem[];
+}
+
+export interface CurriculumSubCourse {
   id: string;
   title: string;
   position: number;
   duration: string;
   description: string;
+  modules: CurriculumSubModule[];
+  courseAssessment?: CurriculumItem;
+  courseProject?: CurriculumItem;
   items: CurriculumItem[];
 }
 
 /**
- * Sub-Course interface representing progressive sequential courses
- * inside the Main Course (Full Stack Web Development).
+ * Backward compatibility: CurriculumModule maps to CurriculumSubCourse
  */
-export type CurriculumSubCourse = CurriculumModule;
+export type CurriculumModule = CurriculumSubCourse;
+
 
