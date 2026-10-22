@@ -9,6 +9,7 @@ const nav = {
   student: [
     { to: "/student", label: "Dashboard", icon: "dashboard" as IconName },
     { to: "/student/courses", label: "My Courses", icon: "courses" as IconName },
+    { to: "/student/codelab", label: "Code Lab", icon: "code" as IconName },
     { to: "/student/journey", label: "My Journey", icon: "journey" as IconName },
   ],
 } as const;

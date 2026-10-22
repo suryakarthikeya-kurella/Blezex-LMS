@@ -20,6 +20,7 @@ const StudentCourse = lazy(() => import("./pages/student/Course"));
 const StudentCourses = lazy(() => import("./pages/student/Courses"));
 const StudentJourney = lazy(() => import("./pages/student/Journey"));
 const StudentLesson = lazy(() => import("./pages/student/Lesson"));
+const StudentCodeLab = lazy(() => import("./pages/student/CodeLab"));
 
 function Guard({ role, children }: { role: string; children: ReactNode }) {
   const { profile, loading } = useAuth();
@@ -56,6 +57,8 @@ export default function App() {
         <Route path="/mentor/enrollment/:eid" element={<Guard role="mentor"><MentorEnrollment /></Guard>} />
         <Route path="/student" element={<Guard role="student"><StudentHome /></Guard>} />
         <Route path="/student/courses" element={<Guard role="student"><StudentCourses /></Guard>} />
+        <Route path="/student/codelab" element={<Guard role="student"><StudentCodeLab /></Guard>} />
+        <Route path="/student/codelab/:projectId" element={<Guard role="student"><StudentCodeLab /></Guard>} />
         <Route path="/student/journey" element={<Guard role="student"><StudentJourney /></Guard>} />
         <Route path="/student/course/:eid" element={<Guard role="student"><StudentCourse /></Guard>} />
         <Route path="/student/course/:eid/lesson/:lid" element={<Guard role="student"><StudentLesson /></Guard>} />

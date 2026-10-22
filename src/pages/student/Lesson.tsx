@@ -24,6 +24,8 @@ import {
   saveAssignmentSubmission,
 } from "../../lib/curriculumService";
 import { useAuth } from "../../lib/auth";
+import { LessonCodingExercise } from "../../components/codelab/LessonCodingExercise";
+import { getExerciseForLesson } from "../../lib/codelab/exerciseData";
 
 export default function StudentLesson() {
   const { profile } = useAuth();
@@ -78,13 +80,13 @@ export default function StudentLesson() {
     }
   };
 
-  const handleSetLessonMode = (mode: "learn" | "quiz") => {
+  const handleSetLessonMode = (mode: "learn" | "quiz" | "code") => {
     setLessonMode(mode);
     scrollToTop(true);
   };
 
-  // View mode for lessons with questions: "learn" (reading notes) vs "quiz" (testing understanding)
-  const [lessonMode, setLessonMode] = useState<"learn" | "quiz">("learn");
+  // View mode for lessons with questions: "learn" (reading notes) vs "quiz" (testing understanding) vs "code" (interactive coding exercise)
+  const [lessonMode, setLessonMode] = useState<"learn" | "quiz" | "code">("learn");
 
   // Quiz / Assessment submission & review state
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
@@ -800,21 +802,21 @@ export default function StudentLesson() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Quick Mode Switcher for cheatsheet items with questions */}
-            {activeItem?.type === "cheatsheet" && questions.length > 0 && (
-              <div className="hidden sm:flex items-center rounded-xl border border-slate-200 bg-slate-100 p-1">
-                <button
-                  type="button"
-                  onClick={() => handleSetLessonMode("learn")}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                    lessonMode === "learn"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-900"
-                  }`}
-                >
-                  <Icon name="sheet" size={13} />
-                  <span>Cheat Sheet</span>
-                </button>
+            {/* Quick Mode Switcher for lessons */}
+            <div className="hidden sm:flex items-center rounded-xl border border-slate-200 bg-slate-100 p-1">
+              <button
+                type="button"
+                onClick={() => handleSetLessonMode("learn")}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  lessonMode === "learn"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                <Icon name="sheet" size={13} />
+                <span>Cheat Sheet</span>
+              </button>
+              {questions.length > 0 && (
                 <button
                   type="button"
                   onClick={() => handleSetLessonMode("quiz")}
@@ -825,10 +827,22 @@ export default function StudentLesson() {
                   }`}
                 >
                   <Icon name="quiz" size={13} />
-                  <span>Test Mode ({questions.length})</span>
+                  <span>Test ({questions.length})</span>
                 </button>
-              </div>
-            )}
+              )}
+              <button
+                type="button"
+                onClick={() => handleSetLessonMode("code")}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  lessonMode === "code"
+                    ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                <Icon name="code" size={13} />
+                <span>Code Lab</span>
+              </button>
+            </div>
 
             <Link
               to={`/student/course/${effectiveEid}`}
@@ -1082,14 +1096,83 @@ export default function StudentLesson() {
                       </div>
                     </div>
                   )}
+
+                  {/* --- INTERACTIVE CODE LAB LAUNCH CARD --- */}
+                  <div className="mt-6 overflow-hidden rounded-3xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/60 p-6 md:p-8 shadow-sm">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                      <div className="space-y-2">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-800">
+                          <Icon name="code" size={13} />
+                          <span>Hands-On Coding Lab</span>
+                        </div>
+                        <h3 className="font-display text-2xl font-black text-slate-900">
+                          Practice in the BlezeX Code Lab
+                        </h3>
+                        <p className="text-sm leading-6 text-slate-600 max-w-xl">
+                          Apply this lesson's concepts directly in the code editor. Solve algorithmic problems, query databases, run tests against automated test cases, and earn learning streak credit.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSetLessonMode("code")}
+                        className="inline-flex shrink-0 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:scale-[1.02] hover:shadow-emerald-500/35 active:scale-[0.98]"
+                      >
+                        <Icon name="code" size={17} />
+                        <span>Launch Code Lab</span>
+                        <Icon name="arrow" size={16} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </article>
             )}
 
             {/* ============================================================== */}
+            {/* --- INTERACTIVE CODE LAB / CODING EXERCISE VIEW --- */}
+            {/* ============================================================== */}
+            {(lessonMode === "code" || (activeItem?.type === "practice" && lessonMode !== "quiz")) && (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleSetLessonMode("learn")}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    >
+                      <Icon name="arrowLeft" size={13} />
+                      <span>Back to Reading Notes</span>
+                    </button>
+                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-700 border border-emerald-200/50">
+                      Live Coding Challenge
+                    </span>
+                  </div>
+
+                  <Link
+                    to="/student/codelab"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition"
+                  >
+                    <span>Open Standalone IDE</span>
+                    <Icon name="arrow" size={13} />
+                  </Link>
+                </div>
+
+                <LessonCodingExercise
+                  exercise={getExerciseForLesson(activeItem?.id, activeItem?.title, activeItem?.type)}
+                  enrollmentId={effectiveEid}
+                  lessonId={activeItem?.id}
+                  courseTitle={course?.title}
+                  userId={profile?.id}
+                  onComplete={() => markAsCompleted()}
+                  isAlreadyCompleted={isCurrentDone}
+                />
+              </section>
+            )}
+
+            {/* ============================================================== */}
             {/* --- QUIZ / TEST MODE: QUESTIONS & EXPLANATIONS VIEW --- */}
             {/* ============================================================== */}
-            {(activeItem?.type === "practice" || activeItem?.type === "quiz" || (activeItem?.type === "cheatsheet" && lessonMode === "quiz")) && (
+            {(lessonMode === "quiz" || (activeItem?.type === "quiz" && lessonMode !== "code")) && (
               <section className="space-y-6">
                 <article className="rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm md:p-9">
                   {/* Top Bar inside Quiz Mode */}
